@@ -83,12 +83,12 @@ Each question has tags like: `#arrays` `#dp` `#amazon` `#medium` `#must-know`
 | Category | Total | Completed | Remaining |
 |----------|-------|-----------|-----------|
 | DSA | 0 | 0 | 0 |
-| Languages | 0 | 0 | 0 |
+| Languages (Java - Spring Batch) | 125 | 0 | 125 |
 | Web Dev | 0 | 0 | 0 |
 | Database | 0 | 0 | 0 |
 | System Design | 0 | 0 | 0 |
 | HR & Behavioral | 0 | 0 | 0 |
-| **Total** | **0** | **0** | **0** |
+| **Total** | **125** | **0** | **125** |
 
 ---
 
@@ -97,6 +97,7 @@ Each question has tags like: `#arrays` `#dp` `#amazon` `#medium` `#must-know`
 | Date | Changes |
 |------|---------|
 | 2026-03-13 | 🎉 System Created! Initial structure ready. |
+| 2026-03-13 | 🍃 Added 125 Spring Batch questions (15 sections, basic to advanced) |
 
 ---
 

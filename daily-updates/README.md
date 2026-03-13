@@ -15,6 +15,7 @@
 | Date | What was added | Category | Link |
 |------|---------------|----------|------|
 | 2026-03-13 | 🎉 System Created | All | [README](../README.md) |
+| 2026-03-13 | 🍃 125 Spring Batch Questions (15 sections) | Java / Spring Batch | [Go →](../questions/languages/java/spring-batch/) |
 
 ---
 
