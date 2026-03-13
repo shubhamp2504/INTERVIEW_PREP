@@ -1,4 +1,3 @@
-<![CDATA[<div align="center">
 
 # 🧠 Arrays & Strings — DSA
 
@@ -6,7 +5,6 @@
 [![Difficulty Mix](https://img.shields.io/badge/Medium-0-yellow.svg)](#)
 [![Difficulty Mix](https://img.shields.io/badge/Hard-0-red.svg)](#)
 
-</div>
 
 ---
 

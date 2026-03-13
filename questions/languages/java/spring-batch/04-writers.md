@@ -1,15 +1,14 @@
-<![CDATA[<div align="center">
 
 # 🟡 Spring Batch — Writers Questions (41-48)
 
 [![Questions](https://img.shields.io/badge/Questions-8-blue.svg)](#)
 [![Difficulty](https://img.shields.io/badge/Level-Medium-yellow.svg)](#)
 
-</div>
 
 ---
 
 <a id="q1"></a>
+
 ## Q41. ❓ What types of ItemWriter implementations exist?
 
 🔖 **Tags:** `#spring-batch` `#writer` `#must-know`  
@@ -34,6 +33,7 @@
 ---
 
 <a id="q2"></a>
+
 ## Q42. ❓ What is JdbcBatchItemWriter?
 
 🔖 **Tags:** `#spring-batch` `#writer` `#jdbc` `#must-know`  
@@ -85,6 +85,7 @@ Result: 100 INSERTs in 1 DB round-trip instead of 100!
 ---
 
 <a id="q3"></a>
+
 ## Q43. ❓ What is JpaItemWriter?
 
 🔖 **Tags:** `#spring-batch` `#writer` `#jpa`  
@@ -117,6 +118,7 @@ public JpaItemWriter<Employee> jpaWriter(EntityManagerFactory emf) {
 ---
 
 <a id="q4"></a>
+
 ## Q44. ❓ What is FlatFileItemWriter?
 
 🔖 **Tags:** `#spring-batch` `#writer` `#file`  
@@ -151,6 +153,7 @@ ID,Name,Salary,Department
 ---
 
 <a id="q5"></a>
+
 ## Q45. ❓ What is CompositeItemWriter?
 
 🔖 **Tags:** `#spring-batch` `#writer` `#composite` `#must-know`  
@@ -201,6 +204,7 @@ public ClassifierCompositeItemWriter<Employee> classifiedWriter() {
 ---
 
 <a id="q6"></a>
+
 ## Q46. ❓ How does batch insert work in JdbcBatchItemWriter?
 
 🔖 **Tags:** `#spring-batch` `#batch-insert` `#performance`  
@@ -242,6 +246,7 @@ ps.executeBatch();                      // Execute ALL at once
 ---
 
 <a id="q7"></a>
+
 ## Q47. ❓ How do you write data to multiple destinations?
 
 🔖 **Tags:** `#spring-batch` `#writer` `#multi-destination`  
@@ -262,6 +267,7 @@ Covered in Q45 above with code examples.
 ---
 
 <a id="q8"></a>
+
 ## Q48. ❓ What happens if writing fails during chunk processing?
 
 🔖 **Tags:** `#spring-batch` `#writer` `#error-handling`  

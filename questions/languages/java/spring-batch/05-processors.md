@@ -1,15 +1,14 @@
-<![CDATA[<div align="center">
 
 # 🟡 Spring Batch — Processor Questions (49-54)
 
 [![Questions](https://img.shields.io/badge/Questions-6-blue.svg)](#)
 [![Difficulty](https://img.shields.io/badge/Level-Medium-yellow.svg)](#)
 
-</div>
 
 ---
 
 <a id="q1"></a>
+
 ## Q49. ❓ What is ItemProcessor used for?
 
 🔖 **Tags:** `#spring-batch` `#processor` `#must-know`  
@@ -52,6 +51,7 @@ public ItemProcessor<RawOrder, ProcessedOrder> orderProcessor() {
 ---
 
 <a id="q2"></a>
+
 ## Q50. ❓ Can ItemProcessor modify the data?
 
 🔖 **Tags:** `#spring-batch` `#processor` `#transformation`  
@@ -88,6 +88,7 @@ ItemProcessor<String[], Employee> processor = csvRow -> {
 ---
 
 <a id="q3"></a>
+
 ## Q51. ❓ Can we have multiple processors in Spring Batch?
 
 🔖 **Tags:** `#spring-batch` `#processor` `#composite`  
@@ -121,6 +122,7 @@ Item → Processor1 (validate) → Processor2 (transform) → Processor3 (enrich
 ---
 
 <a id="q4"></a>
+
 ## Q52. ❓ What is CompositeItemProcessor?
 
 🔖 **Tags:** `#spring-batch` `#processor` `#composite`  
@@ -158,6 +160,7 @@ public CompositeItemProcessor<RawData, FinalData> compositeProcessor() {
 ---
 
 <a id="q5"></a>
+
 ## Q53. ❓ What happens if ItemProcessor throws an exception?
 
 🔖 **Tags:** `#spring-batch` `#processor` `#error-handling`  
@@ -192,6 +195,7 @@ public Step step(JobRepository repo, PlatformTransactionManager tx) {
 ---
 
 <a id="q6"></a>
+
 ## Q54. ❓ Can we filter records using ItemProcessor?
 
 🔖 **Tags:** `#spring-batch` `#processor` `#filtering`  

@@ -1,15 +1,14 @@
-<![CDATA[<div align="center">
 
 # 🟡 Spring Batch — Readers Questions (31-40)
 
 [![Questions](https://img.shields.io/badge/Questions-10-blue.svg)](#)
 [![Difficulty](https://img.shields.io/badge/Level-Medium-yellow.svg)](#)
 
-</div>
 
 ---
 
 <a id="q1"></a>
+
 ## Q31. ❓ What types of ItemReader implementations are available?
 
 🔖 **Tags:** `#spring-batch` `#reader` `#must-know`  
@@ -38,6 +37,7 @@
 ---
 
 <a id="q2"></a>
+
 ## Q32. ❓ What is FlatFileItemReader?
 
 🔖 **Tags:** `#spring-batch` `#reader` `#file`  
@@ -100,6 +100,7 @@ public FlatFileItemReader<Employee> fixedWidthReader() {
 ---
 
 <a id="q3"></a>
+
 ## Q33. ❓ What is JdbcCursorItemReader?
 
 🔖 **Tags:** `#spring-batch` `#reader` `#jdbc` `#cursor`  
@@ -148,6 +149,7 @@ public JdbcCursorItemReader<Employee> cursorReader(DataSource ds) {
 ---
 
 <a id="q4"></a>
+
 ## Q34. ❓ What is JdbcPagingItemReader?
 
 🔖 **Tags:** `#spring-batch` `#reader` `#jdbc` `#paging`  
@@ -203,6 +205,7 @@ public JdbcPagingItemReader<Employee> pagingReader(DataSource ds) {
 ---
 
 <a id="q5"></a>
+
 ## Q35. ❓ What is JpaPagingItemReader?
 
 🔖 **Tags:** `#spring-batch` `#reader` `#jpa`  
@@ -252,6 +255,7 @@ public JpaPagingItemReader<Employee> jpaReaderWithParams(EntityManagerFactory em
 ---
 
 <a id="q6"></a>
+
 ## Q36. ❓ What is the difference between Cursor and Paging reader?
 
 🔖 **Tags:** `#spring-batch` `#cursor-vs-paging` `#must-know` `#frequently-asked`  
@@ -295,6 +299,7 @@ Use PAGING when:
 ---
 
 <a id="q7"></a>
+
 ## Q37. ❓ Which reader is best for large datasets?
 
 🔖 **Tags:** `#spring-batch` `#reader` `#performance` `#large-data`  
@@ -335,6 +340,7 @@ public Partitioner rangePartitioner(DataSource ds) {
 ---
 
 <a id="q8"></a>
+
 ## Q38. ❓ How does JdbcCursorItemReader work internally?
 
 🔖 **Tags:** `#spring-batch` `#cursor` `#internals`  
@@ -396,6 +402,7 @@ class JdbcCursorItemReader {
 ---
 
 <a id="q9"></a>
+
 ## Q39. ❓ What are the limitations of cursor readers?
 
 🔖 **Tags:** `#spring-batch` `#cursor` `#limitations`  
@@ -435,6 +442,7 @@ public SynchronizedItemStreamReader<Employee> threadSafeReader() {
 ---
 
 <a id="q10"></a>
+
 ## Q40. ❓ How do you read data from multiple files?
 
 🔖 **Tags:** `#spring-batch` `#reader` `#multi-file`  

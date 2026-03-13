@@ -1,15 +1,14 @@
-<![CDATA[<div align="center">
 
 # 🔴 Spring Batch — Transaction & Restart Questions (63-69)
 
 [![Questions](https://img.shields.io/badge/Questions-7-blue.svg)](#)
 [![Difficulty](https://img.shields.io/badge/Level-Hard-red.svg)](#)
 
-</div>
 
 ---
 
 <a id="q1"></a>
+
 ## Q63. ❓ How does Spring Batch handle transactions?
 
 🔖 **Tags:** `#spring-batch` `#transactions` `#must-know` `#frequently-asked`  
@@ -64,6 +63,7 @@ public Step step(JobRepository repo, PlatformTransactionManager tx) {
 ---
 
 <a id="q2"></a>
+
 ## Q64. ❓ What is rollback in Spring Batch?
 
 🔖 **Tags:** `#spring-batch` `#rollback` `#transactions`  
@@ -98,6 +98,7 @@ After rollback:
 ---
 
 <a id="q3"></a>
+
 ## Q65. ❓ What happens when a chunk fails?
 
 🔖 **Tags:** `#spring-batch` `#chunk-failure` `#error-handling`  
@@ -130,6 +131,7 @@ Chunk fails → What happens?
 ---
 
 <a id="q4"></a>
+
 ## Q66. ❓ How does Spring Batch support restartability?
 
 🔖 **Tags:** `#spring-batch` `#restartability` `#must-know`  
@@ -182,6 +184,7 @@ public void open(ExecutionContext ctx) {
 ---
 
 <a id="q5"></a>
+
 ## Q67. ❓ How does ExecutionContext work?
 
 🔖 **Tags:** `#spring-batch` `#execution-context` `#internals`  
@@ -218,6 +221,7 @@ stepExec.getJobExecution().getExecutionContext().putInt("totalRecords", 50000);
 ---
 
 <a id="q6"></a>
+
 ## Q68. ❓ Where is ExecutionContext stored?
 
 🔖 **Tags:** `#spring-batch` `#execution-context` `#storage`  
@@ -248,6 +252,7 @@ WHERE STEP_EXECUTION_ID = 123;
 ---
 
 <a id="q7"></a>
+
 ## Q69. ❓ How does Spring Batch resume from a failure point?
 
 🔖 **Tags:** `#spring-batch` `#resume` `#restart` `#must-know`  

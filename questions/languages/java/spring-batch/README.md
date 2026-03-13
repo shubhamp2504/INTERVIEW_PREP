@@ -1,4 +1,3 @@
-<![CDATA[<div align="center">
 
 # 🍃 Spring Batch — Complete Interview Guide
 
@@ -8,7 +7,6 @@
 
 > _The most comprehensive Spring Batch interview preparation resource_
 
-</div>
 
 ---
 

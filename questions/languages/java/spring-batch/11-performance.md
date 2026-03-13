@@ -1,15 +1,14 @@
-<![CDATA[<div align="center">
 
 # 🔴 Spring Batch — Performance Optimization Questions (92-98)
 
 [![Questions](https://img.shields.io/badge/Questions-7-blue.svg)](#)
 [![Difficulty](https://img.shields.io/badge/Level-Hard-red.svg)](#)
 
-</div>
 
 ---
 
 <a id="q1"></a>
+
 ## Q92. ❓ How do you process millions of records efficiently?
 
 🔖 **Tags:** `#spring-batch` `#performance` `#must-know` `#frequently-asked`  
@@ -63,6 +62,7 @@ public TaskExecutor taskExecutor() {
 ---
 
 <a id="q2"></a>
+
 ## Q93. ❓ How do you improve Spring Batch performance?
 
 🔖 **Tags:** `#spring-batch` `#performance` `#optimization`  
@@ -102,6 +102,7 @@ Infrastructure:
 ---
 
 <a id="q3"></a>
+
 ## Q94. ❓ How do you reduce database calls in Spring Batch?
 
 🔖 **Tags:** `#spring-batch` `#performance` `#database`  
@@ -145,6 +146,7 @@ public class EnrichmentProcessor implements ItemProcessor<Order, Order> {
 ---
 
 <a id="q4"></a>
+
 ## Q95. ❓ What is the best reader for large datasets?
 
 🔖 **Tags:** `#spring-batch` `#reader` `#large-data`  
@@ -165,6 +167,7 @@ public class EnrichmentProcessor implements ItemProcessor<Order, Order> {
 ---
 
 <a id="q5"></a>
+
 ## Q96. ❓ How do you optimize batch inserts?
 
 🔖 **Tags:** `#spring-batch` `#batch-insert` `#optimization`  
@@ -205,6 +208,7 @@ public JdbcBatchItemWriter<Employee> writer(DataSource ds) {
 ---
 
 <a id="q6"></a>
+
 ## Q97. ❓ How do you tune chunk size?
 
 🔖 **Tags:** `#spring-batch` `#chunk-size` `#tuning`  
@@ -236,6 +240,7 @@ Chunk Size | Time    | Memory  | Commits
 ---
 
 <a id="q7"></a>
+
 ## Q98. ❓ How do you avoid memory issues?
 
 🔖 **Tags:** `#spring-batch` `#memory` `#troubleshooting`  

@@ -1,11 +1,9 @@
-<![CDATA[<div align="center">
 
 # 🧠 Data Structures & Algorithms
 
 [![Questions](https://img.shields.io/badge/Questions-0-blue.svg)](#)
 [![Last Updated](https://img.shields.io/badge/Updated-March%202026-green.svg)](#)
 
-</div>
 
 ---
 

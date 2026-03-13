@@ -1,15 +1,14 @@
-<![CDATA[<div align="center">
 
 # 🟢 Spring Batch — Tasklet Questions (79-83)
 
 [![Questions](https://img.shields.io/badge/Questions-5-blue.svg)](#)
 [![Difficulty](https://img.shields.io/badge/Level-Easy-green.svg)](#)
 
-</div>
 
 ---
 
 <a id="q1"></a>
+
 ## Q79. ❓ What is Tasklet in Spring Batch?
 
 🔖 **Tags:** `#spring-batch` `#tasklet` `#must-know`  
@@ -53,6 +52,7 @@ public Step cleanupStep(JobRepository repo, PlatformTransactionManager tx) {
 ---
 
 <a id="q2"></a>
+
 ## Q80. ❓ What is the difference between Tasklet and Chunk processing?
 
 🔖 **Tags:** `#spring-batch` `#tasklet-vs-chunk` `#must-know` `#frequently-asked`  
@@ -85,6 +85,7 @@ Job: "dailyETL"
 ---
 
 <a id="q3"></a>
+
 ## Q81. ❓ When should you use Tasklet?
 
 🔖 **Tags:** `#spring-batch` `#tasklet` `#when-to-use`  
@@ -106,6 +107,7 @@ Use Tasklet when you **DON'T** need read-process-write pattern:
 ---
 
 <a id="q4"></a>
+
 ## Q82. ❓ Can Tasklet run multiple times?
 
 🔖 **Tags:** `#spring-batch` `#tasklet` `#repeat`  
@@ -145,6 +147,7 @@ int[] counter = {0};
 ---
 
 <a id="q5"></a>
+
 ## Q83. ❓ What is RepeatStatus?
 
 🔖 **Tags:** `#spring-batch` `#repeat-status` `#tasklet`  

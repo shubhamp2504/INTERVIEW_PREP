@@ -1,15 +1,14 @@
-<![CDATA[<div align="center">
 
 # 🟢 Spring Batch — Basic Questions (1-20)
 
 [![Questions](https://img.shields.io/badge/Questions-20-blue.svg)](#)
 [![Difficulty](https://img.shields.io/badge/Level-Easy-green.svg)](#)
 
-</div>
 
 ---
 
 <a id="q1"></a>
+
 ## Q1. ❓ What is Spring Batch?
 
 🔖 **Tags:** `#spring-batch` `#basics` `#must-know` `#easy`  
@@ -77,6 +76,7 @@ public class BatchConfig {
 ---
 
 <a id="q2"></a>
+
 ## Q2. ❓ What are the main use cases of Spring Batch?
 
 🔖 **Tags:** `#spring-batch` `#use-cases` `#must-know`  
@@ -104,6 +104,7 @@ public class BatchConfig {
 ---
 
 <a id="q3"></a>
+
 ## Q3. ❓ What problems does Spring Batch solve?
 
 🔖 **Tags:** `#spring-batch` `#basics` `#why`  
@@ -125,6 +126,7 @@ public class BatchConfig {
 ---
 
 <a id="q4"></a>
+
 ## Q4. ❓ What are the core components of Spring Batch?
 
 🔖 **Tags:** `#spring-batch` `#architecture` `#must-know`  
@@ -168,6 +170,7 @@ public class BatchConfig {
 ---
 
 <a id="q5"></a>
+
 ## Q5. ❓ What is a Job in Spring Batch?
 
 🔖 **Tags:** `#spring-batch` `#job` `#must-know`  
@@ -214,6 +217,7 @@ Job: "orderProcessingJob"
 ---
 
 <a id="q6"></a>
+
 ## Q6. ❓ What is a Step?
 
 🔖 **Tags:** `#spring-batch` `#step` `#must-know`  
@@ -260,6 +264,7 @@ public Step cleanupStep(JobRepository repo,
 ---
 
 <a id="q7"></a>
+
 ## Q7. ❓ What is the difference between Job and Step?
 
 🔖 **Tags:** `#spring-batch` `#comparison` `#must-know`  
@@ -288,6 +293,7 @@ Job ("monthlyBilling")
 ---
 
 <a id="q8"></a>
+
 ## Q8. ❓ What is ItemReader?
 
 🔖 **Tags:** `#spring-batch` `#reader` `#must-know`  
@@ -338,6 +344,7 @@ public FlatFileItemReader<Employee> reader() {
 ---
 
 <a id="q9"></a>
+
 ## Q9. ❓ What is ItemProcessor?
 
 🔖 **Tags:** `#spring-batch` `#processor` `#must-know`  
@@ -383,6 +390,7 @@ public ItemProcessor<RawEmployee, Employee> processor() {
 ---
 
 <a id="q10"></a>
+
 ## Q10. ❓ What is ItemWriter?
 
 🔖 **Tags:** `#spring-batch` `#writer` `#must-know`  
@@ -430,6 +438,7 @@ public JdbcBatchItemWriter<Employee> writer(DataSource dataSource) {
 ---
 
 <a id="q11"></a>
+
 ## Q11. ❓ What is JobRepository?
 
 🔖 **Tags:** `#spring-batch` `#job-repository` `#must-know`  
@@ -475,6 +484,7 @@ public JobRepository jobRepository() throws Exception {
 ---
 
 <a id="q12"></a>
+
 ## Q12. ❓ What is JobLauncher?
 
 🔖 **Tags:** `#spring-batch` `#job-launcher`  
@@ -516,6 +526,7 @@ public void triggerJob() throws Exception {
 ---
 
 <a id="q13"></a>
+
 ## Q13. ❓ What is JobParameters?
 
 🔖 **Tags:** `#spring-batch` `#job-parameters`  
@@ -545,6 +556,7 @@ JobParameters params = new JobParametersBuilder()
 ---
 
 <a id="q14"></a>
+
 ## Q14. ❓ What is JobExecution?
 
 🔖 **Tags:** `#spring-batch` `#job-execution`  
@@ -575,6 +587,7 @@ JobInstance: "dailyReport" + params(date=2026-03-13)
 ---
 
 <a id="q15"></a>
+
 ## Q15. ❓ What is StepExecution?
 
 🔖 **Tags:** `#spring-batch` `#step-execution`  
@@ -612,6 +625,7 @@ public ExitStatus afterStep(StepExecution stepExecution) {
 ---
 
 <a id="q16"></a>
+
 ## Q16. ❓ What is ExecutionContext?
 
 🔖 **Tags:** `#spring-batch` `#execution-context`  
@@ -653,6 +667,7 @@ public void beforeStep(StepExecution stepExecution) {
 ---
 
 <a id="q17"></a>
+
 ## Q17. ❓ What is the lifecycle of a Spring Batch job?
 
 🔖 **Tags:** `#spring-batch` `#lifecycle` `#must-know`  
@@ -698,6 +713,7 @@ STARTING → STARTED → COMPLETED ✅
 ---
 
 <a id="q18"></a>
+
 ## Q18. ❓ What are the default tables created by Spring Batch?
 
 🔖 **Tags:** `#spring-batch` `#metadata-tables` `#must-know`  
@@ -728,6 +744,7 @@ ORDER BY CREATE_TIME DESC;
 ---
 
 <a id="q19"></a>
+
 ## Q19. ❓ What is the purpose of Spring Batch metadata tables?
 
 🔖 **Tags:** `#spring-batch` `#metadata`  
@@ -749,6 +766,7 @@ ORDER BY CREATE_TIME DESC;
 ---
 
 <a id="q20"></a>
+
 ## Q20. ❓ How does Spring Batch maintain job state?
 
 🔖 **Tags:** `#spring-batch` `#state-management`  

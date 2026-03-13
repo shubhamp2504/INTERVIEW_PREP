@@ -1,15 +1,14 @@
-<![CDATA[<div align="center">
 
 # 🔴 Spring Batch — Parallel Processing Questions (84-91)
 
 [![Questions](https://img.shields.io/badge/Questions-8-blue.svg)](#)
 [![Difficulty](https://img.shields.io/badge/Level-Hard-red.svg)](#)
 
-</div>
 
 ---
 
 <a id="q1"></a>
+
 ## Q84. ❓ What is parallel processing in Spring Batch?
 
 🔖 **Tags:** `#spring-batch` `#parallel` `#must-know`  
@@ -40,6 +39,7 @@ Spring Batch offers **4 approaches** to parallel processing:
 ---
 
 <a id="q2"></a>
+
 ## Q85. ❓ What is a multi-threaded step?
 
 🔖 **Tags:** `#spring-batch` `#multi-threaded` `#parallel`  
@@ -85,6 +85,7 @@ Thread-3: Read chunk → Process → Write [items 201-300]
 ---
 
 <a id="q3"></a>
+
 ## Q86. ❓ What is partitioning?
 
 🔖 **Tags:** `#spring-batch` `#partitioning` `#must-know` `#frequently-asked`  
@@ -162,6 +163,7 @@ public JdbcPagingItemReader<Employee> reader(
 ---
 
 <a id="q4"></a>
+
 ## Q87. ❓ How does partitioning work?
 
 🔖 **Tags:** `#spring-batch` `#partitioning` `#internals`  
@@ -196,6 +198,7 @@ public JdbcPagingItemReader<Employee> reader(
 ---
 
 <a id="q5"></a>
+
 ## Q88. ❓ What is remote partitioning?
 
 🔖 **Tags:** `#spring-batch` `#remote-partitioning` `#distributed`  
@@ -226,6 +229,7 @@ Data doesn't travel over the network — only partition metadata does!
 ---
 
 <a id="q6"></a>
+
 ## Q89. ❓ What is remote chunking?
 
 🔖 **Tags:** `#spring-batch` `#remote-chunking` `#distributed`  
@@ -262,6 +266,7 @@ Difference from Remote Partitioning:
 ---
 
 <a id="q7"></a>
+
 ## Q90. ❓ What is the difference between partitioning and multi-threading?
 
 🔖 **Tags:** `#spring-batch` `#comparison` `#must-know`  
@@ -285,6 +290,7 @@ Difference from Remote Partitioning:
 ---
 
 <a id="q8"></a>
+
 ## Q91. ❓ How do you configure parallel execution?
 
 🔖 **Tags:** `#spring-batch` `#parallel` `#configuration`  

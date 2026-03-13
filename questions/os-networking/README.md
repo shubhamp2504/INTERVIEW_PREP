@@ -1,10 +1,8 @@
-<![CDATA[<div align="center">
 
 # 🖥️ OS & Networking
 
 [![Last Updated](https://img.shields.io/badge/Updated-March%202026-green.svg)](#)
 
-</div>
 
 ---
 

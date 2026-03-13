@@ -1,15 +1,14 @@
-<![CDATA[<div align="center">
 
 # 🟡 Spring Batch — Database & Metadata Questions (110-116)
 
 [![Questions](https://img.shields.io/badge/Questions-7-blue.svg)](#)
 [![Difficulty](https://img.shields.io/badge/Level-Medium-yellow.svg)](#)
 
-</div>
 
 ---
 
 <a id="q1"></a>
+
 ## Q110. ❓ What tables does Spring Batch create?
 
 🔖 **Tags:** `#spring-batch` `#metadata` `#tables` `#must-know`  
@@ -59,6 +58,7 @@
 ---
 
 <a id="q2"></a>
+
 ## Q111. ❓ What is BATCH_JOB_INSTANCE?
 
 🔖 **Tags:** `#spring-batch` `#metadata` `#job-instance`  
@@ -84,6 +84,7 @@ SELECT * FROM BATCH_JOB_INSTANCE;
 ---
 
 <a id="q3"></a>
+
 ## Q112. ❓ What is BATCH_JOB_EXECUTION?
 
 🔖 **Tags:** `#spring-batch` `#metadata` `#job-execution`  
@@ -108,6 +109,7 @@ FROM BATCH_JOB_EXECUTION;
 ---
 
 <a id="q4"></a>
+
 ## Q113. ❓ What is BATCH_STEP_EXECUTION?
 
 🔖 **Tags:** `#spring-batch` `#metadata` `#step-execution`  
@@ -139,6 +141,7 @@ FROM BATCH_STEP_EXECUTION WHERE JOB_EXECUTION_ID = 2;
 ---
 
 <a id="q5"></a>
+
 ## Q114. ❓ What is BATCH_JOB_PARAMS?
 
 🔖 **Tags:** `#spring-batch` `#metadata` `#job-params`  
@@ -167,6 +170,7 @@ FROM BATCH_JOB_EXECUTION_PARAMS;
 ---
 
 <a id="q6"></a>
+
 ## Q115. ❓ What is BATCH_STEP_EXECUTION_CONTEXT?
 
 🔖 **Tags:** `#spring-batch` `#metadata` `#execution-context`  
@@ -192,6 +196,7 @@ FROM BATCH_STEP_EXECUTION_CONTEXT;
 ---
 
 <a id="q7"></a>
+
 ## Q116. ❓ What is BATCH_JOB_EXECUTION_CONTEXT?
 
 🔖 **Tags:** `#spring-batch` `#metadata` `#execution-context`  

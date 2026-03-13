@@ -1,10 +1,8 @@
-<![CDATA[<div align="center">
 
 # 🤖 AI / Machine Learning
 
 [![Last Updated](https://img.shields.io/badge/Updated-March%202026-green.svg)](#)
 
-</div>
 
 ---
 

@@ -1,15 +1,14 @@
-<![CDATA[<div align="center">
 
 # 🟡 Spring Batch — Scheduling Questions (99-103)
 
 [![Questions](https://img.shields.io/badge/Questions-5-blue.svg)](#)
 [![Difficulty](https://img.shields.io/badge/Level-Medium-yellow.svg)](#)
 
-</div>
 
 ---
 
 <a id="q1"></a>
+
 ## Q99. ❓ How do you schedule Spring Batch jobs?
 
 🔖 **Tags:** `#spring-batch` `#scheduling` `#must-know`  
@@ -49,6 +48,7 @@ public class BatchScheduler {
 ---
 
 <a id="q2"></a>
+
 ## Q100. ❓ How do you trigger jobs automatically?
 
 🔖 **Tags:** `#spring-batch` `#trigger` `#automation`  
@@ -113,6 +113,7 @@ public class FileWatcher {
 ---
 
 <a id="q3"></a>
+
 ## Q101. ❓ Can Spring Batch run with Quartz?
 
 🔖 **Tags:** `#spring-batch` `#quartz` `#scheduling`  
@@ -163,6 +164,7 @@ public Trigger batchTrigger() {
 ---
 
 <a id="q4"></a>
+
 ## Q102. ❓ Can Spring Batch run with Cron scheduling?
 
 🔖 **Tags:** `#spring-batch` `#cron`  
@@ -201,6 +203,7 @@ schtasks /create /tn "DailyBatch" /tr "java -jar batch-app.jar" /sc daily /st 02
 ---
 
 <a id="q5"></a>
+
 ## Q103. ❓ How do you run jobs on application startup?
 
 🔖 **Tags:** `#spring-batch` `#startup`  

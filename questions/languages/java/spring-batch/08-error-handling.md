@@ -1,15 +1,14 @@
-<![CDATA[<div align="center">
 
 # 🔴 Spring Batch — Error Handling Questions (70-78)
 
 [![Questions](https://img.shields.io/badge/Questions-9-blue.svg)](#)
 [![Difficulty](https://img.shields.io/badge/Level-Hard-red.svg)](#)
 
-</div>
 
 ---
 
 <a id="q1"></a>
+
 ## Q70. ❓ What is skip logic?
 
 🔖 **Tags:** `#spring-batch` `#skip` `#error-handling` `#must-know`  
@@ -48,6 +47,7 @@ public Step step(JobRepository repo, PlatformTransactionManager tx) {
 ---
 
 <a id="q2"></a>
+
 ## Q71. ❓ What is retry logic?
 
 🔖 **Tags:** `#spring-batch` `#retry` `#error-handling`  
@@ -93,6 +93,7 @@ If all 3 retries fail → check skip logic or fail step
 ---
 
 <a id="q3"></a>
+
 ## Q72. ❓ What is skip limit?
 
 🔖 **Tags:** `#spring-batch` `#skip-limit`  
@@ -122,6 +123,7 @@ If all 3 retries fail → check skip logic or fail step
 ---
 
 <a id="q4"></a>
+
 ## Q73. ❓ What is retry limit?
 
 🔖 **Tags:** `#spring-batch` `#retry-limit`  
@@ -159,6 +161,7 @@ public Step step(JobRepository repo, PlatformTransactionManager tx) {
 ---
 
 <a id="q5"></a>
+
 ## Q74. ❓ What is SkipPolicy?
 
 🔖 **Tags:** `#spring-batch` `#skip-policy` `#custom`  
@@ -195,6 +198,7 @@ public class CustomSkipPolicy implements SkipPolicy {
 ---
 
 <a id="q6"></a>
+
 ## Q75. ❓ What is RetryPolicy?
 
 🔖 **Tags:** `#spring-batch` `#retry-policy`  
@@ -227,6 +231,7 @@ RetryTemplate retryTemplate = RetryTemplate.builder()
 ---
 
 <a id="q7"></a>
+
 ## Q76. ❓ How do you handle bad records in a batch job?
 
 🔖 **Tags:** `#spring-batch` `#bad-records` `#production`  
@@ -268,6 +273,7 @@ public class BadRecordListener implements SkipListener<Employee, Employee> {
 ---
 
 <a id="q8"></a>
+
 ## Q77. ❓ How do you log failed records?
 
 🔖 **Tags:** `#spring-batch` `#logging` `#error-handling`  
@@ -306,6 +312,7 @@ public JdbcBatchItemWriter<FailedRecord> errorWriter(DataSource ds) {
 ---
 
 <a id="q9"></a>
+
 ## Q78. ❓ How do you store rejected records?
 
 🔖 **Tags:** `#spring-batch` `#rejected-records`  

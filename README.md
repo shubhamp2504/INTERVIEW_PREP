@@ -1,5 +1,4 @@
 <![CDATA[<!-- Banner -->
-<div align="center">
 
 # 🚀 Interview Preparation Hub
 
@@ -14,7 +13,6 @@
 
 > 💡 **"Preparation is the key to success."** — Alexander Graham Bell
 
-</div>
 
 ---
 
@@ -101,11 +99,9 @@ Each question has tags like: `#arrays` `#dp` `#amazon` `#medium` `#must-know`
 
 ---
 
-<div align="center">
 
 ### ⭐ Star this repo if it helps you!
 
 _Keep learning, keep growing!_ 🌱
 
-</div>
 ]]>

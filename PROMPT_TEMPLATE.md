@@ -1,10 +1,8 @@
-<![CDATA[<div align="center">
 
 # 📋 PROMPT TEMPLATE
 
 ### _Use this template to bulk-add questions to the Interview Prep System_
 
-</div>
 
 ---
 
@@ -193,9 +191,7 @@ You can also use these quick commands in chat:
 
 ---
 
-<div align="center">
 
 ### 🎯 Just paste your content — the system handles the rest!
 
-</div>
 ]]>

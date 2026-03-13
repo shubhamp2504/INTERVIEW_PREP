@@ -1,4 +1,3 @@
-<![CDATA[<div align="center">
 
 # 🔴 Spring Batch — Real Production Scenario Questions (117-125)
 
@@ -6,11 +5,11 @@
 [![Difficulty](https://img.shields.io/badge/Level-Hard-red.svg)](#)
 [![Type](https://img.shields.io/badge/Type-Scenario%20Based-purple.svg)](#)
 
-</div>
 
 ---
 
 <a id="q1"></a>
+
 ## Q117. ❓ How would you process a 10GB file using Spring Batch?
 
 🔖 **Tags:** `#spring-batch` `#production` `#large-file` `#must-know`  
@@ -87,6 +86,7 @@ public Step masterStep(JobRepository repo, PlatformTransactionManager tx) {
 ---
 
 <a id="q2"></a>
+
 ## Q118. ❓ How would you process 100 million database records?
 
 🔖 **Tags:** `#spring-batch` `#production` `#large-dataset`  
@@ -152,6 +152,7 @@ public JdbcPagingItemReader<Record> reader(
 ---
 
 <a id="q3"></a>
+
 ## Q119. ❓ How would you handle multiple batch jobs running simultaneously?
 
 🔖 **Tags:** `#spring-batch` `#concurrent-jobs` `#production`  
@@ -200,6 +201,7 @@ public JobLauncher asyncJobLauncher(JobRepository repo) {
 ---
 
 <a id="q4"></a>
+
 ## Q120. ❓ How would you restart a job after a crash?
 
 🔖 **Tags:** `#spring-batch` `#restart` `#crash-recovery`  
@@ -252,6 +254,7 @@ public class CrashRecovery implements ApplicationRunner {
 ---
 
 <a id="q5"></a>
+
 ## Q121. ❓ How would you process files uploaded by multiple users?
 
 🔖 **Tags:** `#spring-batch` `#multi-user` `#file-processing`  
@@ -296,6 +299,7 @@ public ResponseEntity<?> handleUpload(
 ---
 
 <a id="q6"></a>
+
 ## Q122. ❓ How would you avoid duplicate processing?
 
 🔖 **Tags:** `#spring-batch` `#idempotency` `#duplicate`  
@@ -342,6 +346,7 @@ public JdbcBatchItemWriter<Record> markProcessedWriter(DataSource ds) {
 ---
 
 <a id="q7"></a>
+
 ## Q123. ❓ How would you track failed records?
 
 🔖 **Tags:** `#spring-batch` `#failed-records` `#production`  
@@ -396,6 +401,7 @@ public SkipListener<Employee, Employee> failedRecordTracker() {
 ---
 
 <a id="q8"></a>
+
 ## Q124. ❓ How would you cancel a running batch job?
 
 🔖 **Tags:** `#spring-batch` `#cancel` `#stop-job`  
@@ -445,6 +451,7 @@ public StepListener conditionalStopListener() {
 ---
 
 <a id="q9"></a>
+
 ## Q125. ❓ How would you limit batch job execution time?
 
 🔖 **Tags:** `#spring-batch` `#timeout` `#execution-limit`  

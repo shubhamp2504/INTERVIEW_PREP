@@ -1,15 +1,14 @@
-<![CDATA[<div align="center">
 
 # 🟡 Spring Batch — Monitoring & Debugging Questions (104-109)
 
 [![Questions](https://img.shields.io/badge/Questions-6-blue.svg)](#)
 [![Difficulty](https://img.shields.io/badge/Level-Medium-yellow.svg)](#)
 
-</div>
 
 ---
 
 <a id="q1"></a>
+
 ## Q104. ❓ How do you monitor Spring Batch jobs?
 
 🔖 **Tags:** `#spring-batch` `#monitoring` `#must-know`  
@@ -71,6 +70,7 @@ public class JobMonitoringListener implements JobExecutionListener {
 ---
 
 <a id="q2"></a>
+
 ## Q105. ❓ How do you check job status?
 
 🔖 **Tags:** `#spring-batch` `#job-status`  
@@ -123,6 +123,7 @@ public ResponseEntity<?> getJobStatus(@PathVariable String jobName) {
 ---
 
 <a id="q3"></a>
+
 ## Q106. ❓ How do you debug a failed batch job?
 
 🔖 **Tags:** `#spring-batch` `#debugging` `#troubleshooting`  
@@ -178,6 +179,7 @@ public void debugFailedJob(JobExecution jobExecution) {
 ---
 
 <a id="q4"></a>
+
 ## Q107. ❓ What logs should be monitored?
 
 🔖 **Tags:** `#spring-batch` `#logging` `#monitoring`  
@@ -208,6 +210,7 @@ logging:
 ---
 
 <a id="q5"></a>
+
 ## Q108. ❓ How do you track job performance?
 
 🔖 **Tags:** `#spring-batch` `#performance` `#metrics`  
@@ -249,6 +252,7 @@ public class BatchMetrics implements JobExecutionListener {
 ---
 
 <a id="q6"></a>
+
 ## Q109. ❓ How do you find slow steps?
 
 🔖 **Tags:** `#spring-batch` `#performance` `#slow-steps`  

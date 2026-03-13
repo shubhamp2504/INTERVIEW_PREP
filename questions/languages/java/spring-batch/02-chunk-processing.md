@@ -1,15 +1,14 @@
-<![CDATA[<div align="center">
 
 # 🟡 Spring Batch — Chunk Processing Questions (21-30)
 
 [![Questions](https://img.shields.io/badge/Questions-10-blue.svg)](#)
 [![Difficulty](https://img.shields.io/badge/Level-Medium-yellow.svg)](#)
 
-</div>
 
 ---
 
 <a id="q1"></a>
+
 ## Q21. ❓ What is chunk processing in Spring Batch?
 
 🔖 **Tags:** `#spring-batch` `#chunk` `#must-know` `#frequently-asked`  
@@ -60,6 +59,7 @@ public Step processStep(JobRepository repo, PlatformTransactionManager tx) {
 ---
 
 <a id="q2"></a>
+
 ## Q22. ❓ How does chunk processing work internally?
 
 🔖 **Tags:** `#spring-batch` `#chunk` `#internals` `#must-know`  
@@ -131,6 +131,7 @@ while (true) {
 ---
 
 <a id="q3"></a>
+
 ## Q23. ❓ What is the difference between chunk size and commit interval?
 
 🔖 **Tags:** `#spring-batch` `#chunk-size` `#commit-interval`  
@@ -161,6 +162,7 @@ In Spring Batch, chunk size **IS** the commit interval. When you set `chunk(100)
 ---
 
 <a id="q4"></a>
+
 ## Q24. ❓ What happens if a failure occurs in the middle of chunk processing?
 
 🔖 **Tags:** `#spring-batch` `#error-handling` `#chunk` `#must-know`  
@@ -198,6 +200,7 @@ StepExecution: readCount=250, writeCount=200, commitCount=2, rollbackCount=1
 ---
 
 <a id="q5"></a>
+
 ## Q25. ❓ How does Spring Batch manage transactions in chunk processing?
 
 🔖 **Tags:** `#spring-batch` `#transactions` `#chunk`  
@@ -248,6 +251,7 @@ public Step step(JobRepository repo, PlatformTransactionManager tx) {
 ---
 
 <a id="q6"></a>
+
 ## Q26. ❓ What is the optimal chunk size?
 
 🔖 **Tags:** `#spring-batch` `#chunk-size` `#performance` `#frequently-asked`  
@@ -283,6 +287,7 @@ public Step step(JobRepository repo, PlatformTransactionManager tx) {
 ---
 
 <a id="q7"></a>
+
 ## Q27. ❓ How do you handle memory issues when processing large chunks?
 
 🔖 **Tags:** `#spring-batch` `#memory` `#performance`  
@@ -319,6 +324,7 @@ public JdbcPagingItemReader<Employee> reader(DataSource ds) {
 ---
 
 <a id="q8"></a>
+
 ## Q28. ❓ What happens if ItemProcessor returns null?
 
 🔖 **Tags:** `#spring-batch` `#processor` `#filtering`  
@@ -358,6 +364,7 @@ StepExecution: readCount=5, filterCount=2, writeCount=3
 ---
 
 <a id="q9"></a>
+
 ## Q29. ❓ What happens if ItemWriter fails?
 
 🔖 **Tags:** `#spring-batch` `#writer` `#error-handling`  
@@ -394,6 +401,7 @@ This is called "scan mode" — finds the exact bad item
 ---
 
 <a id="q10"></a>
+
 ## Q30. ❓ Can we skip records in chunk processing?
 
 🔖 **Tags:** `#spring-batch` `#skip` `#chunk`  
