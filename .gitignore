@@ -1,0 +1,21 @@
+<![CDATA[# Git ignore for Interview Prep System
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+.vscode/
+*.swp
+*.swo
+*~
+
+# Node modules (if any scripts used)
+node_modules/
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+]]>
