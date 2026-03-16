@@ -1,399 +1,389 @@
-# 🔔 Thread Communication (Q29–Q36)
+# 📡 Thread Communication (Q29–Q36)
 
-> 🔑 Quick Answer → 📖 Step-by-Step Explanation → 🗣️ How to Say in Interview → 💻 Code → ⚡ Remember → 🔗 Follow-ups
+> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Interview Script → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
 
 ---
 
 <a id="q29"></a>
-
 ## Q29. What is inter-thread communication?
 
+### 📝 One-Liner
+> Threads signaling each other using wait/notify or BlockingQueue — "I'm done, your turn."
+
 ### 🔑 Quick Answer
+> Inter-thread communication is **threads coordinating** by signaling each other. Java provides `wait()/notify()` (low-level) and `BlockingQueue` (high-level). Without it, threads would **busy-wait** — wasting CPU. *(Threads ek dusre ko batate hain — "mera kaam ho gaya, ab tu kaam kar")*
 
-> Threads **coordinate** by using `wait()`, `notify()`, and `notifyAll()` on shared objects. One thread waits for a condition; another thread fulfills it and signals. This avoids busy-waiting (polling) and is how producer-consumer works.
-
-### 📖 Step-by-Step Explanation
-
+### 📖 How It Works
 ```
-WITHOUT inter-thread communication (busy-waiting):
-  Consumer: Is data ready? No. Is data ready? No. Is data ready? No...
-  → Wastes CPU cycles constantly checking ❌
+Without communication (busy-waiting — BAD):
+  Consumer: while (!dataReady) { } // burns CPU doing nothing! 💀
+  *(CPU jal raha hai — kuch nahi kar raha bus check kar raha hai)*
 
-WITH inter-thread communication (wait/notify):
-  Consumer: wait()  → Sleeps (zero CPU) → notify() → Wakes up → Processes data
-  Producer: Produces data → notify()
-  → Efficient, no wasted CPU ✅
+With wait/notify (GOOD):
+  Consumer: wait();              // sleeps, zero CPU ✅
+  Producer: data = produce(); notify();  // wakes consumer
+  Consumer: (wakes up) process(data);
+  *(Soya hua hai — jab data ready ho tab jagao)*
+
+With BlockingQueue (BEST):
+  Consumer: data = queue.take();  // blocks until data available ✅
+  Producer: queue.put(data);       // wakes consumer automatically
+  *(Queue handle karta hai sab — hum sirf put/take karo)*
 ```
 
-### 🗣️ How to Explain in Interview
+### 🗣️ How to Say in Interview
+> *"Inter-thread communication is how threads coordinate work. The classic mechanism is wait/notify — a thread calls wait() to release the lock and sleep until another thread calls notify(). In production, I always use BlockingQueue instead — it handles all the synchronization internally. put() blocks when full, take() blocks when empty. No manual wait/notify needed."*
 
-> *"Inter-thread communication lets threads coordinate without busy-waiting. Instead of a consumer thread looping 'is data ready? is data ready?', it calls wait() and goes to sleep — zero CPU usage. When the producer thread has data ready, it calls notify(), waking the consumer. This is built on Java's monitor mechanism — wait() and notify() must be called within a synchronized block on the same object. The pattern is fundamental to producer-consumer, blocking queues, and many concurrent designs."*
+### ⚠️ Pitfalls / Gotchas
+- Busy-waiting (`while(!ready)`) wastes CPU *(100% CPU bekaar mein)*
+- wait/notify is error-prone — easy to miss a signal or get wrong
+- **BlockingQueue** = production standard *(interview mein bhi BlockingQueue bolo — senior approach dikhta hai)*
 
-### ⚡ Key Points to Remember
+### ⚡ Remember
+1. **Busy-waiting** = CPU waste ❌
+2. **wait/notify** = low-level, error-prone
+3. **BlockingQueue** = production standard ⭐
+4. Always in **while loop** with wait() *(spurious wakeup)*
 
-1. **wait/notify** = efficient coordination (no busy-waiting)
-2. Must be inside **synchronized** block on the same object
-3. **wait()** → releases lock + sleeps
-4. **notify()** → wakes one waiting thread
-5. Foundation of **producer-consumer** pattern
+### 🔗 Follow-ups
+→ [Q30. wait/notify/notifyAll](#q30) → [Q35. BlockingQueue solution](#q35)
 
 ---
 
 <a id="q30"></a>
+## Q30. How do wait(), notify(), and notifyAll() work?
 
-## Q30. What are wait(), notify(), notifyAll()?
+### 📝 One-Liner
+> wait() releases lock and sleeps; notify() wakes one waiting thread; notifyAll() wakes all.
 
 ### 🔑 Quick Answer
+> - `wait()` — releases lock, thread goes to **WAITING** state *(soja, lock chhod de)*
+> - `notify()` — wakes **one** random waiting thread *(ek ko jagao)*
+> - `notifyAll()` — wakes **all** waiting threads *(sab ko jagao)* — preferred ⭐
 
-> `wait()` — current thread **releases lock and sleeps** until notified. `notify()` — wakes up **one** waiting thread. `notifyAll()` — wakes up **all** waiting threads. All three must be called inside `synchronized`.
-
-### 📖 Step-by-Step Explanation
-
+### 📖 How It Works
 ```
-obj.wait():
-  1. Thread RELEASES lock on obj
-  2. Thread enters WAITING state (no CPU usage)
-  3. Thread waits until: notify(), notifyAll(), or interrupt
+Object has a "wait set" — list of threads that called wait()
 
-obj.notify():
-  1. Wakes ONE arbitrary waiting thread (on obj's wait-set)
-  2. Awakened thread must RE-ACQUIRE lock before continuing
-  3. Calling thread keeps the lock until it exits synchronized
+  Thread-1: synchronized(obj) { obj.wait(); }  → enters wait set
+  Thread-2: synchronized(obj) { obj.wait(); }  → enters wait set
+  Thread-3: synchronized(obj) { obj.wait(); }  → enters wait set
 
-obj.notifyAll():
-  1. Wakes ALL threads waiting on obj
-  2. All compete to re-acquire the lock
-  3. Only one succeeds at a time — others go back to BLOCKED
+  Thread-4: synchronized(obj) { obj.notify(); }
+  → Wakes ONE random thread from wait set (say Thread-2)
+  → Thread-2 moves from WAITING → BLOCKED (tries to re-acquire lock)
+  
+  Thread-4: synchronized(obj) { obj.notifyAll(); }
+  → Wakes ALL threads from wait set
+  → All move to BLOCKED → compete for lock → one gets in
+  *(notify = ek ko jagao; notifyAll = sab ko jagao aur compete karo)*
 ```
 
-### 💻 Code Example
-
+### 💻 Code
 ```java
-Object monitor = new Object();
-
-// Thread A: Waits for signal
-new Thread(() -> {
-    synchronized (monitor) {
-        while (!dataReady) {       // Always use WHILE, not IF!
-            monitor.wait();        // Release lock + sleep
-        }
-        // Process data (lock re-acquired automatically)
+// Producer-consumer with wait/notify
+synchronized (lock) {
+    while (queue.isEmpty()) {      // WHILE not IF! (spurious wakeup ke liye)
+        lock.wait();               // release lock, sleep
     }
-}).start();
+    item = queue.remove();         // got data!
+}
 
-// Thread B: Sends signal
-new Thread(() -> {
-    synchronized (monitor) {
-        dataReady = true;
-        monitor.notify();          // Wake Thread A
-    }                              // Lock released when exiting synchronized
-}).start();
+// Producer side
+synchronized (lock) {
+    queue.add(item);
+    lock.notifyAll();              // wake all waiting consumers
+}
 ```
 
-### 🗣️ How to Explain in Interview
+### ⚠️ Pitfalls / Gotchas
+- Must be called inside `synchronized` → else `IllegalMonitorStateException`
+- Always use **while loop**, never `if` *(spurious wakeup — bina notify ke uth sakta hai)*
+- `notify()` wakes random thread — might wake the wrong one *(galat ko jaga diya toh kuch nahi hoga)*
+- **notifyAll()** is safer — all threads check their condition
 
-> *"wait() puts the current thread to sleep and releases the lock — other threads can then enter the synchronized block. notify() wakes up one waiting thread, and notifyAll() wakes all of them. A critical best practice: always call wait() inside a WHILE loop, not an IF statement, because of spurious wakeups — the thread can wake up without being notified. The while loop rechecks the condition, and if it's not actually true, the thread goes back to waiting."*
+### 🎯 Tricky Interview Qs
+**Q: Why while loop and not if with wait()?**
+> Spurious wakeup — JVM can wake a thread without notify(). While loop re-checks the condition. *(Bina reason ke uth sakta hai — dobara check karo condition)*
 
-### ⚡ Key Points to Remember
+### ⚡ Remember
+1. `wait()` = release lock + sleep *(lock chhodo, soja)*
+2. `notify()` = wake one (random) *(ek jagao)*
+3. `notifyAll()` = wake all (safer) ⭐ *(sab jagao)*
+4. **while loop** always *(spurious wakeup)*
+5. Must be inside **synchronized** *(warna error)*
 
-1. **wait()** = release lock + sleep
-2. **notify()** = wake ONE, **notifyAll()** = wake ALL
-3. ALL must be inside **synchronized** block
-4. Always use **while loop** (not if) for wait — spurious wakeups
-5. After notify, awakened thread must **re-acquire lock**
+### 🔗 Follow-ups
+→ [Q31. Why wait needs synchronized](#q31) → [Q33. notify vs notifyAll](#q33)
 
 ---
 
 <a id="q31"></a>
+## Q31. Why does wait() need to be called inside synchronized?
 
-## Q31. Why must wait() be called inside a synchronized block?
+### 📝 One-Liner
+> To prevent "lost wakeup" — if notify() fires before wait(), the signal is missed forever.
 
 ### 🔑 Quick Answer
+> Without synchronized, there's a **race condition**: notify() can fire between condition check and `wait()` — the signal is **lost forever**, thread sleeps permanently. *(Agar synchronized nahi toh notify miss ho jaayega — thread soya rahega forever)*
 
-> Because wait() **releases the monitor lock** — it can only release what it holds. Without synchronized, there's no lock to release, and we'd have a **race condition** between checking the condition and calling wait().
-
-### 📖 Step-by-Step Explanation
-
+### 📖 How It Works
 ```
-WITHOUT synchronized (RACE CONDITION):
-  Thread A:  if (!dataReady)        // Checks: false
-  Thread B:       dataReady = true; notify();  // Signal LOST!
-  Thread A:              wait();    // Waits FOREVER (missed notify)
+WITHOUT synchronized (BROKEN):
+  Consumer:                     Producer:
+  if (queue.isEmpty())          
+                                queue.add(item);
+                                obj.notify();    ← LOST! no one is waiting yet
+  obj.wait();                   ← sleeps FOREVER (missed the notify)
+  *(Notify pehle aa gaya, wait baad mein — signal kho gaya)*
 
-WITH synchronized (SAFE):
-  Thread A:  synchronized(m) {
-                if (!dataReady)     // Checks: false (holds lock)
-                    m.wait();       // Atomically: release lock + wait
-             }
-  Thread B:  synchronized(m) {     // Must wait for A to call wait()
-                dataReady = true;
-                m.notify();         // A will receive this
-             }
+WITH synchronized (CORRECT):
+  Consumer:                     Producer:
+  synchronized(lock) {          
+    while (queue.isEmpty())     synchronized(lock) { ← BLOCKED (consumer has lock)
+      lock.wait();              
+  }                             queue.add(item);
+  // releases lock ──────────→  lock.notifyAll();     ← consumer is now waiting ✅
+                                }
 ```
 
-### 🗣️ How to Explain in Interview
+### 🗣️ How to Say in Interview
+> *"wait() must be inside synchronized to prevent the 'lost wakeup' problem. Without synchronization, there's a race: the producer might call notify() between the consumer's condition check and wait() call — the signal is lost, and the consumer waits forever. synchronized ensures the check-and-wait is atomic from the signaling thread's perspective."*
 
-> *"wait() must be in synchronized because of two reasons. First, technically, wait() needs a lock to release — calling wait() without holding the lock throws IllegalMonitorStateException. Second, and more importantly, it prevents a race condition called 'lost wakeup'. Without synchronized, Thread A might check the condition, then Thread B sets it and calls notify(), then Thread A calls wait() — missing the notify forever. Synchronized ensures the check-and-wait is atomic with respect to the lock."*
+### ⚡ Remember
+1. Prevents **lost wakeup** *(signal miss na ho)*
+2. Check + wait must be **atomic** *(beech mein koi na aaye)*
+3. `IllegalMonitorStateException` if not in synchronized *(Java force karta hai)*
 
-### ⚡ Key Points to Remember
-
-1. **wait() releases the lock** — must hold one first
-2. Without synchronized → **IllegalMonitorStateException**
-3. Prevents **lost wakeup** race condition
-4. Check + wait must be **atomic** (inside same synchronized)
-5. Same applies to notify() — must hold the monitor
+### 🔗 Follow-ups
+→ [Q32. What happens on notify()](#q32)
 
 ---
 
 <a id="q32"></a>
-
 ## Q32. What happens when notify() is called?
 
+### 📝 One-Liner
+> One waiting thread moves from WAITING → BLOCKED (must re-acquire lock before running).
+
 ### 🔑 Quick Answer
+> `notify()` picks **one random** thread from the object's wait set, moves it from WAITING → BLOCKED. The woken thread must **re-acquire the monitor lock** before it can continue. The notifying thread **keeps the lock** until it exits synchronized. *(Ek ko jagaya — par woh turant nahi chalega, pehle lock lena padega)*
 
-> One **arbitrary** thread from the object's wait-set moves from WAITING to BLOCKED state. It doesn't run immediately — it must **re-acquire the lock** first. The notifying thread keeps the lock until it exits the synchronized block.
-
-### 📖 Step-by-Step Explanation
-
+### 📖 How It Works
 ```
-Timeline:
-  T1: synchronized(obj) { obj.wait(); }      → Releases lock, enters WAITING
-  T2: synchronized(obj) { obj.wait(); }      → Releases lock, enters WAITING
-  T3: synchronized(obj) { obj.notify(); }    → ONE of T1/T2 wakes up
-                                              → T3 STILL holds lock!
-  T3: }                                       → T3 releases lock
-  T1: (if chosen) → re-acquires lock → continues after wait()
-
-Important:
-  ✅ notify() wakes ONE thread (which one? unpredictable)
-  ✅ Awakened thread goes WAITING → BLOCKED (still needs lock)
-  ✅ Notifying thread keeps lock until synchronized block ends
-  ❌ Awakened thread does NOT run immediately
+  Thread-1: wait() → [WAITING in wait set]
+  
+  Thread-2: synchronized(lock) {
+    lock.notify();        // wakes Thread-1
+    // Thread-2 still holds the lock!
+    doSomeWork();         // Thread-1 can't run yet (BLOCKED)
+  }                       // Thread-2 exits sync → releases lock
+  
+  Thread-1: [WAITING] → [BLOCKED] → acquires lock → [RUNNABLE] → continues after wait()
 ```
 
-### 🗣️ How to Explain in Interview
+### ⚡ Remember
+1. Woken thread goes WAITING → **BLOCKED** (not RUNNABLE) *(jagaya par lock chahiye)*
+2. Notifier **keeps the lock** until sync block exits
+3. Woken thread runs only after **re-acquiring** the lock
+4. Must re-check condition in **while loop** *(condition phir se check karo)*
 
-> *"When notify() is called, one arbitrary thread from the wait-set wakes up and moves from WAITING to BLOCKED state. It doesn't execute immediately — the notifying thread still holds the lock. Only when the notifying thread exits the synchronized block does the awakened thread get a chance to re-acquire the lock and continue. Which waiting thread gets woken is not specified — it's JVM-implementation dependent. That's why for production code, I prefer notifyAll() or higher-level constructs like BlockingQueue."*
-
-### ⚡ Key Points to Remember
-
-1. Wakes **ONE arbitrary** thread (not predictable which)
-2. Awakened thread → **BLOCKED** (needs to re-acquire lock)
-3. Notifying thread **keeps lock** until exiting synchronized
-4. **Not immediate** — only runs after lock is available
-5. Prefer **notifyAll()** or **BlockingQueue** in production
+### 🔗 Follow-ups
+→ [Q33. notify vs notifyAll](#q33)
 
 ---
 
 <a id="q33"></a>
+## Q33. What is the difference between notify() and notifyAll()?
 
-## Q33. Difference between notify() and notifyAll()?
+### 📝 One-Liner
+> notify() wakes one random thread; notifyAll() wakes all — notifyAll is safer.
 
-### 🔑 Quick Answer
+### 🆚 vs. Comparison
+| Feature | notify() | notifyAll() |
+|---------|----------|-------------|
+| Wakes | 1 random thread *(ek ko jagao)* | All waiting threads *(sab ko jagao)* |
+| Risk | Wrong thread woken → others starve | All check condition → correct one proceeds |
+| Performance | Slightly faster | Slightly more contention |
+| **Safety** | Risky ⚠️ | **Safe** ✅ ⭐ |
 
-> `notify()` wakes **one** arbitrary waiting thread. `notifyAll()` wakes **all** waiting threads (they then compete for the lock). Use **notifyAll()** in most cases to avoid threads being permanently stuck.
-
-### 📖 Step-by-Step Explanation
-
+### 📖 How It Works
 ```
-3 threads waiting on obj.wait():
-
-obj.notify():
-  T1: WAITING ──→ BLOCKED (chosen to wake)
-  T2: WAITING ──→ WAITING (still sleeping)
-  T3: WAITING ──→ WAITING (still sleeping)
+notify() problem:
+  3 consumers waiting for different conditions:
+  C1: waiting for item-type-A
+  C2: waiting for item-type-B
+  C3: waiting for item-type-A
   
-  ⚠️ If T1 rechecks condition and it's still false → calls wait() again
-  T2 and T3 NEVER wake up → STUCK!
+  Producer adds type-A item → notify() → wakes C2 (random!)
+  C2 checks: "not type-B" → goes back to wait()
+  C1 and C3 still sleeping → TYPE-A ITEM NOT PROCESSED! 💀
+  *(Galat thread jag gaya — sahi wala soya raha)*
 
-obj.notifyAll():
-  T1: WAITING ──→ BLOCKED
-  T2: WAITING ──→ BLOCKED
-  T3: WAITING ──→ BLOCKED
-  
-  All compete for lock, only one runs at a time
-  Each rechecks condition in while loop
-  ✅ No thread gets permanently stuck
+notifyAll() solution:
+  Producer adds type-A → notifyAll() → wakes C1, C2, C3
+  C1: "type-A! process it" ✅
+  C2: "not type-B" → wait()
+  C3: "type-A but C1 got it" → wait()
+  → Correct thread always picks up ✅
 ```
 
-### 🗣️ How to Explain in Interview
+### 🗣️ How to Say in Interview
+> *"I always use notifyAll() instead of notify(). notify() wakes a random thread — if that thread's condition isn't met, the signal is effectively lost. notifyAll() wakes all threads, each re-checks its condition in a while loop, and the right one proceeds. The slight overhead of waking extra threads is negligible compared to the risk of missed signals."*
 
-> *"notify() wakes one thread, notifyAll() wakes all. The problem with notify() is that it might wake a thread whose condition isn't met — that thread goes back to waiting, and no one else wakes up. For example, in a producer-consumer, if I have multiple consumers waiting and I notify() one that can't consume — maybe its specific condition isn't met — the item goes unprocessed and other consumers that could handle it stay asleep. notifyAll() avoids this because all threads wake up and recheck their conditions. It has more overhead but is much safer."*
+### ⚡ Remember
+1. **Always use notifyAll()** in production ⭐ *(sab ko jagao, sahi wala kaam karega)*
+2. notify() = risky (wrong thread may wake) *(galat thread jag sakta)*
+3. notifyAll() + while loop = **safe pattern**
 
-### ⚡ Key Points to Remember
-
-1. **notify()** = one thread, **notifyAll()** = all threads
-2. **notifyAll() is safer** — no risk of stuck threads
-3. After wakeup, threads **compete** for lock (one at a time)
-4. Each thread **rechecks condition** (while loop)
-5. Use **notify()** only if exactly ONE thread can proceed
+### 🔗 Follow-ups
+→ [Q34. Producer-consumer problem](#q34)
 
 ---
 
 <a id="q34"></a>
-
 ## Q34. What is the producer-consumer problem?
 
+### 📝 One-Liner
+> Classic concurrency problem: producer adds data to shared buffer, consumer removes — need coordination when buffer is full/empty.
+
 ### 🔑 Quick Answer
+> Producer creates data, puts in a **shared buffer**. Consumer takes from that buffer. Issues: buffer **full** (producer must wait), buffer **empty** (consumer must wait). *(Ek daalta hai, ek nikalta hai — jab jagah nahi toh ruko, jab khaali toh ruko)*
 
-> A classic concurrency problem: **producer** threads create data and put it in a shared buffer, **consumer** threads take data from the buffer. The challenge: producer must wait when buffer is full, consumer must wait when buffer is empty.
-
-### 📖 Step-by-Step Explanation
-
+### 📖 How It Works
 ```
-Shared Buffer (capacity = 3):
-
-Producer → [Item1, Item2, Item3] → Consumer
-                 FULL!
-Producer must WAIT until consumer takes an item
-
-Consumer → [  empty  ] → Nothing to consume
-Consumer must WAIT until producer adds an item
-
-RACE CONDITIONS to prevent:
-  1. Both threads accessing buffer simultaneously → data corruption
-  2. Producer adding to full buffer → overflow
-  3. Consumer reading from empty buffer → underflow
+Buffer (capacity = 3):
+  Producer: put("A") → [A _ _]      ← ok
+  Producer: put("B") → [A B _]      ← ok
+  Producer: put("C") → [A B C]      ← ok
+  Producer: put("D") → WAIT! (full) ← buffer bhar gaya, ruko
+  
+  Consumer: take()   → [B C] → "A"  ← freed space
+  Producer: (wakes)  → [B C D]      ← ab jagah hai, daalo
 ```
 
-### 🗣️ How to Explain in Interview
+### 🗣️ How to Say in Interview
+> *"The producer-consumer is the fundamental concurrency pattern. Producer threads put data into a shared bounded buffer, consumer threads take from it. When the buffer is full, producers wait. When empty, consumers wait. In Java, I solve this with BlockingQueue — put() blocks on full, take() blocks on empty. No manual wait/notify needed. It's the backbone of most async processing — message queues, task pipelines, event processing."*
 
-> *"The producer-consumer problem is about coordinating threads that share a bounded buffer. Producers add items and must wait when the buffer is full. Consumers take items and must wait when it's empty. The challenge is synchronizing access to prevent corruption while maximizing throughput. In Java, the cleanest solution is BlockingQueue — it handles all the wait/notify internally. For interviews, knowing the wait/notify implementation shows you understand the underlying mechanism."*
+### ⚡ Remember
+1. Producer → buffer → Consumer *(chain)*
+2. Buffer full → producer waits *(jagah nahi)*
+3. Buffer empty → consumer waits *(data nahi)*
+4. **BlockingQueue** = ready-made solution ⭐
 
-### ⚡ Key Points to Remember
-
-1. **Buffer**: shared, bounded (fixed capacity)
-2. **Producer waits** when full, **consumer waits** when empty
-3. Must prevent **concurrent access** to buffer
-4. Classic solution: `wait()`/`notifyAll()` in synchronized
-5. Modern solution: **BlockingQueue** (preferred)
+### 🔗 Follow-ups
+→ [Q35. wait/notify solution](#q35) → [Q36. BlockingQueue solution](#q36)
 
 ---
 
 <a id="q35"></a>
+## Q35. How to implement producer-consumer with wait/notify?
 
-## Q35. How do you solve producer-consumer using wait/notify?
+### 📝 One-Liner
+> synchronized + while + wait/notifyAll — producer waits when full, consumer waits when empty.
 
-### 🔑 Quick Answer
-
-> Shared buffer with `synchronized` access. Producer calls `wait()` when full, consumer calls `wait()` when empty. Both call `notifyAll()` after modifying the buffer.
-
-### 💻 Code Example
-
+### 💻 Code
 ```java
-public class ProducerConsumer {
-    private final Queue<Integer> buffer = new LinkedList<>();
+public class SharedBuffer {
+    private final Queue<Integer> queue = new LinkedList<>();
     private final int capacity = 5;
-    
-    // Producer: Add item, wait if full
+
+    // Producer — daalo, agar jagah nahi toh ruko
     public synchronized void produce(int item) throws InterruptedException {
-        while (buffer.size() == capacity) {  // Buffer full?
-            wait();                           // Release lock + sleep
+        while (queue.size() == capacity) {  // WHILE not IF!
+            wait();  // buffer full → release lock, sleep
         }
-        buffer.add(item);
-        System.out.println("Produced: " + item + " | Size: " + buffer.size());
-        notifyAll();                          // Wake consumers
+        queue.add(item);
+        System.out.println("Produced: " + item);
+        notifyAll();  // wake consumers (sab ko jagao)
     }
-    
-    // Consumer: Take item, wait if empty
+
+    // Consumer — nikalo, agar khaali toh ruko
     public synchronized int consume() throws InterruptedException {
-        while (buffer.isEmpty()) {            // Buffer empty?
-            wait();                           // Release lock + sleep
+        while (queue.isEmpty()) {  // WHILE not IF!
+            wait();  // buffer empty → release lock, sleep
         }
-        int item = buffer.poll();
-        System.out.println("Consumed: " + item + " | Size: " + buffer.size());
-        notifyAll();                          // Wake producers
+        int item = queue.remove();
+        System.out.println("Consumed: " + item);
+        notifyAll();  // wake producers (sab ko jagao)
         return item;
     }
 }
 ```
 
-```java
-// Modern solution using BlockingQueue (production standard) ⭐
-BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(5);
+### ⚠️ Pitfalls / Gotchas
+- Use **while**, never **if** for wait() *(spurious wakeup — bina notify ke uth sakta hai)*
+- `notifyAll()` not `notify()` *(galat thread jag sakta hai)*
+- This is **interview code** — in production, use **BlockingQueue** *(manually mat karo)*
 
-// Producer — blocks automatically when full
-new Thread(() -> {
-    for (int i = 0; i < 100; i++)
-        queue.put(i);  // Blocks if queue is full
-}).start();
+### ⚡ Remember
+1. **while** + wait() *(spurious wakeup ke liye)*
+2. **notifyAll()** *(sabko jagao)*
+3. This code = interview answer | Production = **BlockingQueue** ⭐
 
-// Consumer — blocks automatically when empty
-new Thread(() -> {
-    while (true)
-        process(queue.take());  // Blocks if queue is empty
-}).start();
-```
-
-### 🗣️ How to Explain in Interview
-
-> *"The wait/notify implementation: both produce and consume are synchronized methods. The producer checks if the buffer is full — if so, it calls wait() which releases the lock and sleeps. The consumer does the same when the buffer is empty. After adding or removing an item, both call notifyAll() to wake up waiting threads. The key detail is using while loops, not if statements, to handle spurious wakeups. In production, I use ArrayBlockingQueue which encapsulates all this logic — put() blocks when full, take() blocks when empty."*
-
-### ⚡ Key Points to Remember
-
-1. **while loop** for wait condition (not if)
-2. **notifyAll()** after producing AND consuming
-3. **synchronized** on the shared buffer object
-4. Production: use **BlockingQueue** (handles everything)
-5. `put()` = blocking add, `take()` = blocking remove
+### 🔗 Follow-ups
+→ [Q36. BlockingQueue solution](#q36)
 
 ---
 
 <a id="q36"></a>
+## Q36. How to implement producer-consumer with BlockingQueue?
 
-## Q36. How do you solve producer-consumer using BlockingQueue?
+### 📝 One-Liner
+> Just use put() and take() — BlockingQueue handles all synchronization internally.
 
 ### 🔑 Quick Answer
+> `BlockingQueue.put()` blocks when full, `take()` blocks when empty. **Zero manual synchronization**. Production-grade solution in 5 lines. *(put daalo, take nikalo — baaki sab queue sambhal lega)*
 
-> `BlockingQueue.put()` blocks when full, `take()` blocks when empty. No manual synchronization needed — it's the **production standard** approach.
-
-### 💻 Code Example
-
+### 💻 Code
 ```java
-public class ProducerConsumerModern {
-    private final BlockingQueue<String> queue = new ArrayBlockingQueue<>(10);
-    
-    public void startProducer() {
-        new Thread(() -> {
-            try {
-                for (int i = 0; i < 100; i++) {
-                    String item = "Item-" + i;
-                    queue.put(item);        // Blocks if queue is full
-                    System.out.println("Produced: " + item);
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }, "Producer").start();
+// Itna simple hai — bas put aur take!
+BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(5);
+
+// Producer
+Runnable producer = () -> {
+    for (int i = 0; i < 100; i++) {
+        queue.put(i);  // blocks if full (jagah nahi toh ruko)
     }
-    
-    public void startConsumer() {
-        new Thread(() -> {
-            try {
-                while (true) {
-                    String item = queue.take();  // Blocks if queue is empty
-                    System.out.println("Consumed: " + item);
-                    processItem(item);
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }, "Consumer").start();
+};
+
+// Consumer
+Runnable consumer = () -> {
+    while (true) {
+        int item = queue.take();  // blocks if empty (data nahi toh ruko)
+        process(item);
     }
-}
+};
+
+// Start
+executor.submit(producer);
+executor.submit(consumer);
 ```
 
-### 🗣️ How to Explain in Interview
+### 🆚 vs. Comparison
+| Feature | wait/notify | BlockingQueue |
+|---------|-----------|--------------|
+| Code complexity | ~30 lines *(jhanjhat)* | ~5 lines *(simple)* |
+| Error-prone | Very ⚠️ | No ✅ |
+| Production-ready | ❌ | ✅ ⭐ |
+| Performance | OK | Optimized |
 
-> *"BlockingQueue is the production solution for producer-consumer. put() blocks when the queue is full and take() blocks when it's empty — no manual wait/notify needed. I choose ArrayBlockingQueue for bounded buffers with a fixed capacity, or LinkedBlockingQueue for unbounded or very large buffers. The key advantage is it's thread-safe by design, tested, and optimized. I know how wait/notify works underneath, but in production code I never implement it manually."*
+### 🗣️ How to Say in Interview
+> *"In production, I always use BlockingQueue for producer-consumer. put() blocks when the queue is full, take() blocks when empty — no manual synchronization needed. I use ArrayBlockingQueue for fixed-size bounded queues with predictable memory, and LinkedBlockingQueue when I need higher throughput with separate put and take locks. The wait/notify solution is good to know for interviews, but I'd never use it in production code."*
 
-### ⚡ Key Points to Remember
+### ⚠️ Pitfalls / Gotchas
+- **Always specify capacity** for LinkedBlockingQueue — default is Integer.MAX_VALUE *(unbounded = OOM risk!)*
+- `offer()` returns false if full (instead of blocking) — use `put()` for guaranteed delivery
 
-1. **put()** = blocks when full, **take()** = blocks when empty
-2. **No manual synchronization** — thread-safe by design
-3. **ArrayBlockingQueue** = bounded (fixed size)
-4. **LinkedBlockingQueue** = optionally bounded
-5. Always the **production choice** over manual wait/notify
+### ⚡ Remember
+1. `put()` blocks on full, `take()` blocks on empty *(automatic!)*
+2. **ArrayBlockingQueue** = fixed size, predictable *(safe choice)*
+3. **LinkedBlockingQueue** = always specify capacity *(default unbounded = danger)*
+4. **Zero manual sync** — queue handles everything ⭐
+5. This is the **production answer** *(interview mein bolo toh senior lagoge)*
+
+### 🔗 Follow-ups
+→ [Q55. BlockingQueue deep dive](#q55) → [Q56. ArrayBQ vs LinkedBQ](#q56)
 
 ---
 

@@ -1,7 +1,7 @@
 # 🧵 Java Multithreading — Interview Questions (96 Questions)
 
 > Complete guide: 96 questions across 10 sections — from basics to production scenarios.
-> Every question has: 🔑 Quick Answer → 📖 Step-by-Step → 🗣️ Interview Script → 💻 Code → ⚡ Key Points
+> Every question follows a 10-section interview-optimized format with Hindi brackets for instant understanding.
 
 ---
 
@@ -24,16 +24,34 @@
 
 ## 🎯 Question Format
 
-Every question follows this structure for **learning + interview explanation**:
+Every question follows this **10-section interview-optimized** structure:
 
 ```
-🔑 Quick Answer       — What to say first (30 seconds)
-📖 Step-by-Step        — Progressive understanding
-🗣️ Interview Script   — How to explain naturally
-💻 Code Example        — With line-by-line walkthrough
-⚡ Key Points          — Quick revision bullets
-🔗 Follow-ups         — What interviewer asks next
+📝 One-Liner              ← 1 sentence (last-minute revision scanning)
+🔑 Quick Answer           ← 30-second spoken answer + (Hindi layman brackets)
+📖 How It Works           ← Deep explanation + diagrams + (Hindi for hard concepts)
+🗣️ How to Say in Interview ← English script + "In my project..." (NO Hindi)
+💻 Code                   ← Working example + Hindi comments where tricky
+⚠️ Pitfalls / Gotchas     ← Common bugs/mistakes + (Hindi warnings)
+🆚 vs. Comparison         ← [Only when relevant] Table + (Hindi difference)
+🎯 Tricky Interview Qs    ← Curveball Q&A + (Hindi quick explanation)
+⚡ Remember               ← Bullet points + (Hindi shortcuts for recall)
+🔗 Follow-ups             ← Cross-links to related questions
 ```
+
+### Hindi Brackets Rules:
+- **Romanized Hindi** in English letters *(matlab ye ek tarah ka lock hai)*
+- Only for **hard/confusing concepts** — not obvious things
+- **5-10 words max** per bracket, in italics
+- **NOT in 🗣️ Interview Script** — that section is English speaking practice
+
+### Prep Phase Guide:
+| When | Read These |
+|------|-----------|
+| **Last 1 hour** | 📝 One-Liner + ⚡ Remember |
+| **Day before** | 🗣️ Interview Script + 🎯 Tricky Qs |
+| **Week before** | 📖 How It Works + 💻 Code + ⚠️ Pitfalls |
+| **During interview** | 🔑 Quick Answer → expand naturally |
 
 ---
 
