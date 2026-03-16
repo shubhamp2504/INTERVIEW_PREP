@@ -1,441 +1,508 @@
-# 🟡 Spring Batch — Scheduling (Q99–Q103)
-
-> 🔑 Quick Answer → 📖 Step-by-Step Explanation → 🗣️ How to Say in Interview → 💻 Code → ⚡ Remember → 🔗 Follow-ups
+# 🟡 Scheduling — Q99 to Q103
 
 ---
-
-<a id="q99"></a>
 
 ## Q99. How do you schedule Spring Batch jobs?
 
+### 📝 One-Liner
+Spring Batch has no built-in scheduler — use @Scheduled (simplest), Quartz (production), Kubernetes CronJob (cloud), or OS cron (traditional).
+
 ### 🔑 Quick Answer
+Spring Batch is a **processing framework**, not a scheduling framework. You need an external scheduler. Options: **(1) @Scheduled** — simplest, good for single-instance apps, no clustering/persistence. **(2) Quartz** — production standard, supports clustering (only 1 instance runs), JDBC persistence, misfire handling. **(3) Kubernetes CronJob** — cloud-native, container-based. **(4) OS cron** — traditional, runs JAR with crontab. Always pass **unique JobParameters** (e.g., timestamp) to avoid "already completed" errors. *(Spring Batch ke paas apna scheduler nahi hai — bahar se lagana padta hai)*
 
-> Spring Batch has **no built-in scheduler**. Use external schedulers: **@Scheduled** (simplest), **Quartz** (production), **Kubernetes CronJob** (cloud), or **OS cron** (traditional).
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — Why no built-in scheduler:**
-
+### 📖 How It Works
 ```
-Spring Batch = Processing Framework (read → process → write)
-It does NOT decide WHEN to run.
+Scheduler Options:
 
-You need something external to say: "Run this job NOW"
+@Scheduled (simplest):
+  ├── Built into Spring
+  ├── Cron or fixed-rate
+  ├── ❌ No clustering (all instances run)
+  ├── ❌ No persistence of schedule state
+  └── Good for: single-instance, non-critical
 
-Options:
-  Spring @Scheduled  → Simple, in-app, no persistence
-  Quartz             → Enterprise, clustered, persistent ⭐
-  Kubernetes CronJob → Cloud-native, container based
-  OS Cron            → Traditional, runs JAR as command
-  Spring Cloud DF    → Full orchestration platform
+Quartz ⭐ (production):
+  ├── Clustered (only 1 instance fires)
+  ├── JDBC persistence (survives restarts)
+  ├── Misfire handling
+  ├── Rich API (pause, resume, reschedule)
+  └── Good for: production, multi-instance
+
+Kubernetes CronJob (cloud):
+  ├── One pod per execution
+  ├── Built-in retry, history
+  ├── Cluster awareness via K8s
+  └── Good for: containerized deployments
+
+OS Cron (traditional):
+  ├── Linux crontab / Windows Task Scheduler
+  ├── Runs JAR externally
+  ├── ❌ No clustering (needs wrapper)
+  └── Good for: simple, legacy
 ```
 
-**Step 2 — Comparison:**
+### 🗣️ How to Say in Interview
+"Spring Batch doesn't include a scheduler — it's purely a processing framework. For scheduling, I use Quartz in production because it supports clustering, ensuring only one instance in a cluster fires the trigger. It also persists schedule state in JDBC, so schedule information survives application restarts. For cloud deployments on Kubernetes, I've used CronJobs. The key with any scheduler is to always pass unique JobParameters — typically a timestamp — because Spring Batch rejects re-running a completed job with the same parameters."
 
-| Scheduler | Clustering | Persistence | Setup | Best For |
-|-----------|-----------|------------|-------|----------|
-| @Scheduled | ❌ | ❌ | 2 lines | Dev, simple apps |
-| Quartz | ✅ | ✅ | Medium | Production ⭐ |
-| K8s CronJob | ✅ | ✅ (K8s) | Medium | Cloud apps |
-| OS Cron | ❌ | ❌ | 1 line | Legacy, simple |
-
-### 💻 Code Example
-
+### 💻 Code
 ```java
-// Simplest: @Scheduled
-@Configuration
+// @Scheduled — simplest approach
+@Component
 @EnableScheduling
 public class BatchScheduler {
-    
     @Autowired private JobLauncher jobLauncher;
-    @Autowired private Job dailyReportJob;
-    
-    @Scheduled(cron = "0 0 2 * * ?")  // Every day at 2 AM
-    public void runDailyReport() throws Exception {
+    @Autowired private Job dailyPaymentJob;
+
+    @Scheduled(cron = "0 0 2 * * ?")  // 2 AM daily
+    public void runDailyJob() throws Exception {
         JobParameters params = new JobParametersBuilder()
-                .addLong("timestamp", System.currentTimeMillis())
+                .addLocalDateTime("runTime", LocalDateTime.now())  // unique each run
                 .toJobParameters();
-        jobLauncher.run(dailyReportJob, params);
+        jobLauncher.run(dailyPaymentJob, params);
     }
 }
+
+// Quartz — production approach (see Q101)
+// Kubernetes CronJob — in deployment YAML:
+// apiVersion: batch/v1
+// kind: CronJob
+// metadata:
+//   name: daily-payment-job
+// spec:
+//   schedule: "0 2 * * *"
+//   jobTemplate:
+//     spec:
+//       template:
+//         spec:
+//           containers:
+//           - name: batch-job
+//             image: myapp/batch:latest
+//             command: ["java", "-jar", "batch.jar", "--job=dailyPayment"]
+//           restartPolicy: OnFailure
 ```
 
-### 🗣️ How to Explain in Interview
+### ⚠️ Pitfalls / Gotchas
+- @Scheduled with no clustering → every instance in the cluster fires → duplicate executions *(clustering nahi hai toh sab instances job chalayenge)*
+- Must pass unique JobParameters every run — same params = "already completed" error
+- Quartz needs JDBC tables (10 tables for clustering support)
+- K8s CronJob: set concurrencyPolicy: Forbid to prevent overlapping runs
 
-> *"Spring Batch intentionally doesn't include scheduling — it's a processing framework, not a scheduler. For scheduling, I use @Scheduled for simple apps — just add EnableScheduling and a cron expression. For production, I use Quartz because it supports clustering — if you have 3 instances, only one runs the job, and if it goes down, another takes over. Quartz also persists schedule state to the database, so it survives restarts. In cloud environments, Kubernetes CronJob is the standard approach."*
+### 🆚 vs. Comparison
+| Feature | @Scheduled | Quartz ⭐ | K8s CronJob | OS Cron |
+|---------|-----------|---------|-------------|---------|
+| Clustering | ❌ | ✅ | ✅ (K8s) | ❌ |
+| Persistence | ❌ | ✅ JDBC | ✅ (K8s) | ❌ |
+| Misfire | ❌ | ✅ | ❌ | ❌ |
+| Complexity | Low | Medium | Medium | Low |
+| Best for | Dev/single | Production ⭐ | Cloud | Legacy |
 
-### ⚡ Key Points to Remember
+### ⚡ Remember
+- Spring Batch has NO scheduler *(apna scheduler nahi — bahar se lagao)*
+- @Scheduled = simple, no clustering
+- **Quartz = production standard** (clustering + persistence)
+- K8s CronJob = cloud-native
+- Always unique JobParameters (timestamp)
 
-1. Spring Batch = **no built-in scheduler**
-2. **@Scheduled** = simplest (but no clustering/persistence)
-3. **Quartz** = production standard (clustered, persistent)
-4. **Kubernetes CronJob** = cloud-native approach
-5. Always pass **unique JobParameters** (timestamp) to avoid duplicate detection
+### 🔗 Follow-ups
+- [Q101 → Quartz integration details](#q101)
+- [Q100 → Job trigger types](#q100)
+- [Q103 → Running on startup](#q103)
 
 ---
 
-<a id="q100"></a>
-
 ## Q100. How do you trigger jobs automatically?
 
+### 📝 One-Liner
+Four trigger types: time-based (@Scheduled/Quartz), event-based (file watcher/message listener), API-based (REST endpoint), and startup (CommandLineRunner).
+
 ### 🔑 Quick Answer
+**(1) Time-based**: @Scheduled cron, Quartz trigger, K8s CronJob — run at fixed times. **(2) Event-based**: file arrives in directory → file watcher triggers job; message arrives in queue → listener triggers job. **(3) API-based**: REST POST endpoint calls JobLauncher — for on-demand or external system triggers. **(4) Startup**: CommandLineRunner or `spring.batch.job.enabled=true` — for one-time migrations. Always use unique parameters for every trigger. *(Char tarike — time, event, API, startup — sab mein unique params dena zaroori)*
 
-> Four trigger types: **Time-based** (@Scheduled/Cron), **Event-based** (file watcher, message listener), **API-based** (REST endpoint), **Startup** (CommandLineRunner).
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — Trigger types:**
-
+### 📖 How It Works
 ```
-1. TIME-BASED (most common)
-   "Run every day at 2 AM"
-   → @Scheduled, Quartz, Cron
+Trigger Types:
 
-2. EVENT-BASED
-   "Run when a file arrives in /incoming/"
-   → File watcher, Kafka listener, JMS listener
+TIME-BASED:
+  @Scheduled(cron="0 0 2 * * ?") → 2 AM daily
+  Quartz CronTrigger → clustered scheduling
+  K8s CronJob → containerized scheduling
 
-3. API-BASED
-   "Run when someone calls POST /api/jobs/import"
-   → REST controller, actuator endpoint
+EVENT-BASED:
+  File arrives in /incoming/ → WatchService detects → launch job
+  Message in Kafka/RabbitMQ → Listener receives → launch job
 
-4. STARTUP
-   "Run once when application starts"
-   → CommandLineRunner, spring.batch.job.enabled=true
+API-BASED:
+  POST /api/batch/launch?job=paymentJob → REST controller → launch job
+  External system calls API → job starts
+
+STARTUP:
+  Application starts → CommandLineRunner → launch job
+  spring.batch.job.enabled=true → auto-run all jobs
 ```
 
-### 💻 Code Examples
+### 🗣️ How to Say in Interview
+"I use four trigger types depending on the requirement. For daily reconciliation, it's time-based with Quartz. For file processing, we have a file watcher that triggers the job when a file arrives in the inbox directory. For on-demand processing, we expose a REST endpoint that operations teams can call. For one-time data migrations, we use CommandLineRunner that runs on application startup. The key across all triggers is unique JobParameters — I always include a timestamp so the same job can run again without the 'already completed' error."
 
+### 💻 Code
 ```java
-// 1. REST API trigger
-@RestController
-@RequestMapping("/api/jobs")
-public class JobController {
-    
-    @Autowired private JobLauncher jobLauncher;
-    @Autowired private Job importJob;
-    
-    @PostMapping("/import")
-    public ResponseEntity<String> trigger(@RequestParam String fileName)
-            throws Exception {
-        JobParameters params = new JobParametersBuilder()
-                .addString("file", fileName)
-                .addLong("time", System.currentTimeMillis())
-                .toJobParameters();
-        
-        JobExecution exec = jobLauncher.run(importJob, params);
-        return ResponseEntity.ok("Job started: " + exec.getId());
-    }
-}
-
-// 2. File watcher trigger
+// EVENT-BASED: File watcher trigger
 @Component
-public class FileWatcher {
+public class FileWatchTrigger {
     @Autowired private JobLauncher jobLauncher;
-    @Autowired private Job fileJob;
-    
-    @Scheduled(fixedDelay = 10000)  // Check every 10 seconds
-    public void watchForFiles() throws Exception {
-        Path dir = Paths.get("/incoming/");
-        try (DirectoryStream<Path> stream = 
-                Files.newDirectoryStream(dir, "*.csv")) {
-            for (Path file : stream) {
+    @Autowired private Job fileProcessingJob;
+
+    @Scheduled(fixedDelay = 30000)  // check every 30 seconds
+    public void watchInbox() throws Exception {
+        Path inbox = Paths.get("/data/inbox");
+        try (DirectoryStream<Path> files = Files.newDirectoryStream(inbox, "*.csv")) {
+            for (Path file : files) {
                 JobParameters params = new JobParametersBuilder()
-                        .addString("file", file.toString())
+                        .addString("filePath", file.toString())
+                        .addLocalDateTime("triggerTime", LocalDateTime.now())
                         .toJobParameters();
-                jobLauncher.run(fileJob, params);
+                jobLauncher.run(fileProcessingJob, params);
+                Files.move(file, Paths.get("/data/processing/" + file.getFileName()));
             }
         }
     }
 }
 
-// 3. Startup trigger
+// API-BASED: REST endpoint trigger
+@RestController
+@RequestMapping("/api/batch")
+public class BatchController {
+    @Autowired private JobLauncher jobLauncher;
+    @Autowired private ApplicationContext context;
+
+    @PostMapping("/launch/{jobName}")
+    public ResponseEntity<String> launchJob(@PathVariable String jobName) throws Exception {
+        Job job = context.getBean(jobName, Job.class);
+        JobParameters params = new JobParametersBuilder()
+                .addLocalDateTime("triggerTime", LocalDateTime.now())
+                .toJobParameters();
+        JobExecution execution = jobLauncher.run(job, params);
+        return ResponseEntity.ok("Job started: " + execution.getId());
+    }
+}
+
+// STARTUP: CommandLineRunner
 @Component
-public class StartupJobRunner implements CommandLineRunner {
+public class MigrationRunner implements CommandLineRunner {
     @Autowired private JobLauncher jobLauncher;
     @Autowired private Job migrationJob;
-    
+
     @Override
     public void run(String... args) throws Exception {
-        jobLauncher.run(migrationJob, new JobParametersBuilder()
-                .addLong("time", System.currentTimeMillis())
-                .toJobParameters());
+        JobParameters params = new JobParametersBuilder()
+                .addLocalDateTime("migrationTime", LocalDateTime.now())
+                .toJobParameters();
+        jobLauncher.run(migrationJob, params);
     }
 }
 ```
 
-### 🗣️ How to Explain in Interview
+### ⚠️ Pitfalls / Gotchas
+- File watcher: move file to processing folder BEFORE launching to avoid re-trigger *(file ko pehle move karo — nahi toh dobara trigger hoga)*
+- REST trigger: use async JobLauncher for long jobs (don't block HTTP request)
+- Startup trigger: set `spring.batch.job.enabled=false` in production to prevent accidental auto-run
+- Always unique params — without them second run fails
 
-> *"I trigger batch jobs four ways depending on the use case. Time-based with @Scheduled or Quartz for recurring jobs like daily reports. Event-based — I use a file watcher that checks an incoming directory every 10 seconds and triggers the import job when CSV files appear. API-based — a REST endpoint so external systems can trigger imports on demand. And startup — using CommandLineRunner for one-time migration jobs. The key in all cases is passing unique JobParameters — usually a timestamp — so Spring Batch doesn't reject the launch as a duplicate."*
+### ⚡ Remember
+- Time: @Scheduled, Quartz, K8s CronJob
+- Event: file watcher, message listener *(file aayi = job start)*
+- API: REST POST endpoint
+- Startup: CommandLineRunner / spring.batch.job.enabled
+- Always unique JobParameters
 
-### ⚡ Key Points to Remember
-
-1. **Time**: @Scheduled, Quartz, Cron
-2. **Event**: File watcher, message listener
-3. **API**: REST controller (POST endpoint)
-4. **Startup**: CommandLineRunner or spring.batch.job.enabled
-5. Always include **unique parameter** (timestamp) in every launch
+### 🔗 Follow-ups
+- [Q99 → Scheduling options](#q99)
+- [Q101 → Quartz integration](#q101)
+- [Q121 → File upload processing](#q121)
 
 ---
 
-<a id="q101"></a>
-
 ## Q101. Can Spring Batch run with Quartz?
 
+### 📝 One-Liner
+Yes — Quartz is the production standard. QuartzJobBean calls JobLauncher.run(). Quartz handles WHEN, Spring Batch handles WHAT.
+
 ### 🔑 Quick Answer
+**Yes, and it's the recommended production setup.** `QuartzJobBean.executeInternal()` calls `jobLauncher.run()`. Quartz provides: **(1) Clustering** — only 1 instance in the cluster fires the trigger. **(2) JDBC persistence** — schedule survives restarts. **(3) Misfire handling** — handles missed triggers (app was down). **(4) Rich API** — pause, resume, reschedule programmatically. @Scheduled can't do any of this — it fires on every instance and loses state on restart. *(Quartz = WHEN job chalana hai, Spring Batch = WHAT karna hai — dono milke production ka standard hain)*
 
-> **Yes, and it's the production standard.** Create a QuartzJobBean that calls JobLauncher.run(). Quartz handles scheduling, clustering, and persistence — Spring Batch handles processing.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — Why Quartz for production:**
-
+### 📖 How It Works
 ```
-@Scheduled problems in production:
-  ❌ No clustering — all 3 instances run the job simultaneously
-  ❌ No persistence — schedule lost on restart
-  ❌ No retry — if app was down during scheduled time, job is skipped
+Quartz + Spring Batch Flow:
 
-Quartz solves all:
-  ✅ Clustering — only 1 of 3 instances runs the job
-  ✅ Persistence — schedule saved in DB (QRTZ_ tables)
-  ✅ Misfire handling — runs missed jobs when app comes back
-  ✅ Dynamic scheduling — change schedule without restart
-```
+  Quartz Scheduler (clustered, JDBC-backed)
+      ↓
+  CronTrigger fires at 2 AM
+      ↓
+  QuartzJobBean.executeInternal()
+      ↓
+  jobLauncher.run(springBatchJob, params)
+      ↓
+  Spring Batch processes data
 
-**Step 2 — How it connects:**
+@Scheduled Problems (why Quartz is needed):
+  ❌ No clustering → all instances fire → duplicate processing
+  ❌ No persistence → restart loses schedule
+  ❌ No misfire handling → missed at 2AM? → silently skipped
+  ❌ No API → can't pause/resume dynamically
 
-```
-Quartz                          Spring Batch
-──────                          ────────────
-QuartzJobBean                   
-  ↓ (trigger fires)            
-  executeInternal()             
-    ↓                           
-    jobLauncher.run(job, params)
-                                ↓
-                                JobExecution created
-                                Steps execute
-                                Results saved to BATCH_ tables
+Quartz Fixes All:
+  ✅ Clustering → only 1 instance fires (via DB lock)
+  ✅ JDBC persistence → schedule survives restart
+  ✅ Misfire → fires immediately when detected
+  ✅ Rich API → pause/resume/reschedule
 ```
 
-### 💻 Code Example
+### 🗣️ How to Say in Interview
+"Yes, Quartz with Spring Batch is the production standard. I create a QuartzJobBean that calls JobLauncher.run() in its executeInternal method. Quartz handles the scheduling concerns — clustering ensures only one instance fires the trigger via a database lock, JDBC persistence means the schedule survives application restarts, and misfire handling catches up on missed triggers. In my project, we had a 5-node cluster running our batch application, and Quartz ensured only one node executed each scheduled job. When we had a brief outage at 2 AM, the misfire policy triggered the job as soon as the app came back online."
 
+### 💻 Code
 ```java
-// 1. Quartz Job wraps Spring Batch Job
-public class BatchQuartzJob extends QuartzJobBean {
-    
+// Quartz Job Bean — calls Spring Batch
+public class PaymentBatchJob extends QuartzJobBean {
     @Autowired private JobLauncher jobLauncher;
-    @Autowired private Job dailyReportJob;
-    
+    @Autowired private Job paymentJob;
+
     @Override
-    protected void executeInternal(JobExecutionContext context) {
+    protected void executeInternal(JobExecutionContext context) throws JobExecutionException {
         try {
             JobParameters params = new JobParametersBuilder()
-                    .addLong("timestamp", System.currentTimeMillis())
+                    .addLocalDateTime("scheduledTime", LocalDateTime.now())
                     .toJobParameters();
-            jobLauncher.run(dailyReportJob, params);
+            jobLauncher.run(paymentJob, params);
         } catch (Exception e) {
-            throw new RuntimeException("Batch job failed", e);
+            throw new JobExecutionException("Batch job failed", e);
         }
     }
 }
 
-// 2. Quartz configuration
+// Quartz Configuration
 @Configuration
 public class QuartzConfig {
-    
+
     @Bean
-    public JobDetail batchJobDetail() {
-        return JobBuilder.newJob(BatchQuartzJob.class)
-                .withIdentity("dailyBatchJob")
+    public JobDetail paymentJobDetail() {
+        return JobBuilder.newJob(PaymentBatchJob.class)
+                .withIdentity("paymentJob", "batchGroup")
                 .storeDurably()
                 .build();
     }
-    
+
     @Bean
-    public Trigger batchTrigger() {
+    public CronTrigger paymentTrigger() {
         return TriggerBuilder.newTrigger()
-                .forJob(batchJobDetail())
-                .withIdentity("dailyBatchTrigger")
+                .forJob(paymentJobDetail())
+                .withIdentity("paymentTrigger", "batchGroup")
                 .withSchedule(CronScheduleBuilder
-                        .cronSchedule("0 0 2 * * ?")  // Daily at 2 AM
-                        .withMisfireHandlingInstructionFireAndProceed())
+                        .cronSchedule("0 0 2 * * ?")          // 2 AM daily
+                        .withMisfireHandlingInstructionFireAndProceed())  // catch missed
                 .build();
     }
 }
+
+// application.yml — Quartz with JDBC store + clustering
+// spring:
+//   quartz:
+//     job-store-type: jdbc                    # persist to DB
+//     properties:
+//       org.quartz.jobStore.isClustered: true # enable clustering
+//       org.quartz.jobStore.clusterCheckinInterval: 20000
+//       org.quartz.scheduler.instanceId: AUTO
 ```
 
-```yaml
-# application.yml — Quartz persistence
-spring:
-  quartz:
-    job-store-type: jdbc          # Store in DB (not memory)
-    properties:
-      org.quartz.jobStore.isClustered: true
-      org.quartz.jobStore.clusterCheckinInterval: 15000
-```
+### ⚠️ Pitfalls / Gotchas
+- Quartz needs 10+ DB tables — auto-create with `spring.quartz.jdbc.initialize-schema=always` *(Quartz ke apne tables chahiye DB mein)*
+- Don't confuse `org.quartz.Job` with `org.springframework.batch.core.Job` — different packages
+- Quartz `JobStore` must be JDBC for clustering (not RAM)
+- Misfire policy: `withMisfireHandlingInstructionFireAndProceed` = fire once immediately
 
-### 🗣️ How to Explain in Interview
+### ⚡ Remember
+- QuartzJobBean calls jobLauncher.run() *(Quartz = WHEN, Batch = WHAT)*
+- **Clustering**: only 1 instance fires (DB lock)
+- **JDBC persistence**: survives restart
+- **Misfire handling**: catches missed triggers
+- @Scheduled = no clustering, no persistence → dev only
 
-> *"Yes, Quartz and Spring Batch work well together. I create a QuartzJobBean that calls jobLauncher.run() inside executeInternal(). Quartz handles the scheduling — when to run, clustering, misfire recovery — and Spring Batch handles the actual processing. In production, I configure Quartz with JDBC job store and clustering enabled, so if I have 3 application instances, only one runs the batch job. If the running instance goes down, another picks it up. The misfire policy handles cases where the app was down at the scheduled time."*
-
-### ⚡ Key Points to Remember
-
-1. QuartzJobBean calls **jobLauncher.run()** inside executeInternal()
-2. Quartz = **clustering** (only 1 instance runs the job)
-3. **JDBC job store** = schedule persists across restarts
-4. **Misfire handling** = catches up on missed schedules
-5. Quartz manages WHEN, Spring Batch manages WHAT
+### 🔗 Follow-ups
+- [Q99 → Scheduling options](#q99)
+- [Q102 → Cron scheduling](#q102)
+- [Q119 → Multiple jobs running](#q119)
 
 ---
-
-<a id="q102"></a>
 
 ## Q102. Can Spring Batch run with Cron scheduling?
 
+### 📝 One-Liner
+Yes — two approaches: @Scheduled(cron) in-app or OS-level crontab running the JAR.
+
 ### 🔑 Quick Answer
+**(1) In-app cron**: `@Scheduled(cron = "0 0 2 * * MON-FRI")` — job runs within the same JVM. Simple but no clustering. Spring cron = 6 fields (second minute hour day month weekday). **(2) OS cron**: Linux `crontab -e` → `0 2 * * * java -jar batch.jar`. OS starts a new JVM each execution. No long-running process needed but OS-dependent. For production, use Quartz (cron triggers with clustering). *(Cron do tarike se — app ke andar @Scheduled ya OS level crontab)*
 
-> **Yes, two approaches:** (1) Spring's **@Scheduled(cron = "...")** within the app, (2) **OS-level cron** (Linux crontab / Windows Task Scheduler) that runs the app as a JAR.
-
-### 📖 Step-by-Step Explanation
-
+### 📖 How It Works
 ```
-Approach 1: IN-APP CRON (@Scheduled)
-  App is long-running (web server), cron triggers job inside the app
-  ✅ Simple, no external setup
-  ❌ No clustering, no persistence
+Spring @Scheduled Cron vs OS Cron:
 
-Approach 2: OS CRON
-  App starts, runs job, exits
-  ✅ No long-running process
-  ✅ Clean resource usage
-  ❌ No Spring-level monitoring
-  ❌ OS-dependent
+Spring Cron (6 fields):
+  sec  min  hour  day  month  weekday
+   0    0    2     *     *    MON-FRI   → Weekdays at 2 AM
+
+Linux Cron (5 fields — no seconds):
+  min  hour  day  month  weekday
+   0    2     *     *       1-5        → Weekdays at 2 AM
+
+Common Cron Expressions:
+  "0 0 2 * * ?"        → Every day at 2 AM
+  "0 0 2 * * MON-FRI"  → Weekdays at 2 AM
+  "0 0 */4 * * ?"      → Every 4 hours
+  "0 30 1 1 * ?"       → 1st of month at 1:30 AM
+  "0 0 0 L * ?"        → Last day of month at midnight
 ```
 
-### 💻 Code Examples
+### 🗣️ How to Say in Interview
+"Yes, there are two approaches. The simpler one is @Scheduled with a cron expression inside the application — the job runs within the same JVM process. Spring cron has 6 fields including seconds. The other approach is OS-level crontab that starts the Java process externally. For production, I prefer Quartz with cron triggers because it adds clustering and persistence on top of cron scheduling. @Scheduled cron works well for single-instance development and non-critical jobs."
 
+### 💻 Code
 ```java
-// Approach 1: Spring @Scheduled
-@Scheduled(cron = "0 0 2 * * MON-FRI")  // Weekdays at 2 AM
-public void runWeekdayJob() throws Exception {
-    jobLauncher.run(weekdayJob, new JobParametersBuilder()
-            .addLong("time", System.currentTimeMillis())
-            .toJobParameters());
+// In-app cron scheduling
+@Component
+@EnableScheduling
+public class CronScheduler {
+    @Autowired private JobLauncher jobLauncher;
+    @Autowired private Job reconciliationJob;
+
+    @Scheduled(cron = "0 0 2 * * MON-FRI")  // Weekdays 2 AM
+    public void runWeekdayJob() throws Exception {
+        JobParameters params = new JobParametersBuilder()
+                .addLocalDateTime("scheduledAt", LocalDateTime.now())
+                .toJobParameters();
+        jobLauncher.run(reconciliationJob, params);
+    }
+
+    @Scheduled(cron = "0 30 1 1 * ?")  // 1st of month at 1:30 AM
+    public void runMonthlyJob() throws Exception {
+        JobParameters params = new JobParametersBuilder()
+                .addLocalDateTime("scheduledAt", LocalDateTime.now())
+                .toJobParameters();
+        jobLauncher.run(reconciliationJob, params);
+    }
 }
+
+// OS Cron (Linux crontab -e):
+// 0 2 * * * /usr/bin/java -jar /opt/batch/batch-app.jar --spring.batch.job.name=paymentJob
+// 30 1 1 * * /usr/bin/java -jar /opt/batch/batch-app.jar --spring.batch.job.name=monthlyReport
 ```
 
-```bash
-# Approach 2: Linux crontab
-0 2 * * * java -jar /opt/batch-app.jar --spring.batch.job.name=dailyReport
-```
+### ⚠️ Pitfalls / Gotchas
+- Spring cron = 6 fields (with seconds), Linux cron = 5 fields (no seconds) *(Spring mein seconds hai, Linux mein nahi)*
+- @Scheduled without clustering → multiple instances fire simultaneously
+- OS cron starts new JVM each time → cold start overhead
+- Don't forget unique parameters — without them job fails on second run
 
-**Common cron expressions:**
+### ⚡ Remember
+- @Scheduled cron = in-app, simple, no clustering
+- OS cron = external, runs JAR
+- Spring cron: 6 fields (sec min hr day mon weekday) *(Spring = 6 fields with seconds)*
+- Linux cron: 5 fields (min hr day mon weekday)
+- Production → Quartz with cron triggers
 
-| Expression | When |
-|-----------|------|
-| `0 0 2 * * ?` | Daily at 2 AM |
-| `0 0 2 * * MON-FRI` | Weekdays at 2 AM |
-| `0 0 * * * ?` | Every hour |
-| `0 */30 * * * ?` | Every 30 minutes |
-| `0 0 0 1 * ?` | First day of month, midnight |
-
-### 🗣️ How to Explain in Interview
-
-> *"There are two ways. First, Spring's @Scheduled with a cron expression — the app stays running and triggers the batch job at the scheduled time. This is simple but doesn't support clustering. Second, OS-level cron — Linux crontab or Windows Task Scheduler runs the batch app as a JAR command. The app starts, runs the job, and exits. This is cleaner for resource usage but loses in-app monitoring. For production, I prefer Quartz over both approaches because of clustering and persistence."*
-
-### ⚡ Key Points to Remember
-
-1. **@Scheduled(cron)** = in-app, simple, no clustering
-2. **OS cron** = runs JAR as command, clean but manual
-3. Spring cron: **6 fields** (sec min hour day month weekday)
-4. Linux cron: **5 fields** (min hour day month weekday)
-5. For production → **Quartz** over cron
+### 🔗 Follow-ups
+- [Q99 → Scheduling options](#q99)
+- [Q101 → Quartz (preferred for production)](#q101)
+- [Q103 → Running on startup](#q103)
 
 ---
-
-<a id="q103"></a>
 
 ## Q103. How do you run jobs on application startup?
 
+### 📝 One-Liner
+Three methods: Spring Boot auto-runs all jobs (default), CommandLineRunner for programmatic control, or disable auto-run with spring.batch.job.enabled=false.
+
 ### 🔑 Quick Answer
+**(1) Default behavior**: `spring.batch.job.enabled=true` (default) → Spring Boot auto-runs ALL registered jobs on startup. **(2) Specific job**: set `spring.batch.job.name=myJob` → only runs that job. **(3) Programmatic**: implement `CommandLineRunner` for custom logic (conditional runs, args parsing). **(4) Production**: set `enabled=false` → no auto-run → trigger externally (Quartz, REST, etc.). For one-time migrations, CommandLineRunner is ideal. *(Default mein sab jobs auto-run hote hain — production mein disable karke bahar se trigger karo)*
 
-> Three methods: (1) **Spring Boot default** — `spring.batch.job.enabled=true` auto-runs all jobs, (2) **CommandLineRunner** — programmatic control, (3) **Disable auto-run** with `enabled=false` and trigger via REST/scheduler.
-
-### 📖 Step-by-Step Explanation
-
+### 📖 How It Works
 ```
-Method 1: AUTO-RUN (Spring Boot default)
-  spring.batch.job.enabled=true (default)
-  → ALL registered @Bean Job run on startup
-  → Good for single-job apps
+Startup Behavior:
 
-Method 2: COMMAND LINE RUNNER
-  Implement CommandLineRunner
-  → Full control over which job, which params
-  → Good for migration scripts
+spring.batch.job.enabled=true (default):
+  App starts → finds ALL @Bean Job → runs ALL → exits/continues
+  ⚠️ Dangerous in production — ALL jobs run!
 
-Method 3: DISABLE + EXTERNAL TRIGGER
-  spring.batch.job.enabled=false
-  → No job runs on startup
-  → Trigger via REST API, @Scheduled, or Quartz
-  → Good for production apps with multiple jobs
-```
+spring.batch.job.name=myJob:
+  App starts → finds only "myJob" → runs it → exits/continues
+  Good for: specific job via command line
 
-### 💻 Code Examples
+spring.batch.job.enabled=false:
+  App starts → No jobs auto-run
+  Jobs triggered externally (Quartz, REST, etc.)
+  ✅ Production standard
 
-```yaml
-# Method 1: Auto-run specific job
-spring:
-  batch:
-    job:
-      enabled: true
-      name: migrationJob        # Only run this job (not all jobs)
+CommandLineRunner:
+  App starts → your run() method called → you decide what to run
+  Good for: one-time migrations, conditional logic
 ```
 
+### 🗣️ How to Say in Interview
+"By default, Spring Boot auto-runs all registered batch jobs on startup, which is dangerous in production. I always set spring.batch.job.enabled=false and trigger jobs externally via Quartz or REST endpoints. For one-time data migrations, I use CommandLineRunner which gives me programmatic control — I can parse command-line arguments, check conditions, and decide whether to run. In my project, we had a database migration job that ran via CommandLineRunner on first deployment, then we removed it in the next release."
+
+### 💻 Code
 ```java
-// Method 2: CommandLineRunner — full control
+// application.yml — production config
+// spring:
+//   batch:
+//     job:
+//       enabled: false  # ← never auto-run in production
+
+// Run specific job via command line:
+// java -jar batch.jar --spring.batch.job.name=paymentJob
+
+// CommandLineRunner for one-time migration
 @Component
 public class MigrationRunner implements CommandLineRunner {
-    
     @Autowired private JobLauncher jobLauncher;
-    @Autowired private Job migrationJob;
-    
+    @Autowired private Job dataMigrationJob;
+
     @Override
     public void run(String... args) throws Exception {
-        JobParameters params = new JobParametersBuilder()
-                .addString("version", "2.0")
-                .addLong("time", System.currentTimeMillis())
-                .toJobParameters();
-        
-        JobExecution execution = jobLauncher.run(migrationJob, params);
-        System.out.println("Migration result: " + execution.getStatus());
+        // Only run if migration hasn't completed yet
+        if (shouldRunMigration()) {
+            JobParameters params = new JobParametersBuilder()
+                    .addString("migrationVersion", "v2.5")
+                    .addLocalDateTime("startTime", LocalDateTime.now())
+                    .toJobParameters();
+            JobExecution execution = jobLauncher.run(dataMigrationJob, params);
+            log.info("Migration completed with status: {}", execution.getStatus());
+        }
+    }
+    
+    private boolean shouldRunMigration() {
+        // Check if migration already done (e.g., flag in DB)
+        return !migrationRepository.isCompleted("v2.5");
     }
 }
+
+// Disable auto-run, trigger via REST
+// spring.batch.job.enabled=false
+// POST /api/batch/launch/paymentJob → launches on demand
 ```
 
-```yaml
-# Method 3: Disable for production — trigger externally
-spring:
-  batch:
-    job:
-      enabled: false   # NO jobs run on startup
-# Jobs triggered via REST API or Quartz scheduler
-```
+### ⚠️ Pitfalls / Gotchas
+- `enabled=true` (default) runs ALL jobs → dangerous in production *(production mein default true hai — sab jobs chal jayenge!)*
+- Multiple jobs registered → all fire on startup unless filtered
+- CommandLineRunner runs in startup thread — long job blocks application readiness
+- Same params on restart → "already completed" error → always use unique params
 
-### 🗣️ How to Explain in Interview
+### ⚡ Remember
+- Default: `enabled=true` → ALL jobs auto-run *(default sab chalata hai — production mein band karo)*
+- `spring.batch.job.name=X` → run specific job
+- `enabled=false` → no auto-run (production standard)
+- CommandLineRunner = programmatic startup logic
+- Always unique JobParameters
 
-> *"By default, Spring Boot auto-runs all registered batch jobs on startup. You can control which job runs with spring.batch.job.name. For more control, I use CommandLineRunner — it lets me set specific parameters and log the result. But in production, I disable auto-run with enabled=false and trigger jobs through Quartz or REST endpoints. This gives me control over when jobs run and prevents accidental execution on deployment."*
-
-### ⚡ Key Points to Remember
-
-1. **Default: enabled=true** → all jobs auto-run on startup
-2. **spring.batch.job.name** = run specific job only
-3. **CommandLineRunner** = programmatic startup control
-4. **Production: enabled=false** + external trigger ⭐
-5. Always pass unique params to avoid duplicate rejection
-
----
-
-> **🎯 Navigation:** [← Performance (Q92-98)](11-performance.md) | [Next → Monitoring (Q104-109)](13-monitoring.md) | [📋 All Sections](README.md)
+### 🔗 Follow-ups
+- [Q99 → Scheduling options](#q99)
+- [Q100 → Trigger types](#q100)
+- [Q101 → Quartz for production](#q101)

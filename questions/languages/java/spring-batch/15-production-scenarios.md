@@ -1,267 +1,275 @@
-# 🔴 Spring Batch — Real Production Scenarios (Q117–Q125)
-
-> 🔑 Quick Answer → 📖 Step-by-Step Explanation → 🗣️ How to Say in Interview → 💻 Code → ⚡ Remember → 🔗 Follow-ups
+# 🔴 Real Production Scenarios — Q117 to Q125
 
 ---
 
-<a id="q117"></a>
-
 ## Q117. How would you process a 10GB file using Spring Batch?
 
+### 📝 One-Liner
+Split the file into smaller chunks (Tasklet) → partition them for parallel processing → FlatFileItemReader streams each chunk with constant memory.
+
 ### 🔑 Quick Answer
+Two-step architecture: **(Step 1)** Tasklet splits 10GB file into 10 × 1GB files. **(Step 2)** Master step partitions the 10 files to 10 parallel workers, each using FlatFileItemReader (streaming, constant memory ~50MB per partition) + JdbcBatchItemWriter. Total time: ~10-20 minutes with 10 partitions. Each partition restartable independently. FlatFileItemReader streams line-by-line — never loads entire file into memory. *(Pehle file todo, phir har piece ko parallel mein process karo — memory constant rehti hai)*
 
-> **Split the file into chunks** (Tasklet) → **Partition** each chunk file to parallel workers → each worker uses **FlatFileItemReader** (streaming, constant memory) + **JdbcBatchItemWriter** (batch inserts). Total: ~10-20 minutes with 10 partitions.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — The architecture:**
-
+### 📖 How It Works
 ```
-Job: process10GBFile
-  │
-  ├── Step 1: fileSplitTasklet  (split 10GB → 10 × 1GB files)
-  │     input.csv → split_aa, split_ab, ... split_aj
-  │
-  └── Step 2: masterStep (partitioned)
-        ├── Partition 1: FlatFileReader(split_aa) → Writer
-        ├── Partition 2: FlatFileReader(split_ab) → Writer
-        ├── ...
-        └── Partition 10: FlatFileReader(split_aj) → Writer
-        All 10 run in PARALLEL → 10× faster
-```
+Architecture:
 
-**Step 2 — Why this works:**
+Step 1: File Split (Tasklet)
+  10GB file → Split into 10 files of ~1GB each
+  /data/input_001.csv (1GB)
+  /data/input_002.csv (1GB)
+  ...
+  /data/input_010.csv (1GB)
 
-```
-Memory: FlatFileItemReader streams line by line
-  → Only current chunk (500 lines) in memory
-  → 10GB file needs only ~50MB per partition
+Step 2: Parallel Processing (Partitioned)
+  Master Step
+  ├── Partition 1: input_001.csv → FlatFileItemReader → process → write
+  ├── Partition 2: input_002.csv → FlatFileItemReader → process → write
+  ├── ...
+  └── Partition 10: input_010.csv → FlatFileItemReader → process → write
 
-Speed: 10 partitions = 10× throughput
-  Single thread: ~2 hours
-  10 partitions:  ~12 minutes
+Memory Usage:
+  Each partition: ~50MB (reader buffer + chunk in memory)
+  Total: 10 × 50MB = 500MB (NOT 10GB!)
 
-Reliability: Each partition = separate StepExecution
-  → Partition 7 fails? Only partition 7 restarts
-  → Other 9 keep their committed data
+Performance:
+  Single thread: ~60 minutes
+  10 partitions: ~10 minutes (6× faster, limited by DB write speed)
 ```
 
-### 💻 Code Example
+### 🗣️ How to Say in Interview
+"For a 10GB file, I use a two-step approach. First, a Tasklet step splits the file into 10 equal chunks of approximately 1GB each. Second, a master step uses MultiResourcePartitioner to assign each file chunk to a parallel worker. Each worker uses FlatFileItemReader which streams line-by-line with constant memory — about 50MB per partition regardless of file size. Combined with JdbcBatchItemWriter for batch inserts, 10 partitions process the file in about 10 minutes. Each partition is independently restartable — if partition 7 fails, restart only re-reads that file chunk."
 
+### 💻 Code
 ```java
-// Step 1: Split file into manageable chunks
-@Bean
-public Tasklet fileSplitTasklet() {
-    return (contribution, chunkContext) -> {
-        // Split using Java (cross-platform)
-        Path input = Path.of("/data/input.csv");
-        long totalLines = Files.lines(input).count();
+// Step 1: File Split Tasklet
+@Component
+@StepScope
+public class FileSplitTasklet implements Tasklet {
+    @Value("#{jobParameters['inputFile']}")
+    private String inputFile;
+
+    @Override
+    public RepeatStatus execute(StepContribution contribution, ChunkContext context) throws Exception {
+        Path source = Path.of(inputFile);
+        long totalLines = Files.lines(source).count();
         long linesPerFile = totalLines / 10;
         
-        // Split into 10 files: split_00.csv through split_09.csv
-        // (implementation with BufferedReader/BufferedWriter)
+        try (BufferedReader reader = Files.newBufferedReader(source)) {
+            for (int i = 0; i < 10; i++) {
+                Path output = Path.of("/data/split/chunk_" + i + ".csv");
+                try (BufferedWriter writer = Files.newBufferedWriter(output)) {
+                    for (long j = 0; j < linesPerFile && reader.ready(); j++) {
+                        writer.write(reader.readLine());
+                        writer.newLine();
+                    }
+                }
+            }
+        }
         return RepeatStatus.FINISHED;
-    };
+    }
 }
 
-// Step 2: Partition across split files
+// Step 2: Partitioned processing
 @Bean
-public MultiResourcePartitioner partitioner() {
+public Step masterStep(JobRepository repo, Step workerStep) {
     MultiResourcePartitioner partitioner = new MultiResourcePartitioner();
-    partitioner.setResources(
-            new PathMatchingResourcePatternResolver()
-                    .getResources("file:/data/split_*.csv"));
-    partitioner.setKeyName("file");
-    return partitioner;
-}
-
-// Worker reader: Each partition reads its own file
-@Bean
-@StepScope
-public FlatFileItemReader<Record> reader(
-        @Value("#{stepExecutionContext['file']}") Resource file) {
-    return new FlatFileItemReaderBuilder<Record>()
-            .name("partitionReader")
-            .resource(file)
-            .delimited()
-            .names("col1", "col2", "col3", "col4")
-            .targetType(Record.class)
-            .build();
-}
-
-// Master step: Orchestrate 10 partitions
-@Bean
-public Step masterStep(JobRepository repo, PlatformTransactionManager tx) {
-    return new StepBuilder("master", repo)
-            .partitioner("worker", partitioner())
-            .step(workerStep(repo, tx))
+    partitioner.setResources(resourcePatternResolver.getResources("file:/data/split/chunk_*.csv"));
+    
+    return new StepBuilder("masterStep", repo)
+            .partitioner("workerStep", partitioner)
+            .step(workerStep)
             .gridSize(10)
             .taskExecutor(taskExecutor())
             .build();
 }
+
+@Bean
+@StepScope
+public FlatFileItemReader<Transaction> fileReader(
+        @Value("#{stepExecutionContext['fileName']}") Resource file) {
+    return new FlatFileItemReaderBuilder<Transaction>()
+            .name("chunkReader")
+            .resource(file)
+            .delimited().delimiter(",")
+            .names("id", "amount", "date", "status")
+            .targetType(Transaction.class)
+            .build();
+}
 ```
 
-### 🗣️ How to Explain in Interview
+### ⚠️ Pitfalls / Gotchas
+- FlatFileItemReader is NOT thread-safe — must use @StepScope for per-partition instances *(FlatFileItemReader thread-safe nahi hai — StepScope zaruri)*
+- File split must handle header rows (don't split headers into multiple files)
+- Disk I/O can be bottleneck — use SSD for temp files
+- 10GB file + 10 split files = 20GB disk needed temporarily
 
-> *"For a 10GB file, I use a two-step approach. First, a Tasklet splits the file into 10 smaller files — about 1GB each. Second, a partitioned step assigns one file to each of 10 parallel workers. Each worker uses FlatFileItemReader which streams line by line — so only the current chunk of 500 records is in memory, not the entire file. Combined with JdbcBatchItemWriter for batch inserts, this processes 10GB in about 10-20 minutes. Each partition is independently restartable — if one fails, only that partition needs to re-run."*
+### ⚡ Remember
+- **Split first → then partition** *(pehle todo, phir parallel process karo)*
+- FlatFileItemReader = streaming, constant memory (~50MB)
+- MultiResourcePartitioner assigns files to workers
+- 10 partitions = 10× faster (limited by DB)
+- Each partition independently restartable
 
-### ⚡ Key Points to Remember
-
-1. **Split file first** (Tasklet) → then partition
-2. **FlatFileItemReader** = streaming (constant memory)
-3. **10 partitions** = ~10× faster
-4. Each partition **independently restartable**
-5. Memory: ~50MB per partition (not 10GB!)
+### 🔗 Follow-ups
+- [Q118 → Process 100M database records](#q118)
+- [Q86 → Partitioning details](#q86)
+- [Q92 → Processing millions efficiently](#q92)
 
 ---
 
-<a id="q118"></a>
-
 ## Q118. How would you process 100 million database records?
 
+### 📝 One-Liner
+ID-range partitioning (20 partitions) + JdbcPagingItemReader + JdbcBatchItemWriter + chunk 500 = ~30-60 minutes.
+
 ### 🔑 Quick Answer
+**ID-range partitioning**: Partitioner queries MIN/MAX ID, divides into 20 non-overlapping ranges. Each partition gets its own JdbcPagingItemReader scoped to its ID range via @StepScope. 20 partitions × 500 records/sec per partition = 10,000 records/sec total. 100M ÷ 10K/sec ≈ 10,000 sec ≈ ~3 hours. With batch inserts + tuning: ~30-60 minutes. Critical: index on ID column, connection pool ≥ partitions + 2. *(100 million records ko 20 ID ranges mein baanto — har range parallel process karo)*
 
-> **Partition by ID range** (20 partitions) + **JdbcPagingItemReader** (memory-safe) + **JdbcBatchItemWriter** (batch inserts) + chunk size 500. Estimated: 30-60 minutes.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — The math:**
-
+### 📖 How It Works
 ```
-100,000,000 records ÷ 20 partitions = 5,000,000 per partition
-5,000,000 ÷ 500 (chunk size) = 10,000 chunks per partition
-20 partitions × 500 records/sec/partition = 10,000 records/sec total
-100,000,000 ÷ 10,000 = 10,000 seconds ≈ ~2.8 hours (safe estimate)
+Architecture:
 
-With tuned JdbcBatch + indexes: 20,000+ records/sec
-100,000,000 ÷ 20,000 ≈ ~83 minutes
-
-With 50 partitions: ~30-40 minutes
-```
-
-**Step 2 — Architecture:**
-
-```
 Partitioner:
-  SELECT MIN(id), MAX(id) FROM records
-  → min=1, max=100,000,000
-  → 20 partitions:
-     partition0:  ID 1 - 5,000,000
-     partition1:  ID 5,000,001 - 10,000,000
-     ...
-     partition19: ID 95,000,001 - 100,000,000
+  SELECT MIN(id), MAX(id) FROM orders → 1, 100000000
+  Range per partition: 100M / 20 = 5M records each
+  
+  Partition 1:  IDs 1 - 5,000,000
+  Partition 2:  IDs 5,000,001 - 10,000,000
+  ...
+  Partition 20: IDs 95,000,001 - 100,000,000
 
-Each Worker:
+Each Partition:
   JdbcPagingItemReader (WHERE id BETWEEN :min AND :max)
-  → Page size 500, chunk size 500
-  → Own DB connection from pool
+  → Processor
   → JdbcBatchItemWriter (batch INSERT)
+  
+  500 records/sec × 20 partitions = 10,000 total/sec
+
+Math:
+  100,000,000 records ÷ 10,000/sec = 10,000 sec ≈ 2.8 hours (baseline)
+  With optimized inserts + tuning: ~30-60 minutes
+
+Infrastructure:
+  Thread pool: 20 threads
+  Connection pool: 22+ (20 partitions + master + monitoring)
+  Heap: 4-8 GB
+  Index: ON orders(id) — CRITICAL
 ```
 
-### 💻 Code Example
+### 🗣️ How to Say in Interview
+"For 100 million records, I use ID-range partitioning with 20 partitions. The Partitioner queries MIN and MAX IDs, divides into 20 non-overlapping ranges of 5 million each. Each partition uses a StepScope JdbcPagingItemReader with WHERE id BETWEEN :minId AND :maxId, combined with JdbcBatchItemWriter for batch inserts. With 20 partitions running at 500 records per second each, we get 10,000 records per second total. The critical infrastructure requirements are an index on the ID column, a connection pool of at least 22, and 4-8 GB heap. In my project, this approach processes 100M payment records in about 45 minutes."
 
+### 💻 Code
 ```java
-@Bean
-public Partitioner idRangePartitioner(DataSource ds) {
-    return gridSize -> {
-        JdbcTemplate jdbc = new JdbcTemplate(ds);
-        Long min = jdbc.queryForObject("SELECT MIN(id) FROM records", Long.class);
-        Long max = jdbc.queryForObject("SELECT MAX(id) FROM records", Long.class);
+@Component
+public class IdRangePartitioner implements Partitioner {
+    @Autowired private JdbcTemplate jdbc;
+
+    @Override
+    public Map<String, ExecutionContext> partition(int gridSize) {
+        Long min = jdbc.queryForObject("SELECT MIN(id) FROM orders", Long.class);
+        Long max = jdbc.queryForObject("SELECT MAX(id) FROM orders", Long.class);
         long range = (max - min) / gridSize + 1;
-        
+
         Map<String, ExecutionContext> partitions = new HashMap<>();
-        long start = min;
         for (int i = 0; i < gridSize; i++) {
             ExecutionContext ctx = new ExecutionContext();
-            ctx.putLong("minId", start);
-            ctx.putLong("maxId", Math.min(start + range - 1, max));
+            ctx.putLong("minId", min + (i * range));
+            ctx.putLong("maxId", Math.min(min + ((i + 1) * range) - 1, max));
             partitions.put("partition" + i, ctx);
-            start += range;
         }
         return partitions;
-    };
+    }
+}
+
+@Bean
+public Step masterStep(JobRepository repo, Step workerStep) {
+    return new StepBuilder("masterStep", repo)
+            .partitioner("workerStep", idRangePartitioner)
+            .step(workerStep)
+            .gridSize(20)
+            .taskExecutor(taskExecutor())  // 20 threads
+            .build();
 }
 
 @Bean
 @StepScope
-public JdbcPagingItemReader<Record> reader(
-        DataSource ds,
+public JdbcPagingItemReader<Order> orderReader(
         @Value("#{stepExecutionContext['minId']}") Long minId,
         @Value("#{stepExecutionContext['maxId']}") Long maxId) {
-    return new JdbcPagingItemReaderBuilder<Record>()
-            .dataSource(ds)
-            .selectClause("SELECT *")
-            .fromClause("FROM records")
-            .whereClause("WHERE id >= :minId AND id <= :maxId")
+    return new JdbcPagingItemReaderBuilder<Order>()
+            .name("orderReader")
+            .dataSource(dataSource)
+            .selectClause("SELECT id, amount, status")
+            .fromClause("FROM orders")
+            .whereClause("WHERE id BETWEEN :minId AND :maxId")
             .sortKeys(Map.of("id", Order.ASCENDING))
-            .pageSize(500)
             .parameterValues(Map.of("minId", minId, "maxId", maxId))
-            .rowMapper(new BeanPropertyRowMapper<>(Record.class))
-            .build();
-}
-
-@Bean
-public Step masterStep(JobRepository repo, PlatformTransactionManager tx) {
-    return new StepBuilder("master", repo)
-            .partitioner("worker", idRangePartitioner(dataSource))
-            .step(workerStep(repo, tx))
-            .gridSize(20)                        // 20 parallel partitions
-            .taskExecutor(taskExecutor())
+            .pageSize(500)
+            .rowMapper(new BeanPropertyRowMapper<>(Order.class))
             .build();
 }
 ```
 
-### 🗣️ How to Explain in Interview
+### ⚠️ Pitfalls / Gotchas
+- **Index on ID column is critical** — without it, each partition does full table scan *(index nahi hai toh full table scan — bahut slow)*
+- Connection pool must be ≥ partitions + 2 (worker threads + master + monitoring)
+- Data skew: if IDs are not evenly distributed, some partitions have more records
+- Consider separate read and write datasources for load isolation
 
-> *"For 100 million records, I use ID-range partitioning. The Partitioner queries MIN and MAX ID, divides the range into 20 partitions of 5 million each. Each partition has its own JdbcPagingItemReader that reads only its ID range — page by page, so memory stays constant. JdbcBatchItemWriter sends 500 inserts as one batch call. With 20 partitions running in parallel, I get about 10,000-20,000 records per second depending on processing complexity. Each partition is independently restartable — if partition 15 fails, only that 5 million range needs to re-process."*
+### ⚡ Remember
+- ID-range partitioning with 20+ partitions *(ID ranges mein baanto — 20 partitions)*
+- JdbcPagingItemReader (constant memory, thread-safe)
+- Connection pool ≥ partitions + 2
+- **Index on partition column is CRITICAL**
+- ~30-60 minutes for 100M records (with tuning)
 
-### ⚡ Key Points to Remember
-
-1. **ID-range partitioning** = divide by MIN/MAX ID
-2. **20+ partitions** for 100M+ records
-3. **JdbcPagingItemReader** = constant memory
-4. Connection pool size ≥ partition count + 2
-5. **Index on ID column** (critical for WHERE clause)
+### 🔗 Follow-ups
+- [Q117 → Process 10GB file](#q117)
+- [Q86 → Partitioning details](#q86)
+- [Q92 → Processing millions efficiently](#q92)
 
 ---
 
-<a id="q119"></a>
-
 ## Q119. How would you handle multiple batch jobs running simultaneously?
 
+### 📝 One-Liner
+Separate thread pools per job, ensure DB connection pool handles all threads, process different data per job, and use async JobLauncher.
+
 ### 🔑 Quick Answer
+Four concerns: **(1) Resource contention** — give each job its own TaskExecutor (separate thread pools) so they don't steal threads from each other. **(2) DB connection pool** — total pool size ≥ sum of all job threads + overhead. **(3) Data isolation** — jobs should process different data (different tables or WHERE clauses) to avoid conflicts. **(4) Async JobLauncher** — use `SimpleAsyncTaskExecutor` on JobLauncher so launching one job doesn't block launching another. *(Har job ko apna thread pool do — connection pool sabke liye enough hona chahiye)*
 
-> **Separate thread pools** per job (resource isolation), **limit DB connections** across all jobs (prevent pool exhaustion), ensure **jobs process different data** (no conflicts), use **async JobLauncher** for non-blocking execution.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — The four concerns:**
-
+### 📖 How It Works
 ```
-Concern 1: RESOURCE CONTENTION
-  Problem: Both jobs fight for CPU/memory/DB connections
-  Fix: Separate thread pools with limits
-  
-  importJob:  ThreadPool(8 threads)  → max 8 DB connections
-  reportJob:  ThreadPool(4 threads)  → max 4 DB connections
-  Total: 12 connections → pool size = 15 (12 + headroom)
+Multiple Concurrent Jobs:
 
-Concern 2: DB CONNECTION EXHAUSTION
-  Problem: 50 spring.datasource.hikari.maximum-pool-size but 
-           importJob(16) + reportJob(8) + billingJob(8) = 32 connections
-  Fix: pool size = sum of all job threads + 5 overhead
+Job A (Import):       Thread Pool A (8 threads)  → 8 DB connections
+Job B (Report):       Thread Pool B (4 threads)  → 4 DB connections
+Job C (Notification): Thread Pool C (2 threads)  → 2 DB connections
+                                                    ──────────────
+                                           Total:    14 connections
+                                           + master: 3  (1 per job)
+                                           + buffer: 3
+                                           ──────────────
+                              Connection Pool Size:   20
 
-Concern 3: DATA CONFLICTS
-  Problem: Job A writes to orders table while Job B reads from it
-  Fix: Jobs should process DIFFERENT data or use isolation
+Isolation:
+  Job A: reads/writes orders table
+  Job B: reads orders, writes reports table
+  Job C: reads notifications table
+  → No write conflicts
 
-Concern 4: PRIORITY
-  Problem: Urgent job needs resources but long-running job has them
-  Fix: Job queue with priority, or dedicated executor per priority
+Async Launcher:
+  POST /launch/importJob  → returns immediately (async)
+  POST /launch/reportJob  → returns immediately (async)
+  → Both jobs run in parallel
 ```
 
-### 💻 Code Example
+### 🗣️ How to Say in Interview
+"For multiple concurrent batch jobs, I address four concerns. First, each job gets its own TaskExecutor with a dedicated thread pool, preventing one job from starving another. Second, the database connection pool must be large enough for all concurrent threads plus overhead — in our case, 20 connections for 14 worker threads plus buffers. Third, jobs process different data to avoid write conflicts. Fourth, I use an async JobLauncher so launching one job doesn't block launching others. In my project, we run three concurrent jobs — import, reporting, and notification — each with its own resources, totaling about 14 worker threads."
 
+### 💻 Code
 ```java
 // Separate thread pools per job
 @Bean("importExecutor")
@@ -270,6 +278,7 @@ public TaskExecutor importExecutor() {
     exec.setCorePoolSize(8);
     exec.setMaxPoolSize(8);
     exec.setThreadNamePrefix("import-");
+    exec.initialize();
     return exec;
 }
 
@@ -279,10 +288,11 @@ public TaskExecutor reportExecutor() {
     exec.setCorePoolSize(4);
     exec.setMaxPoolSize(4);
     exec.setThreadNamePrefix("report-");
+    exec.initialize();
     return exec;
 }
 
-// Async job launcher — non-blocking
+// Async JobLauncher
 @Bean
 public JobLauncher asyncJobLauncher(JobRepository repo) throws Exception {
     TaskExecutorJobLauncher launcher = new TaskExecutorJobLauncher();
@@ -291,584 +301,662 @@ public JobLauncher asyncJobLauncher(JobRepository repo) throws Exception {
     launcher.afterPropertiesSet();
     return launcher;
 }
+
+// Connection pool — must handle all concurrent threads
+// spring:
+//   datasource:
+//     hikari:
+//       maximum-pool-size: 20   # 8 + 4 + 2 + 6 buffer
+//       minimum-idle: 10
 ```
 
-### 🗣️ How to Explain in Interview
+### ⚠️ Pitfalls / Gotchas
+- Shared connection pool too small → threads wait → job hangs *(pool chhota hai toh threads wait karenge — job hang lagega)*
+- Two jobs writing to same table → deadlocks or constraint violations
+- Async launcher: can't get job result synchronously — need status polling
+- Monitor total thread count — too many concurrent jobs can exhaust CPU
 
-> *"For concurrent batch jobs, I manage four things. First, separate thread pools — the import job gets 8 threads and the report job gets 4, so they don't steal threads from each other. Second, connection pool sizing — I set HikariCP's maximum pool to the sum of all job threads plus overhead. Third, data isolation — concurrent jobs should process different tables or different data ranges to avoid conflicts. Fourth, I use an async JobLauncher so launching one job doesn't block the launching of another."*
+### ⚡ Remember
+- **Separate TaskExecutor per job** *(har job ko apna thread pool)*
+- Connection pool ≥ total threads + overhead
+- Different data per concurrent job (avoid conflicts)
+- Async JobLauncher for non-blocking launch
+- Monitor total resource usage
 
-### ⚡ Key Points to Remember
-
-1. **Separate TaskExecutor** per job (thread isolation)
-2. **Connection pool** ≥ sum of all job threads + overhead
-3. **Different data** per concurrent job (avoid conflicts)
-4. **Async JobLauncher** for non-blocking launches
-5. Monitor **total resource usage** across all jobs
+### 🔗 Follow-ups
+- [Q99 → Scheduling options](#q99)
+- [Q84 → Parallel processing options](#q84)
+- [Q124 → Cancel running job](#q124)
 
 ---
 
-<a id="q120"></a>
-
 ## Q120. How would you restart a job after a JVM crash?
 
+### 📝 One-Liner
+Crash → current chunk rolls back, status stays STARTED (stale). Recovery: detect stale STARTED executions → mark FAILED → re-launch with same params → resumes from last committed chunk.
+
 ### 🔑 Quick Answer
+After JVM crash: **(1)** Committed chunks are safe in DB. **(2)** Current in-progress chunk rolls back (transaction). **(3)** Status stays STARTED (not FAILED — because afterJob() never ran). **(4)** On restart: detect stale STARTED executions (START_TIME old, no heartbeat), mark them FAILED via `jobOperator.abandon()` or direct UPDATE. **(5)** Re-launch with same parameters → framework reads ExecutionContext → resumes from last committed position. Implement automatic crash recovery in `ApplicationRunner`. *(Crash hone pe status STARTED rehta hai — FAILED mark karo phir restart karo)*
 
-> On crash, the current chunk rolls back (uncommitted). The JobExecution stays in **STARTED** status (stale). On app restart, mark it as **FAILED** via SQL or programmatically, then re-launch with the **same parameters** — Spring Batch resumes from the last committed chunk.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — What happens during a crash:**
-
+### 📖 How It Works
 ```
-Normal execution:
-  Chunk 1: read → process → write → COMMIT ✅ (saved in DB)
-  Chunk 2: read → process → write → COMMIT ✅ (saved in DB)
-  Chunk 3: read → process → wr—— → 💥 JVM CRASH (not committed)
+Crash Timeline:
 
-State after crash:
-  BATCH_JOB_EXECUTION:  STATUS = 'STARTED' (stale — JVM is dead)
-  BATCH_STEP_EXECUTION: READ_COUNT = 1500, WRITE_COUNT = 1000
-                        (only chunks 1-2 committed, chunk 3 lost)
-  EXECUTION_CONTEXT:    read.count = 1000 (last committed position)
-```
+Running:
+  Chunk 1: read → process → write → COMMIT ✅ (safe in DB)
+  Chunk 2: read → process → write → COMMIT ✅ (safe in DB)
+  ...
+  Chunk 50: read → process → write → COMMIT ✅ (safe in DB)
+  Chunk 51: read → process → ☠️ JVM CRASH
+  
+  DB State:
+    JOB_EXECUTION.STATUS = STARTED (stale — afterJob never ran)
+    STEP_EXECUTION_CONTEXT = {read.count: 25000} (chunk 50's position)
+    Current chunk 51 transaction = ROLLED BACK
 
-**Step 2 — Recovery process:**
-
-```
-1. App restarts
-2. Find stale STARTED execution:
-   SELECT * FROM BATCH_JOB_EXECUTION WHERE STATUS = 'STARTED'
-3. Mark as FAILED:
-   UPDATE BATCH_JOB_EXECUTION SET STATUS='FAILED', EXIT_CODE='FAILED',
-          END_TIME=NOW() WHERE STATUS='STARTED'
-4. Re-launch with same parameters:
-   jobLauncher.run(job, sameParams)
-5. Spring Batch:
-   → Finds FAILED execution for this JobInstance
-   → Creates new JobExecution
-   → Reads EXECUTION_CONTEXT: read.count = 1000
-   → Reader skips first 1000 records
-   → Resumes from record 1001 ✅
+Recovery:
+  1. App restarts
+  2. ApplicationRunner detects stale STARTED executions
+     (START_TIME > 1 hour ago, still STARTED)
+  3. Marks them FAILED
+  4. Re-launches with same JobParameters
+  5. Framework reads context: {read.count: 25000}
+  6. Reader skips to record 25001
+  7. Processing resumes from chunk 51 ✅
 ```
 
-### 💻 Code Example
+### 🗣️ How to Say in Interview
+"After a JVM crash, committed chunks are safe but the current chunk's transaction rolls back, and the job status stays STARTED because the afterJob callback never executed. On restart, I have an ApplicationRunner that detects stale STARTED executions — those where the start time is more than an hour ago but status is still STARTED. It marks them as FAILED, then re-launches with the same parameters. The framework reads the last committed position from the step execution context and resumes from that point. In my project, a crash at record 25,000 of 100,000 lost only the current chunk of 500 records — restart continued from 25,001."
 
+### 💻 Code
 ```java
 // Automatic crash recovery on startup
 @Component
 public class CrashRecoveryRunner implements ApplicationRunner {
-    
     @Autowired private JobExplorer jobExplorer;
     @Autowired private JobRepository jobRepository;
     @Autowired private JobLauncher jobLauncher;
-    @Autowired private Job myJob;
-    
+    @Autowired private ApplicationContext context;
+
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        // Find stale STARTED executions (crashed jobs)
-        Set<JobExecution> staleExecutions = 
-                jobExplorer.findRunningJobExecutions("myJob");
-        
-        for (JobExecution exec : staleExecutions) {
-            // Mark as FAILED so it can be restarted
-            exec.setStatus(BatchStatus.FAILED);
-            exec.setEndTime(LocalDateTime.now());
-            exec.setExitStatus(new ExitStatus("FAILED", "JVM crash recovery"));
-            jobRepository.update(exec);
+        // Find all job names
+        for (String jobName : jobExplorer.getJobNames()) {
+            // Find executions stuck in STARTED (stale after crash)
+            Set<JobExecution> running = jobExplorer.findRunningJobExecutions(jobName);
             
-            // Restart with same parameters → resumes from last checkpoint
-            jobLauncher.run(myJob, exec.getJobParameters());
+            for (JobExecution execution : running) {
+                // Check if truly stale (started > 1 hour ago)
+                if (execution.getStartTime().isBefore(Instant.now().minus(Duration.ofHours(1)))) {
+                    log.warn("Found stale execution: job={}, id={}, started={}",
+                            jobName, execution.getId(), execution.getStartTime());
+
+                    // Mark as FAILED so it can be restarted
+                    execution.setStatus(BatchStatus.FAILED);
+                    execution.setEndTime(Instant.now());
+                    execution.setExitStatus(new ExitStatus("CRASHED", "JVM crash recovery"));
+                    jobRepository.update(execution);
+
+                    // Also update step executions
+                    for (StepExecution step : execution.getStepExecutions()) {
+                        if (step.getStatus() == BatchStatus.STARTED) {
+                            step.setStatus(BatchStatus.FAILED);
+                            step.setEndTime(Instant.now());
+                            jobRepository.update(step);
+                        }
+                    }
+
+                    // Re-launch with same params → resumes from last checkpoint
+                    Job job = context.getBean(jobName, Job.class);
+                    jobLauncher.run(job, execution.getJobParameters());
+                }
+            }
         }
     }
 }
 ```
 
-### 🗣️ How to Explain in Interview
+### ⚠️ Pitfalls / Gotchas
+- Don't restart too quickly — the "stale" execution might still be running on another node *(jaldi restart mat karo — ho sakta hai doosre node pe chal raha ho)*
+- Stale detection threshold: use reasonable time (1 hour) not too aggressive (1 minute)
+- Files: if the job was writing to a file, partial file state must be handled
+- Non-transactional side effects (emails sent, API calls made) cannot be rolled back
 
-> *"When the JVM crashes, the current chunk's transaction rolls back automatically — that's the database guarantee. But the JobExecution stays in STARTED status because Spring Batch never got to mark it FAILED. On restart, I have an ApplicationRunner that finds stale STARTED executions, marks them FAILED, then re-launches with the same parameters. Spring Batch creates a new execution under the same instance, reads the ExecutionContext from the metadata tables — which has the reader position at the last committed chunk — and resumes from there. So if it crashed during chunk 50 out of 200, it resumes from chunk 49's position."*
+### 🎯 Tricky Interview Qs
 
-### ⚡ Key Points to Remember
+**Q: What happens to data that was ALREADY committed before the crash?**
+It's safe. Each committed chunk's data is in the destination database. The framework only re-processes from the last checkpoint position (chunk 51 onward), not from the beginning.
 
-1. **Crash** → current chunk rolls back, status stays STARTED
-2. **Mark FAILED** → manually via SQL or programmatic ApplicationRunner
-3. **Re-launch** with same params → resumes from last checkpoint
-4. **ExecutionContext** stored per commit → position is always safe
-5. Implement **automatic crash recovery** in ApplicationRunner
+**Q: What if two instances of the app restart simultaneously?**
+Second launch gets `JobExecutionAlreadyRunningException` because the first already set it to STARTED. Only one can process — this is handled by Spring Batch's metadata lock.
+
+### ⚡ Remember
+- Crash → status stays STARTED (stale) *(crash ke baad status STARTED rehta hai — FAILED nahi hota)*
+- Committed chunks = safe (transaction committed)
+- Current chunk = rolled back (transaction lost)
+- Recovery: detect stale → mark FAILED → relaunch with same params
+- Resumes from ExecutionContext checkpoint
+
+### 🔗 Follow-ups
+- [Q65 → Restartability concept](#q65)
+- [Q115 → ExecutionContext (checkpoint storage)](#q115)
+- [Q106 → Debug failed jobs](#q106)
 
 ---
 
-<a id="q121"></a>
-
 ## Q121. How would you process files uploaded by multiple users?
 
+### 📝 One-Liner
+Each file = unique JobInstance (userId + fileName as identifying parameters) + async JobLauncher so uploads don't block.
+
 ### 🔑 Quick Answer
+Each user's file gets a **unique JobInstance** via identifying parameters: userId + filePath + uploadTime. **Async JobLauncher** ensures the upload API returns immediately while processing happens in background. Each file is processed independently — different users' jobs don't interfere. Status endpoint lets users check progress. Limit concurrent jobs to prevent resource exhaustion. *(Har user ki file = alag JobInstance — async mein process hota hai, API turant response deta hai)*
 
-> Each file = **unique JobInstance** (userId + fileName as identifying parameters). Use **async JobLauncher** so uploads don't block. Each user's job is independent and separately trackable.
-
-### 📖 Step-by-Step Explanation
-
+### 📖 How It Works
 ```
-User A uploads orders.csv  → Job(userId=A, file=orders.csv)  → Instance 1
-User B uploads returns.csv → Job(userId=B, file=returns.csv) → Instance 2
-User A uploads orders2.csv → Job(userId=A, file=orders2.csv) → Instance 3
+Flow:
 
-Each is a SEPARATE JobInstance because params differ.
-All can run SIMULTANEOUSLY with async launcher.
+User A uploads report.csv:
+  POST /upload → save file → async launch job
+    params: {userId: "A", file: "/data/users/A/report.csv", time: "..."}
+    → JobInstance #1 → processing in background
+    → API returns: {jobId: 101, status: "STARTED"}
+
+User B uploads data.csv (simultaneously):
+  POST /upload → save file → async launch job
+    params: {userId: "B", file: "/data/users/B/data.csv", time: "..."}
+    → JobInstance #2 → processing in background
+    → API returns: {jobId: 102, status: "STARTED"}
+
+Both process independently:
+  Job 101 (User A): reading → processing → writing → COMPLETED ✅
+  Job 102 (User B): reading → processing → writing → COMPLETED ✅
+
+Status check:
+  GET /status/101 → {status: "COMPLETED", records: 5000}
+  GET /status/102 → {status: "STARTED", progress: "60%"}
 ```
 
-### 💻 Code Example
+### 🗣️ How to Say in Interview
+"Each uploaded file becomes a unique JobInstance with userId, filePath, and upload timestamp as identifying parameters. I use an async JobLauncher so the upload API returns immediately with a job ID while processing runs in the background. Users can check progress via a status endpoint. Each job is independent — one user's failure doesn't affect another. We store files in user-specific directories and limit concurrent processing to prevent resource exhaustion. In my project, this handled 50+ concurrent user uploads with an 8-thread pool for batch processing."
 
+### 💻 Code
 ```java
 @RestController
 @RequestMapping("/api/upload")
 public class FileUploadController {
-    
     @Autowired private JobLauncher asyncJobLauncher;
-    @Autowired private Job fileProcessJob;
-    
+    @Autowired private Job fileProcessingJob;
+    @Autowired private JobExplorer jobExplorer;
+
     @PostMapping
-    public ResponseEntity<Map<String, Object>> handleUpload(
-            @RequestParam MultipartFile file,
-            @RequestParam String userId) throws Exception {
-        
+    public ResponseEntity<Map<String, Object>> uploadFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("userId") String userId) throws Exception {
         // Save file to user-specific directory
-        Path userDir = Path.of("/uploads", userId);
+        Path userDir = Path.of("/data/uploads", userId);
         Files.createDirectories(userDir);
         Path filePath = userDir.resolve(file.getOriginalFilename());
         file.transferTo(filePath.toFile());
-        
-        // Launch job with unique params per user+file
+
+        // Launch job with unique params
         JobParameters params = new JobParametersBuilder()
                 .addString("userId", userId)
                 .addString("filePath", filePath.toString())
-                .addLong("uploadTime", System.currentTimeMillis())
+                .addLocalDateTime("uploadTime", LocalDateTime.now())
                 .toJobParameters();
-        
-        JobExecution exec = asyncJobLauncher.run(fileProcessJob, params);
-        
-        return ResponseEntity.ok(Map.of(
-                "jobId", exec.getId(),
-                "status", "PROCESSING"));
+        JobExecution execution = asyncJobLauncher.run(fileProcessingJob, params);
+
+        return ResponseEntity.accepted().body(Map.of(
+                "jobId", execution.getId(),
+                "status", execution.getStatus().toString()
+        ));
     }
-    
+
     @GetMapping("/status/{jobId}")
-    public ResponseEntity<Map<String, Object>> checkStatus(
-            @PathVariable Long jobId) {
+    public Map<String, Object> getStatus(@PathVariable Long jobId) {
         JobExecution exec = jobExplorer.getJobExecution(jobId);
-        return ResponseEntity.ok(Map.of(
+        return Map.of(
                 "status", exec.getStatus().toString(),
+                "startTime", exec.getStartTime(),
                 "readCount", exec.getStepExecutions().stream()
-                        .mapToLong(StepExecution::getReadCount).sum()));
+                        .mapToLong(StepExecution::getReadCount).sum()
+        );
     }
 }
 ```
 
-### 🗣️ How to Explain in Interview
+### ⚠️ Pitfalls / Gotchas
+- Limit concurrent jobs — 100 users uploading simultaneously = 100 threads → resource exhaustion *(concurrent jobs limit karo — bahut saare ek saath chalenge toh system hang hoga)*
+- File cleanup: delete uploaded files after processing
+- User-specific directories prevent file name collisions
+- Async launcher means exceptions are NOT returned to API caller — poll status instead
 
-> *"Each user upload becomes a unique batch job. I use userId, fileName, and uploadTime as identifying parameters — so each upload is a separate JobInstance. The upload endpoint saves the file and launches the batch job asynchronously so the API responds immediately with a job ID. Users can poll the status endpoint to check progress. Jobs run independently — User A's import doesn't affect User B's. For resource control, I limit the async executor to prevent too many simultaneous imports from overwhelming the system."*
+### ⚡ Remember
+- Unique params: userId + filePath + timestamp *(har upload = unique JobInstance)*
+- Async JobLauncher = non-blocking API
+- User-specific file directories
+- Status endpoint for progress tracking
+- Limit concurrent job count
 
-### ⚡ Key Points to Remember
-
-1. **Unique params** per user+file → separate JobInstance
-2. **Async launcher** → API responds immediately
-3. **Status endpoint** → users can check progress
-4. **Limit concurrent jobs** → prevent resource exhaustion
-5. User-specific directories for file isolation
+### 🔗 Follow-ups
+- [Q100 → Trigger types](#q100)
+- [Q119 → Multiple concurrent jobs](#q119)
+- [Q117 → Processing large files](#q117)
 
 ---
 
-<a id="q122"></a>
-
 ## Q122. How would you avoid duplicate processing?
 
+### 📝 One-Liner
+Three layers: JobParameters uniqueness (built-in), idempotent writer (UPSERT), and processed flag on source table.
+
 ### 🔑 Quick Answer
+Three-layer defense: **(1) JobParameters uniqueness** — Spring Batch rejects re-running a COMPLETED job with same params (built-in). **(2) Idempotent writer** — use UPSERT (INSERT ON DUPLICATE KEY UPDATE) so re-processing the same record produces the same result. **(3) Processed flag** — mark source records as processed after writing, read only unprocessed records (WHERE processed=false). All three together = bulletproof against duplicates. *(Teen layers — job uniqueness, UPSERT, processed flag — teeno milke duplicate nahi hone dete)*
 
-> Three strategies: (1) **JobParameters uniqueness** — same params can't re-run a completed instance, (2) **Idempotent writer** — UPSERT instead of INSERT, (3) **Processed flag** — mark records as processed in the source table.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — Three defense layers:**
-
+### 📖 How It Works
 ```
-Layer 1: JOB-LEVEL (Spring Batch built-in)
-  Same job + same identifying params = same instance
-  If instance already COMPLETED → rejects new launch
-  → Prevents re-running the same job
+Three-Layer Defense:
 
-Layer 2: WRITER-LEVEL (idempotent operations)
-  UPSERT instead of INSERT
-  INSERT ... ON DUPLICATE KEY UPDATE ...
-  → Running twice produces same result
+Layer 1: JobParameters Uniqueness (built-in)
+  Job with {date=2024-01-15} COMPLETED
+  → Same params again → JobInstanceAlreadyCompleteException
+  → No re-execution! ✅
 
-Layer 3: SOURCE-LEVEL (processed flag)
-  Add 'processed' column to source table
-  Reader: WHERE processed = false
-  Writer: UPDATE source SET processed = true
-  → Records only processed once
+Layer 2: Idempotent Writer (UPSERT)
+  INSERT INTO target (id, amount, status)
+  VALUES (123, 500, 'DONE')
+  ON DUPLICATE KEY UPDATE amount=500, status='DONE';
+  → Same record processed twice → same result ✅
+
+Layer 3: Processed Flag (source-level)
+  Reader:  SELECT * FROM orders WHERE processed = false
+  Writer:  UPDATE orders SET processed = true WHERE id = ?
+  → Already processed records never re-read ✅
+
+Combined:
+  Layer 1 prevents: entire job re-run
+  Layer 2 handles: chunk retry (same items reprocessed after rollback)
+  Layer 3 prevents: items re-read on restart
 ```
 
-### 💻 Code Example
+### 🗣️ How to Say in Interview
+"I implement three layers of duplicate prevention. First, Spring Batch's built-in JobParameters uniqueness prevents re-running a completed job with the same parameters. Second, I use idempotent writers with UPSERT — INSERT ON DUPLICATE KEY UPDATE — so if the same record is processed twice during a retry, the result is identical. Third, I mark source records as processed after writing, and the reader only queries unprocessed records. The CompositeItemWriter handles both writing to the target and marking the source as processed in one step. In my project, this three-layer approach gave us zero duplicate processing across 6 months of daily runs."
 
+### 💻 Code
 ```java
 // Layer 2: Idempotent writer (UPSERT)
 @Bean
-public JdbcBatchItemWriter<Employee> idempotentWriter(DataSource ds) {
-    return new JdbcBatchItemWriterBuilder<Employee>()
-            .sql("""
-                INSERT INTO employees (id, name, salary, updated_at)
-                VALUES (:id, :name, :salary, NOW())
-                ON DUPLICATE KEY UPDATE 
-                    name = :name, salary = :salary, updated_at = NOW()
-            """)
-            .dataSource(ds)
+public JdbcBatchItemWriter<ProcessedOrder> upsertWriter() {
+    return new JdbcBatchItemWriterBuilder<ProcessedOrder>()
+            .sql("INSERT INTO processed_orders (id, amount, status) " +
+                 "VALUES (:id, :amount, :status) " +
+                 "ON DUPLICATE KEY UPDATE amount=:amount, status=:status")
+            .dataSource(dataSource)
             .beanMapped()
             .build();
 }
 
-// Layer 3: Processed flag in reader + composite writer
+// Layer 3: Read only unprocessed + mark processed after write
 @Bean
 @StepScope
-public JdbcPagingItemReader<Record> reader(DataSource ds) {
-    return new JdbcPagingItemReaderBuilder<Record>()
-            .selectClause("SELECT *")
-            .fromClause("FROM source_records")
-            .whereClause("WHERE processed = false")  // Only unprocessed
+public JdbcPagingItemReader<Order> unprocessedReader() {
+    return new JdbcPagingItemReaderBuilder<Order>()
+            .name("unprocessedReader")
+            .dataSource(dataSource)
+            .selectClause("SELECT id, amount, status")
+            .fromClause("FROM orders")
+            .whereClause("WHERE processed = false")  // only unprocessed
             .sortKeys(Map.of("id", Order.ASCENDING))
+            .pageSize(500)
+            .rowMapper(new BeanPropertyRowMapper<>(Order.class))
             .build();
 }
 
 @Bean
-public CompositeItemWriter<Record> compositeWriter() {
-    CompositeItemWriter<Record> writer = new CompositeItemWriter<>();
-    writer.setDelegates(List.of(
-            targetWriter(),         // Write to destination
-            markProcessedWriter()   // Mark source as processed
-    ));
+public JdbcBatchItemWriter<Order> markProcessedWriter() {
+    return new JdbcBatchItemWriterBuilder<Order>()
+            .sql("UPDATE orders SET processed = true WHERE id = :id")
+            .dataSource(dataSource)
+            .beanMapped()
+            .build();
+}
+
+// Composite: write target + mark source
+@Bean
+public CompositeItemWriter<ProcessedOrder> compositeWriter() {
+    CompositeItemWriter<ProcessedOrder> writer = new CompositeItemWriter<>();
+    writer.setDelegates(List.of(upsertWriter(), markProcessedWriter()));
     return writer;
 }
 ```
 
-### 🗣️ How to Explain in Interview
+### ⚠️ Pitfalls / Gotchas
+- UPSERT syntax varies by DB: MySQL = ON DUPLICATE KEY UPDATE, PostgreSQL = ON CONFLICT DO UPDATE *(har database ka UPSERT syntax alag hai)*
+- Processed flag and target write must be in same transaction — otherwise crash can mark processed without writing
+- CompositeItemWriter delegates execute in order — target first, then mark
+- Read-modify-write on processed flag needs index on processed column
 
-> *"I prevent duplicates at three levels. First, Spring Batch's built-in uniqueness — same job parameters can't re-run a completed instance. Second, idempotent writes — I use UPSERT (INSERT ON DUPLICATE KEY UPDATE) so if a record is processed twice, the result is the same. Third, a processed flag on the source table — the reader queries WHERE processed=false, and after writing, a composite writer marks the source record as processed=true. These three layers ensure that even in failure and restart scenarios, no record gets duplicated."*
+### ⚡ Remember
+- **Three layers**: params uniqueness, UPSERT, processed flag *(teen layers = bulletproof)*
+- JobParameters = built-in duplicate prevention
+- UPSERT = idempotent writes
+- processed flag = source-level tracking
+- CompositeItemWriter = write + mark in one step
 
-### ⚡ Key Points to Remember
-
-1. **JobParameters uniqueness** = built-in duplicate prevention
-2. **UPSERT** = idempotent writes (same result if run twice)
-3. **Processed flag** = source-level tracking
-4. **CompositeItemWriter** = write to target + mark source
-5. All three layers together = bulletproof deduplication
+### 🔗 Follow-ups
+- [Q55 → JobInstance uniqueness](#q55)
+- [Q123 → Track failed records](#q123)
+- [Q70 → Skip logic](#q70)
 
 ---
 
-<a id="q123"></a>
-
 ## Q123. How would you track failed records?
 
+### 📝 One-Liner
+Implement SkipListener to log each skipped record to an error table with phase, record data, exception, and timestamp for audit and reprocessing.
+
 ### 🔑 Quick Answer
+**SkipListener** has three callbacks: `onSkipInRead()`, `onSkipInProcess()`, `onSkipInWrite()`. For each skipped item, log to a **failed_records error table**: phase (READ/PROCESS/WRITE), record data, error message, job execution ID, timestamp. This gives you a complete audit trail. Build a separate **reprocessing job** that reads from the error table. In production: skip → log → alert → investigate → reprocess. *(Har skip hone wale record ko error table mein save karo — baad mein reprocess kar sakte ho)*
 
-> Implement a **SkipListener** that logs each skipped record to a **failed_records** error table with the phase (read/process/write), the record data, the exception, and a timestamp.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — What to capture:**
-
+### 📖 How It Works
 ```
-For each failed record, store:
-  - PHASE: where it failed (READ, PROCESS, WRITE)
-  - RECORD_ID: identifier of the failed record
-  - RECORD_DATA: the actual data (for reprocessing)
-  - ERROR_MESSAGE: what went wrong
-  - JOB_EXECUTION_ID: which job run
-  - TIMESTAMP: when it failed
+Skip → Track → Reprocess Flow:
 
-This creates an "error audit trail" for:
-  1. Root cause analysis
-  2. Manual reprocessing
-  3. Data quality reporting
-  4. Compliance/audit
-```
+During Processing:
+  Record 1: ✅ success → write to target
+  Record 2: ❌ NumberFormatException → SKIP
+    → SkipListener.onSkipInProcess(record2, exception)
+    → INSERT into failed_records (phase=PROCESS, data=record2, error=NFE)
+  Record 3: ✅ success → write to target
+  ...
 
-**Step 2 — Error table schema:**
+Error Table (failed_records):
+  ID | JOB_EXEC_ID | PHASE   | RECORD_DATA       | ERROR_MESSAGE          | TIMESTAMP           | STATUS
+  1  | 101         | PROCESS | {id:2, amount:xyz} | NumberFormatException  | 2024-01-15 02:05:00 | NEW
+  2  | 101         | READ    | line 5045          | MalformedCSVException  | 2024-01-15 02:06:00 | NEW
+  3  | 101         | WRITE   | {id:99, amount:500}| ConstraintViolation    | 2024-01-15 02:07:00 | NEW
 
-```sql
-CREATE TABLE failed_records (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    job_execution_id BIGINT,
-    step_name VARCHAR(100),
-    phase VARCHAR(10),        -- READ, PROCESS, WRITE
-    record_id VARCHAR(100),
-    record_data TEXT,
-    error_message TEXT,
-    error_class VARCHAR(200),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+Reprocessing:
+  Fix root cause (upstream data, code bug)
+  → Run reprocessing job that reads error table (STATUS=NEW)
+  → Process and write → mark STATUS=RESOLVED
 ```
 
-### 💻 Code Example
+### 🗣️ How to Say in Interview
+"I implement a SkipListener that inserts each skipped record into an error table with the phase — whether it failed during reading, processing, or writing — along with the record data, exception message, and timestamp. This gives us a complete audit trail. In production, we alert when skip count exceeds a threshold, investigate the root cause, and then run a separate reprocessing job that reads from the error table. In my project, we tracked about 50 skipped records per day from data quality issues in partner files. The reprocessing job ran weekly after data corrections."
 
+### 💻 Code
 ```java
-// SkipListener — captures every skipped record
 @Component
-public class FailedRecordTracker implements SkipListener<Record, Record> {
-    
+public class FailedRecordTracker implements SkipListener<Order, ProcessedOrder> {
     @Autowired private JdbcTemplate jdbc;
-    
+
     @Override
     public void onSkipInRead(Throwable t) {
-        jdbc.update(
-            "INSERT INTO failed_records(phase, error_message, error_class, created_at) "
-            + "VALUES (?, ?, ?, ?)",
-            "READ", t.getMessage(), t.getClass().getName(), LocalDateTime.now());
+        jdbc.update("INSERT INTO failed_records (phase, error_message, timestamp, status) " +
+                    "VALUES (?, ?, ?, ?)",
+                "READ", t.getMessage(), Timestamp.from(Instant.now()), "NEW");
     }
-    
+
     @Override
-    public void onSkipInProcess(Record item, Throwable t) {
-        jdbc.update(
-            "INSERT INTO failed_records(phase, record_id, record_data, "
-            + "error_message, error_class, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-            "PROCESS", String.valueOf(item.getId()), item.toString(),
-            t.getMessage(), t.getClass().getName(), LocalDateTime.now());
+    public void onSkipInProcess(Order item, Throwable t) {
+        jdbc.update("INSERT INTO failed_records (phase, record_id, record_data, error_message, " +
+                    "timestamp, status) VALUES (?, ?, ?, ?, ?, ?)",
+                "PROCESS", item.getId(), item.toString(), t.getMessage(),
+                Timestamp.from(Instant.now()), "NEW");
     }
-    
+
     @Override
-    public void onSkipInWrite(Record item, Throwable t) {
-        jdbc.update(
-            "INSERT INTO failed_records(phase, record_id, record_data, "
-            + "error_message, error_class, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-            "WRITE", String.valueOf(item.getId()), item.toString(),
-            t.getMessage(), t.getClass().getName(), LocalDateTime.now());
+    public void onSkipInWrite(ProcessedOrder item, Throwable t) {
+        jdbc.update("INSERT INTO failed_records (phase, record_id, record_data, error_message, " +
+                    "timestamp, status) VALUES (?, ?, ?, ?, ?, ?)",
+                "WRITE", item.getId(), item.toString(), t.getMessage(),
+                Timestamp.from(Instant.now()), "NEW");
     }
 }
 
 // Register in step
 @Bean
-public Step step(JobRepository repo, PlatformTransactionManager tx) {
-    return new StepBuilder("step", repo)
-            .<Record, Record>chunk(500, tx)
-            .reader(reader()).processor(processor()).writer(writer())
-            .faultTolerant()
-            .skip(Exception.class).skipLimit(1000)
-            .listener(failedRecordTracker())          // Register tracker
-            .build();
-}
-```
-
-### 🗣️ How to Explain in Interview
-
-> *"I track failed records with a SkipListener that writes to an error table. The listener has three methods: onSkipInRead, onSkipInProcess, and onSkipInWrite. Each logs the phase, the record ID and data, the exception message, and a timestamp. After the job completes, I can query the error table to see exactly which records failed, during which phase, and why. This serves dual purpose — operations can investigate and fix specific records, and we can build a reprocessing job that reads from the error table and retries failed records."*
-
-### ⚡ Key Points to Remember
-
-1. **SkipListener** = three callbacks (read, process, write)
-2. Log **everything**: phase, record, exception, timestamp
-3. **Error table** = audit trail for failed records
-4. Enable with `.faultTolerant().skip().listener()`
-5. Build **reprocessing job** that reads from error table
-
----
-
-<a id="q124"></a>
-
-## Q124. How would you cancel a running batch job?
-
-### 🔑 Quick Answer
-
-> Use **JobOperator.stop(executionId)** — it sets a flag, and the job stops **after the current chunk completes**. Status goes STARTED → STOPPING → STOPPED. A stopped job can be **restarted** later.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — How stopping works:**
-
-```
-                           stop() called here
-                                 ↓
-Chunk 1 ✅ → Chunk 2 ✅ → Chunk 3 [processing...] → Chunk 3 ✅ → STOPPED
-                                 ↑                        ↑
-                           Current chunk finishes    THEN job stops
-                           (NOT killed mid-chunk)    (clean shutdown)
-
-Status flow: STARTED → STOPPING → STOPPED
-  STOPPING = "stop requested, waiting for current chunk"
-  STOPPED  = "cleanly stopped, can restart later"
-```
-
-**Step 2 — Key behaviors:**
-
-```
-⚠️ stop() does NOT kill the job immediately!
-  → Current chunk finishes (data integrity maintained)
-  → Transactions are committed or rolled back cleanly
-  → ExecutionContext is saved (for restart)
-
-✅ STOPPED job CAN be restarted:
-  → jobLauncher.run(job, sameParams)
-  → Resumes from where it stopped
-
-❌ If you need IMMEDIATE stop (rare):
-  → Use setTerminateOnly() on StepExecution
-  → Stops after current item (not chunk)
-```
-
-### 💻 Code Example
-
-```java
-// REST endpoint to stop a job
-@RestController
-@RequestMapping("/api/jobs")
-public class JobControlController {
-    
-    @Autowired private JobOperator jobOperator;
-    
-    @PostMapping("/{executionId}/stop")
-    public ResponseEntity<String> stopJob(@PathVariable Long executionId) 
-            throws Exception {
-        jobOperator.stop(executionId);
-        return ResponseEntity.ok("Job stopping after current chunk completes...");
-    }
-    
-    @PostMapping("/{executionId}/restart")
-    public ResponseEntity<String> restartJob(@PathVariable Long executionId) 
-            throws Exception {
-        Long newExecId = jobOperator.restart(executionId);
-        return ResponseEntity.ok("Job restarted with execution ID: " + newExecId);
-    }
-}
-
-// Programmatic stop via ChunkListener (conditional)
-@Component
-public class ConditionalStopListener implements ChunkListener {
-    
-    @Override
-    public void afterChunk(ChunkContext context) {
-        // Check external condition (DB flag, config, time limit)
-        if (shouldStop()) {
-            context.getStepContext().getStepExecution()
-                    .setTerminateOnly();  // Stop after this chunk
-        }
-    }
-    
-    private boolean shouldStop() {
-        // Check DB flag, time limit, external signal, etc.
-        return false;
-    }
-}
-```
-
-### 🗣️ How to Explain in Interview
-
-> *"I use JobOperator.stop() which sets a flag for graceful shutdown. The current chunk finishes processing — we don't kill it mid-chunk because that would leave data in an inconsistent state. After the chunk commits, the job transitions from STARTED to STOPPING to STOPPED. The job can be restarted later with the same parameters — it resumes from where it stopped. I expose this through a REST endpoint so operations teams can stop jobs on demand. For conditional stops — like time limits — I use a ChunkListener that checks a condition after each chunk and calls setTerminateOnly()."*
-
-### ⚡ Key Points to Remember
-
-1. **JobOperator.stop()** = graceful (waits for current chunk)
-2. Status: STARTED → **STOPPING** → **STOPPED**
-3. STOPPED jobs **can be restarted** (resumes from checkpoint)
-4. **NOT immediate** — current chunk always completes
-5. For conditional stops → **ChunkListener** + setTerminateOnly()
-
----
-
-<a id="q125"></a>
-
-## Q125. How would you limit batch job execution time?
-
-### 🔑 Quick Answer
-
-> Two levels: **Transaction timeout** per chunk (prevents individual chunk from hanging) and **Job-level timeout** (scheduled stop after total time limit using JobOperator).
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — Chunk-level timeout:**
-
-```
-Problem: One chunk hangs forever (DB lock, network timeout)
-Fix: Transaction timeout per chunk
-
-  Chunk 1: 2 sec ✅
-  Chunk 2: 2 sec ✅
-  Chunk 3: ...waiting for DB lock... → 60 sec → TIMEOUT! → Rollback + Retry/Fail
-```
-
-**Step 2 — Job-level timeout:**
-
-```
-Problem: Job must complete within SLA (e.g., 2 hours)
-Fix: Scheduled stop after deadline
-
-  Job starts: 02:00 AM
-  Deadline: 04:00 AM (2 hours)
-  If still running at 04:00 AM → JobOperator.stop()
-  Job transitions to STOPPED → can restart in next window
-```
-
-### 💻 Code Example
-
-```java
-// Level 1: Transaction timeout per chunk (60 seconds)
-@Bean
-public Step step(JobRepository repo, PlatformTransactionManager tx) {
-    DefaultTransactionAttribute txAttr = new DefaultTransactionAttribute();
-    txAttr.setTimeout(60);  // 60 seconds per chunk transaction
-    
-    return new StepBuilder("step", repo)
-            .<Record, Record>chunk(500, tx)
+public Step processStep(JobRepository repo, PlatformTransactionManager tx) {
+    return new StepBuilder("processStep", repo)
+            .<Order, ProcessedOrder>chunk(500, tx)
             .reader(reader())
             .processor(processor())
             .writer(writer())
-            .transactionAttribute(txAttr)    // Chunk timeout
+            .faultTolerant()
+            .skip(Exception.class)
+            .skipLimit(1000)
+            .listener(failedRecordTracker)  // track skipped records
+            .build();
+}
+
+// Error table schema
+// CREATE TABLE failed_records (
+//     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+//     job_execution_id BIGINT,
+//     phase VARCHAR(10),        -- READ, PROCESS, WRITE
+//     record_id VARCHAR(50),
+//     record_data TEXT,
+//     error_message TEXT,
+//     timestamp TIMESTAMP,
+//     status VARCHAR(20)        -- NEW, INVESTIGATING, RESOLVED
+// );
+```
+
+### ⚠️ Pitfalls / Gotchas
+- SkipListener runs outside chunk transaction — error table insert won't roll back with chunk *(SkipListener chunk transaction ke bahar hai — error insert rollback nahi hoga)*
+- onSkipInRead doesn't have the item (only throwable) — log whatever info you can
+- Large record_data column — consider truncating or storing only key fields
+- Error table grows — implement cleanup for old RESOLVED records
+
+### ⚡ Remember
+- **SkipListener**: onSkipInRead, onSkipInProcess, onSkipInWrite *(teen callbacks — teen phases)*
+- Log: phase, record data, exception, timestamp
+- Error table with status lifecycle (NEW → INVESTIGATING → RESOLVED)
+- Build reprocessing job from error table
+- Alert on high skip counts
+
+### 🔗 Follow-ups
+- [Q70 → Skip logic](#q70)
+- [Q122 → Avoid duplicate processing](#q122)
+- [Q78 → Store rejected records](#q78)
+
+---
+
+## Q124. How would you cancel a running batch job?
+
+### 📝 One-Liner
+JobOperator.stop(executionId) — job stops gracefully after current chunk completes. Status: STARTED → STOPPING → STOPPED. Stopped jobs can be restarted.
+
+### 🔑 Quick Answer
+**`JobOperator.stop(executionId)`** sends a stop signal. The job doesn't stop immediately — it finishes the current chunk, commits the transaction, saves the ExecutionContext, then stops. Status transitions: STARTED → STOPPING → STOPPED. **Stopped jobs can be restarted** with the same parameters — they resume from the last checkpoint. For immediate stop (within current chunk): use `ChunkListener` + `setTerminateOnly()` on StepExecution. *(stop() graceful hai — current chunk pura hone ke baad rukta hai, data safe rehta hai)*
+
+### 📖 How It Works
+```
+Graceful Stop Flow:
+
+  Chunk 100: read → process → write → COMMIT ✅
+  Chunk 101: read → process → write → COMMIT ✅
+  Chunk 102: read → pro...                          ← stop() called HERE
+                   ...cess → write → COMMIT ✅       ← chunk finishes!
+  → ExecutionContext saved with position after chunk 102
+  → Status: STARTED → STOPPING → STOPPED
+
+  Restart later:
+  → Resumes from chunk 103 (after last committed position)
+
+Immediate Stop (within chunk):
+  StepExecution.setTerminateOnly()
+  → Current chunk abandoned (rolled back)
+  → Status: FAILED (not STOPPED)
+  → More aggressive, loses current chunk
+
+Stop API:
+  JobOperator.stop(executionId)     ← graceful
+  StepExecution.setTerminateOnly()   ← immediate (current chunk lost)
+```
+
+### 🗣️ How to Say in Interview
+"To cancel a running job, I use JobOperator.stop() which sends a graceful stop signal. The job finishes the current chunk — completes the transaction and saves the ExecutionContext — then transitions to STOPPED status. This is important because no data is lost and the job can be restarted later from the checkpoint. For urgent situations where we can't wait for the current chunk, I use setTerminateOnly() on the StepExecution inside a ChunkListener, which abandons the current chunk. In my project, we exposed stop and restart endpoints for our operations team to manage long-running jobs."
+
+### 💻 Code
+```java
+// REST endpoints for stop/restart
+@RestController
+@RequestMapping("/api/batch")
+public class BatchControlController {
+    @Autowired private JobOperator jobOperator;
+
+    @PostMapping("/stop/{executionId}")
+    public String stopJob(@PathVariable Long executionId) throws Exception {
+        jobOperator.stop(executionId);  // graceful stop
+        return "Stop signal sent. Job will stop after current chunk completes.";
+    }
+
+    @PostMapping("/restart/{executionId}")
+    public Long restartJob(@PathVariable Long executionId) throws Exception {
+        return jobOperator.restart(executionId);  // restart from checkpoint
+    }
+}
+
+// Conditional stop using ChunkListener (immediate)
+@Component
+public class ConditionalStopListener implements ChunkListener {
+    @Autowired private SomeConditionService conditionService;
+
+    @Override
+    public void afterChunk(ChunkContext context) {
+        // Check if job should stop (e.g., business hours started, resource limit reached)
+        if (conditionService.shouldStopProcessing()) {
+            StepExecution stepExecution = context.getStepContext().getStepExecution();
+            stepExecution.setTerminateOnly();  // immediate stop
+            log.info("Terminating job: condition met");
+        }
+    }
+}
+```
+
+### ⚠️ Pitfalls / Gotchas
+- stop() is NOT immediate — current chunk completes first (can take seconds to minutes) *(stop() turant nahi rokta — current chunk pura hota hai)*
+- STOPPED ≠ FAILED: STOPPED can restart, FAILED restart depends on config
+- setTerminateOnly() loses current chunk (rolls back)
+- JobOperator needs the execution ID — get it from the launch result or query metadata tables
+
+### 🆚 vs. Comparison
+| Method | Speed | Data Safety | Status | Restart |
+|--------|-------|-------------|--------|---------|
+| JobOperator.stop() | Slow (waits for chunk) | ✅ Safe | STOPPED | ✅ Yes |
+| setTerminateOnly() | Fast (within chunk) | ❌ Chunk lost | FAILED | ✅ Yes |
+| kill -9 (JVM) | Immediate | ❌ Chunk lost | STARTED (stale) | Manual recovery |
+
+### ⚡ Remember
+- **stop() = graceful** (waits for chunk, data safe) *(stop graceful hai — data safe rehta hai)*
+- **setTerminateOnly() = immediate** (chunk rolled back)
+- STARTED → STOPPING → STOPPED
+- Stopped jobs CAN restart
+- Expose stop/restart via REST for operations team
+
+### 🔗 Follow-ups
+- [Q120 → Restart after crash](#q120)
+- [Q105 → Check job status](#q105)
+- [Q119 → Multiple concurrent jobs](#q119)
+
+---
+
+## Q125. How would you limit batch job execution time?
+
+### 📝 One-Liner
+Two levels: transaction timeout per chunk (prevents hanging) and job-level timeout (scheduled JobOperator.stop() after deadline).
+
+### 🔑 Quick Answer
+**(1) Chunk-level timeout**: `DefaultTransactionAttribute.setTimeout(60)` — if a single chunk takes longer than 60 seconds (DB deadlock, network hang), the transaction is rolled back. Prevents infinite hanging. **(2) Job-level timeout**: schedule `jobOperator.stop()` to fire after the SLA deadline. If the job hasn't finished by deadline, it stops gracefully. The stopped job can be investigated and restarted. Both together = defense against hanging chunks AND overrunning jobs. *(Chunk timeout = agar ek chunk hang ho gaya, Job timeout = agar poora job slow ho gaya)*
+
+### 📖 How It Works
+```
+Two Timeout Levels:
+
+Level 1: Chunk Transaction Timeout (60 seconds)
+  Chunk 1: read → process → write → DONE (5 sec) ✅
+  Chunk 2: read → process → ☠️ DB DEADLOCK → waiting...
+    → 60 sec timeout → TransactionTimedOutException → rollback
+    → Chunk retried or skipped based on error handling config
+
+  Without timeout: chunk waits forever → job hangs indefinitely
+  With timeout:    chunk fails fast → job continues or fails gracefully
+
+Level 2: Job-Level Timeout (SLA: 2 hours)
+  Job starts at 2:00 AM
+  Schedule: stop job at 4:00 AM if still running
+  
+  Scenario A: Job completes at 3:30 AM → timer cancelled → no action
+  Scenario B: Job still running at 4:00 AM → stop() called → graceful stop
+    → STOPPED → investigate why it's slow → restart after fixing
+```
+
+### 🗣️ How to Say in Interview
+"I implement two timeout levels. For chunk-level, I set a transaction timeout of 60 seconds on the step — if a single chunk hangs due to a database deadlock or network issue, the transaction fails fast instead of waiting indefinitely. For job-level, I schedule a JobOperator.stop() call for the SLA deadline — if our 2-hour SLA is breached, the job stops gracefully. The stopped job preserves its checkpoint for restart after investigation. In my project, the chunk timeout caught a database deadlock that would have hung the job indefinitely, and the job-level timeout caught a performance regression where data volume exceeded expectations."
+
+### 💻 Code
+```java
+// Level 1: Chunk transaction timeout
+@Bean
+public Step timedStep(JobRepository repo, PlatformTransactionManager tx) {
+    DefaultTransactionAttribute txAttr = new DefaultTransactionAttribute();
+    txAttr.setTimeout(60);  // 60 seconds per chunk
+
+    return new StepBuilder("timedStep", repo)
+            .<Order, Order>chunk(500, tx)
+            .reader(reader())
+            .processor(processor())
+            .writer(writer())
+            .transactionAttribute(txAttr)  // timeout per chunk
             .build();
 }
 
 // Level 2: Job-level timeout
 @Component
 public class JobTimeoutManager {
-    
     @Autowired private JobOperator jobOperator;
-    
-    private final ScheduledExecutorService scheduler = 
-            Executors.newSingleThreadScheduledExecutor();
-    
-    public JobExecution launchWithTimeout(JobLauncher launcher, Job job,
-                                          JobParameters params,
-                                          Duration timeout) throws Exception {
-        JobExecution exec = launcher.run(job, params);
-        
-        // Schedule stop if job exceeds timeout
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+    public void launchWithTimeout(JobLauncher launcher, Job job,
+                                   JobParameters params, Duration timeout) throws Exception {
+        JobExecution execution = launcher.run(job, params);
+
+        // Schedule stop after timeout
         scheduler.schedule(() -> {
             try {
-                if (exec.isRunning()) {
-                    jobOperator.stop(exec.getId());
-                    log.warn("Job {} timed out after {}",
-                            exec.getJobInstance().getJobName(), timeout);
+                if (execution.isRunning()) {
+                    log.warn("Job {} exceeded timeout of {}. Stopping.",
+                            execution.getId(), timeout);
+                    jobOperator.stop(execution.getId());
                 }
             } catch (Exception e) {
                 log.error("Failed to stop timed-out job", e);
             }
         }, timeout.toMillis(), TimeUnit.MILLISECONDS);
-        
-        return exec;
     }
 }
 
-// Usage
-jobTimeoutManager.launchWithTimeout(
-    jobLauncher, importJob, params, Duration.ofHours(2));
+// Usage: launch with 2-hour SLA
+// jobTimeoutManager.launchWithTimeout(launcher, paymentJob, params, Duration.ofHours(2));
 ```
 
-### 🗣️ How to Explain in Interview
+### ⚠️ Pitfalls / Gotchas
+- Chunk timeout rolls back the chunk — doesn't stop the job (only that chunk fails) *(chunk timeout sirf ek chunk rollback karta hai — job nahi rokta)*
+- Job-level stop is graceful — still waits for current chunk
+- ScheduledExecutorService needs cleanup on app shutdown
+- Transaction timeout doesn't work with all drivers — test with your specific DB
 
-> *"I set timeouts at two levels. First, per-chunk transaction timeout — I set transactionAttribute with a 60-second timeout on the step. If any single chunk hangs longer than 60 seconds — say waiting for a DB lock — the transaction times out and rolls back. Second, job-level timeout — I schedule a stop using JobOperator after the SLA deadline. If the job is still running after 2 hours, it gets stopped gracefully after the current chunk. It can be restarted in the next processing window. The combination ensures no chunk hangs forever and no job exceeds its time boundary."*
+### ⚡ Remember
+- **Chunk timeout**: `DefaultTransactionAttribute.setTimeout(60)` *(chunk hang hua toh 60 sec mein rollback)*
+- **Job timeout**: scheduled `JobOperator.stop()` at SLA deadline
+- Chunk timeout → rollback 1 chunk (job continues)
+- Job timeout → graceful stop (restart possible)
+- Both together = complete timeout protection
 
-### ⚡ Key Points to Remember
-
-1. **Chunk timeout** = DefaultTransactionAttribute.setTimeout(seconds)
-2. **Job timeout** = scheduled JobOperator.stop() after deadline
-3. Chunk timeout **rolls back** the hanging chunk
-4. Job timeout **stops gracefully** (current chunk finishes)
-5. Stopped jobs **can be restarted** later
-
----
-
-> **🎯 Navigation:** [← Database & Metadata (Q110-116)](14-database-metadata.md) | [📋 All Sections](README.md)
+### 🔗 Follow-ups
+- [Q124 → Cancel running job](#q124)
+- [Q27 → Transaction management](#q27)
+- [Q92 → Performance optimization](#q92)

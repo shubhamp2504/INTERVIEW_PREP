@@ -1,643 +1,863 @@
-# 🔴 Spring Batch — Error Handling (Q70–Q78)
-
-> 🔑 Quick Answer → 📖 Step-by-Step Explanation → 🗣️ How to Say in Interview → 💻 Code → ⚡ Remember → 🔗 Follow-ups
+# ⚠️ Error Handling — Q70 to Q78
 
 ---
-
-<a id="q70"></a>
 
 ## Q70. What is skip logic in Spring Batch?
 
+### 📝 One-Liner
+Skip logic lets you ignore bad records and continue processing — the skipped item is excluded and tracked, without failing the job.
+
 ### 🔑 Quick Answer
+Skip logic tells Spring Batch: "if THIS type of exception occurs AND we haven't exceeded the skip limit, skip that item and continue." Three-step config: `.faultTolerant()` → `.skip(ExceptionClass)` → `.skipLimit(N)`. Works at all three phases: read (bad line), process (validation fail), write (constraint violation). Use `noSkip()` for exceptions that should ALWAYS fail. Always pair with `SkipListener` to log what was skipped. *(Kharab record ko chhod ke aage badho — lekin log zaroor karo)*
 
-> Skip logic lets Spring Batch **ignore bad records** and continue processing instead of failing the entire job. You configure which exceptions to skip and a maximum skip limit.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — Without skip (default):**
-
+### 📖 How It Works
 ```
-Processing 10,000 records...
-Record #4,567 has bad data → 💥 Exception
-→ Chunk rolls back → Step FAILS → Job FAILS
-→ 10,000 records = 0 processed. All because of 1 bad record.
-```
+Skip Logic at Each Phase:
 
-**Step 2 — With skip:**
-
-```
-Processing 10,000 records...
-Record #4,567 has bad data → 💥 Exception → SKIPPED
-→ Continue with record #4,568
-→ 9,999 records processed successfully!
-→ 1 record skipped (logged for investigation)
-```
-
-**Step 3 — Skip works at all three phases:**
-
-```
 READ skip:
-  Reader hits a bad CSV line → skip it, read next line
-  Tracked in: readSkipCount
+  reader.read() → FlatFileParseException → SKIP → next line
+  (reader knows exactly which line failed)
 
 PROCESS skip:
-  Processor throws ValidationException → skip this item
-  Tracked in: processSkipCount
+  processor.process(item) → ValidationException → SKIP → next item
+  (processor knows exactly which item failed)
 
-WRITE skip:
-  Writer throws DataIntegrityViolation → scan mode → find and skip bad item
-  Tracked in: writeSkipCount
+WRITE skip (SCAN MODE):
+  writer.write([A,B,C,D,E]) → ConstraintViolationException
+  → ROLLBACK entire chunk
+  → Re-write one-by-one: A✅, B✅, C❌skip, D✅, E✅
+  (writer received list, must find bad item individually)
+
+Skip tracking:
+  readSkipCount + processSkipCount + writeSkipCount = total skipCount
+  skipLimit applies to total (not per-phase)
 ```
 
-**Step 4 — Configuration:**
+### 🗣️ How to Say in Interview
+"Skip logic allows Spring Batch to ignore bad records and continue processing. I configure it with faultTolerant(), specify which exception types are skippable, and set a skipLimit as a safety net. It works differently at each phase — reads and processing skip immediately since the framework knows which item failed. Write skips trigger scan mode since the writer receives the entire chunk as a list. In my project, we skipped up to 100 validation exceptions for bad CSV records, always logging them via SkipListener to an error table for the ops team to review. We never exceeded 0.1% skip rate on normal data."
 
+### 💻 Code
 ```java
 @Bean
-public Step step(JobRepository repo, PlatformTransactionManager tx) {
-    return new StepBuilder("step", repo)
-            .<Order, Order>chunk(500, tx)
-            .reader(reader())
-            .processor(processor())
-            .writer(writer())
-            .faultTolerant()                                  // Enable fault tolerance
-            .skip(FlatFileParseException.class)               // Skip bad CSV lines
-            .skip(ValidationException.class)                  // Skip invalid data
-            .skip(DataIntegrityViolationException.class)      // Skip constraint violations
-            .noSkip(FileNotFoundException.class)              // NEVER skip this (critical)
-            .skipLimit(100)                                   // Max 100 bad records
+public Step skipStep(JobRepository repo, PlatformTransactionManager tx) {
+    return new StepBuilder("skipStep", repo)
+            .<Order, ProcessedOrder>chunk(500, tx)
+            .reader(csvReader())
+            .processor(validator())
+            .writer(dbWriter())
+            .faultTolerant()
+            // These exceptions can be skipped
+            .skip(FlatFileParseException.class)        // bad CSV line
+            .skip(ValidationException.class)            // business rule failure
+            .skip(DuplicateKeyException.class)          // duplicate in DB
+            .skipLimit(100)                              // max 100 skips total
+            // These must ALWAYS fail the job
+            .noSkip(DatabaseConnectionException.class)
+            .noSkip(FileNotFoundException.class)
+            // Log every skip
+            .listener(skipLogger())
             .build();
+}
+
+@Bean
+public SkipListener<Order, ProcessedOrder> skipLogger() {
+    return new SkipListener<>() {
+        @Override
+        public void onSkipInRead(Throwable t) {
+            log.error("SKIP in read: {}", t.getMessage());
+        }
+        @Override
+        public void onSkipInProcess(Order item, Throwable t) {
+            log.error("SKIP in process: id={}, error={}", item.getId(), t.getMessage());
+        }
+        @Override
+        public void onSkipInWrite(ProcessedOrder item, Throwable t) {
+            log.error("SKIP in write: id={}, error={}", item.getId(), t.getMessage());
+        }
+    };
 }
 ```
 
-### 🗣️ How to Explain in Interview
+### ⚠️ Pitfalls / Gotchas
+- Without `.faultTolerant()`, skip config is ignored *(faultTolerant lagana zaruri hai — bina uske skip kaam nahi karega)*
+- skipLimit is TOTAL across all phases, not per phase
+- Write skips trigger scan mode → slow (re-writes individually)
+- `noSkip()` overrides `skip()` for specific exceptions
+- `skipLimit(-1)` = unlimited skips (dangerous — can silently skip all data)
 
-> *"Skip logic allows batch jobs to handle bad records gracefully instead of failing the entire job. You enable it with faultTolerant(), specify which exceptions are safe to skip — like parse errors or validation failures — and set a maximum skip limit. If a record causes a skippable exception, Spring Batch excludes that record and continues with the rest. I always set a reasonable skip limit because if 1000 out of 10,000 records fail, that's a systemic problem, not a few bad records. And I always use a SkipListener to log every skipped record so we can fix the data."*
+### 🎯 Tricky Interview Qs
 
-### ⚡ Key Points to Remember
+**Q: What happens when skipLimit is reached?**
+The step fails immediately with `SkipLimitExceededException`. This is a safety net — too many skips usually indicate a systemic problem, not individual bad records.
 
-1. `faultTolerant()` → `skip()` → `skipLimit()` — three-step configuration
-2. Works at **read, process, and write** phases
-3. **skipLimit** = safety net (too many errors = fail the job)
-4. `noSkip()` = exceptions that should **always** fail the job
-5. Always use **SkipListener** to track what was skipped
+**Q: Does skip affect restart?**
+Skipped items are recorded. On restart, previously skipped items are NOT re-processed.
+
+### ⚡ Remember
+- `.faultTolerant().skip(Exception).skipLimit(N)` *(teen step: faultTolerant, skip, skipLimit)*
+- Works at read, process, and write phases
+- Write skip → scan mode (slow)
+- Always add SkipListener for audit
+- noSkip() for fatal exceptions
+
+### 🔗 Follow-ups
+- [Q71 → Retry logic](#q71)
+- [Q72 → Skip limit details](#q72)
+- [Q74 → Custom SkipPolicy](#q74)
 
 ---
 
-<a id="q71"></a>
-
 ## Q71. What is retry logic in Spring Batch?
 
+### 📝 One-Liner
+Retry logic re-attempts failed operations for transient errors like deadlocks and timeouts — use for errors that might succeed on the next try.
+
 ### 🔑 Quick Answer
+Retry is for TRANSIENT errors — errors that might succeed if you try again (database deadlocks, network timeouts, service temporarily unavailable). Configure with `.retry(Exception.class).retryLimit(N)`. DON'T retry permanent errors (validation failures, missing data). Combine with backoff policy to wait between retries. If all retries fail, the exception either triggers skip (if configured) or fails the step. *(Retry sirf transient errors ke liye — jo dobara try karne pe sahi ho sake)*
 
-> Retry logic makes Spring Batch **re-attempt** a failed operation before giving up. It's for **transient errors** — database deadlocks, network timeouts, service unavailability — where the second try might succeed.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — When retry makes sense:**
-
+### 📖 How It Works
 ```
-TRANSIENT errors (retry CAN help):
-  - Database deadlock → retry after other transaction releases lock
-  - Service timeout → retry when service recovers
-  - Network glitch → retry when connection re-established
-  - Optimistic lock exception → retry with latest version
+Retry Flow:
 
-PERMANENT errors (retry is USELESS):
-  - Invalid data format → will fail every time
-  - Constraint violation → data doesn't match schema
-  - Null pointer → code bug, won't self-fix
+processor.process(item) → TimeoutException
+  Attempt 1: FAILED → wait → retry
+  Attempt 2: FAILED → wait → retry  
+  Attempt 3: SUCCESS ✅ → continue processing
+
+processor.process(item) → TimeoutException
+  Attempt 1: FAILED → wait → retry
+  Attempt 2: FAILED → wait → retry
+  Attempt 3: FAILED → retryLimit exhausted
+    → skip configured? → skip item
+    → no skip? → STEP FAILED
+
+Retry vs Skip:
+  Retry: same operation tried again (transient errors)
+  Skip: operation abandoned, move to next item (data errors)
+  Best: retry first, then skip if retries exhausted
 ```
 
-**Step 2 — Configuration:**
+### 🗣️ How to Say in Interview
+"Retry logic is for transient errors — situations where the same operation might succeed on the next attempt, like database deadlocks, network timeouts, or temporary service unavailability. I configure it with the exception types that are retryable and a retry limit. I always combine retry with skip — retry first for transient errors, then skip if all retries are exhausted. In my project, we retried 3 times for database deadlocks with exponential backoff, and if it still failed, the item was skipped and logged. Never retry permanent errors like validation failures — that wastes time."
 
+### 💻 Code
 ```java
 @Bean
-public Step step(JobRepository repo, PlatformTransactionManager tx) {
-    return new StepBuilder("step", repo)
-            .<Order, Order>chunk(500, tx)
+public Step retryStep(JobRepository repo, PlatformTransactionManager tx) {
+    return new StepBuilder("retryStep", repo)
+            .<Order, ProcessedOrder>chunk(500, tx)
             .reader(reader())
             .processor(processor())
             .writer(writer())
             .faultTolerant()
-            .retry(DeadlockLoserDataAccessException.class)    // Retry deadlocks
-            .retry(ServiceUnavailableException.class)         // Retry timeouts
-            .retryLimit(3)                                    // Original + 2 retries = 3 total
+            // Retry transient errors
+            .retry(DeadlockLoserDataAccessException.class)
+            .retry(TransientDataAccessException.class)
+            .retry(SocketTimeoutException.class)
+            .retryLimit(3)
+            // After retries exhausted → skip
+            .skip(DeadlockLoserDataAccessException.class)
+            .skip(SocketTimeoutException.class)
+            .skipLimit(50)
+            // Never retry permanent errors
+            // (ValidationException NOT in retry list → fails/skips immediately)
+            .skip(ValidationException.class)
+            .listener(skipLogger())
+            .build();
+}
+
+// With backoff policy (wait between retries)
+@Bean
+public Step retryWithBackoff(JobRepository repo, PlatformTransactionManager tx) {
+    return new StepBuilder("retryWithBackoff", repo)
+            .<Order, Order>chunk(500, tx)
+            .reader(reader())
+            .writer(writer())
+            .faultTolerant()
+            .retry(TransientDataAccessException.class)
+            .retryLimit(3)
+            .backOffPolicy(new ExponentialBackOffPolicy() {{
+                setInitialInterval(1000);   // 1 sec
+                setMultiplier(2.0);          // 1s → 2s → 4s
+                setMaxInterval(10000);       // max 10 sec
+            }})
             .build();
 }
 ```
 
-**Step 3 — What happens with retry:**
+### ⚠️ Pitfalls / Gotchas
+- Don't retry permanent errors — wastes time and resources *(permanent error retry karne ka koi fayda nahi)*
+- retryLimit(3) means 3 TOTAL attempts (initial + 2 retries in Spring Retry, or 3 total in Spring Batch)
+- Without backoff, retries happen immediately — can worsen the problem (thundering herd)
+- Retry applies per ITEM, not per chunk
+- Processor must be idempotent for retry safety
 
-```
-Processing item #247:
-  Attempt 1: process(item) → 💥 DeadlockLoserDataAccessException
-  Attempt 2: process(item) → 💥 DeadlockLoserDataAccessException
-  Attempt 3: process(item) → ✅ Success! Continue normally.
+### 🆚 vs. Comparison
+| Aspect | Retry | Skip |
+|--------|-------|------|
+| For | Transient errors | Data/permanent errors |
+| Action | Try again | Abandon item |
+| Example | Deadlock, timeout | Validation failure |
+| Tracked as | (not separately tracked) | skipCount |
+| Best with | Backoff policy | SkipListener |
 
-If all 3 attempts fail:
-  → Check if exception is skippable → skip or fail
-```
+### ⚡ Remember
+- Retry = transient errors (might succeed next time) *(retry = shayad agla try kaam kare)*
+- Don't retry permanent errors (validation, missing data)
+- Combine retry + skip + backoff for production
+- retryLimit = total attempts per item
+- Always add backoff between retries
 
-**Step 4 — Retry with backoff (wait between retries):**
-
-```java
-.faultTolerant()
-.retry(ServiceTimeoutException.class)
-.retryLimit(3)
-.backOffPolicy(new ExponentialBackOffPolicy())  // Wait longer each retry
-// Retry 1: wait 100ms
-// Retry 2: wait 200ms (doubled)
-// Retry 3: wait 400ms (doubled again)
-```
-
-### 🗣️ How to Explain in Interview
-
-> *"Retry logic is for transient errors where the second or third attempt might succeed — like database deadlocks, network timeouts, or service unavailability. You configure which exceptions to retry and a retry limit. Spring Batch will re-attempt the failed item up to N times before giving up. I usually combine retry with exponential backoff — wait 100ms before first retry, 200ms before second, 400ms before third. This gives the external system time to recover. If all retries fail, the exception falls through to skip logic or fails the job."*
-
-### ⚡ Key Points to Remember
-
-1. **Retry** = for transient errors (deadlocks, timeouts)
-2. `retry()` + `retryLimit()` — configure exception + max attempts
-3. **Backoff** = wait between retries (exponential recommended)
-4. If all retries fail → falls to **skip logic** (if configured)
-5. Don't retry **permanent** errors (validation, constraint violations)
+### 🔗 Follow-ups
+- [Q70 → Skip logic](#q70)
+- [Q73 → Retry limit details](#q73)
+- [Q75 → Custom RetryPolicy](#q75)
 
 ---
-
-<a id="q72"></a>
 
 ## Q72. What is skip limit?
 
+### 📝 One-Liner
+Skip limit is the maximum total number of records that can be skipped before the step fails — it's a safety net against systemic data problems.
+
 ### 🔑 Quick Answer
+`skipLimit(N)` sets the maximum number of items that can be skipped across ALL phases (read + process + write) in a step. Once exceeded, the step fails with `SkipLimitExceededException`. It's a safety net: a few bad records (5 out of 100K) = normal; thousands of bad records = systemic problem that should stop the job. Set proportional to data size. *(Kitni records skip ho sakti hain uski limit — zyada ho jaaye toh matlab kuch galat hai)*
 
-> Skip limit is the **maximum number of records** that can be skipped before the step fails. It's a safety net — if too many records fail, something is systemically wrong and the job should stop.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — Why skip limit matters:**
-
+### 📖 How It Works
 ```
+Skip Limit Tracking:
+
 skipLimit(100):
-  Record #1 fails → skip (total: 1/100)
-  Record #500 fails → skip (total: 2/100)
-  ...
-  Record #8,000 fails → skip (total: 100/100)
-  Record #8,050 fails → 💥 SKIP LIMIT REACHED → Step FAILS
+  readSkipCount: 20  ← bad CSV lines
+  processSkipCount: 15 ← validation failures
+  writeSkipCount: 5   ← constraint violations
+  TOTAL: 40           ← under limit (100), continue ✅
 
-This prevents situations like:
-  "50% of records are failing — clearly something is WRONG
-   with the data source or the processing logic."
+  ... later ...
+  TOTAL: 100          ← reached limit!
+  Next skip attempt → SkipLimitExceededException → STEP FAILED ❌
+
+Setting Guidelines:
+| Data Size | Typical skipLimit | Reasoning |
+|-----------|------------------|-----------|
+| < 1K      | 5-10             | Few records, any skip is significant |
+| 1K-100K   | 50-100           | Normal tolerance for data quality |
+| 100K-1M   | 200-500          | Allow reasonable noise |
+| > 1M      | 500-1000         | Large datasets have more noise |
 ```
 
-**Step 2 — Guideline for setting skip limit:**
+### 🗣️ How to Say in Interview
+"Skip limit is the safety net that prevents Spring Batch from silently skipping too many records, which would indicate a systemic data quality problem rather than individual bad records. I set it proportional to the data volume — typically 0.1% of expected records. In my project processing 500K daily payment records, we set skipLimit to 500. If we ever hit that limit, it meant the input file was fundamentally corrupt and needed investigation, not processing. We also monitored the skip rate after each run — a sudden increase in skip count triggered an alert."
 
-| Scenario | Recommended Limit | Reasoning |
-|----------|------------------|-----------|
-| Clean data expected | 0-10 | Very few errors expected |
-| Some data quality issues | 50-100 | Handles known edge cases |
-| External data (messy) | 100-500 | Third-party data can be unreliable |
-| Huge dataset (100M+) | 1000-5000 | Proportional to data size |
-
-**Step 3 — Skip limit applies to ALL skip types combined:**
-
-```
-skipLimit(100) means:
-  readSkipCount + processSkipCount + writeSkipCount ≤ 100
-
-NOT 100 per phase, but 100 TOTAL.
-```
-
-### 🗣️ How to Explain in Interview
-
-> *"Skip limit is the maximum total records that can be skipped before the step fails. It's a safety net. If I'm processing 10,000 records and my skip limit is 100, the job tolerates up to 100 bad records. If the 101st bad record appears, the job fails — because that many failures suggest a systemic problem, not a few bad records. The limit applies to the total across all phases — read, process, and write skips combined. I typically set it proportional to the data size — 100 for 10K records, 1000 for 10M records."*
-
-### ⚡ Key Points to Remember
-
-1. **Maximum total skips** before step fails
-2. Applies to **all phases combined** (read + process + write)
-3. Set **proportional to data size**
-4. Too high → hides real problems; too low → job fails on minor issues
-5. Always monitor skip rate: `skipCount / readCount × 100` = skip percentage
-
----
-
-<a id="q73"></a>
-
-## Q73. What is retry limit?
-
-### 🔑 Quick Answer
-
-> Retry limit is the **maximum number of attempts** to process an item before giving up. If retryLimit=3, Spring Batch tries the original + 2 retries = 3 total attempts.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — Understanding the count:**
-
-```
-retryLimit(3) means:
-  Attempt 1: Original try     → FAILED
-  Attempt 2: First retry      → FAILED
-  Attempt 3: Second retry     → FAILED or SUCCESS
-
-Total attempts: 3 (NOT 1 original + 3 retries)
-```
-
-**Step 2 — What happens after retries exhausted:**
-
-```
-Item #247, retryLimit=3, all attempts failed:
-
-  If skip is configured for this exception → SKIP the item
-  If skip is NOT configured → Step FAILS → Job FAILS
-```
-
-**Step 3 — Combining with backoff:**
-
-```
-retryLimit=3 with exponential backoff:
-
-  Attempt 1: immediate               → FAILED
-  wait 1 second
-  Attempt 2: after 1s                → FAILED
-  wait 2 seconds (doubled)
-  Attempt 3: after 3s total          → FAILED
-  → Give up → skip or fail
-
-Total wall time for this item: ~3 seconds
-```
-
-### 🗣️ How to Explain in Interview
-
-> *"Retry limit is the total number of attempts for an item. If I set retryLimit to 3, Spring Batch tries the item 3 times total. If all 3 fail, it either skips the item if skip is configured, or fails the job. I usually combine this with exponential backoff — wait 1 second, then 2, then 4 — giving the external system time to recover. The retry limit should be small — typically 3 to 5 — because if an operation fails 5 times in a row, it's unlikely to succeed on the 6th try."*
-
-### ⚡ Key Points to Remember
-
-1. **retryLimit(3)** = 3 total attempts (not 1 + 3)
-2. After retries exhausted → **skip** (if configured) or **fail**
-3. Use **exponential backoff** between retries
-4. Keep limit small: **3-5** for most cases
-5. Only for **transient** errors
-
----
-
-<a id="q74"></a>
-
-## Q74. What is SkipPolicy?
-
-### 🔑 Quick Answer
-
-> SkipPolicy is a **custom interface** that gives you full control over skip decisions — beyond simple exception type + limit. You implement `shouldSkip(Throwable, int skipCount)` and return true/false based on your own logic.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — When default skip isn't enough:**
-
-```
-Default skip: "Skip ValidationException up to 100 times"
-  → What if you want: "Skip validation errors always, but database errors only 10 times"
-  → What if you want: "Skip errors from file A but never from file B"
-  → What if you want: "Skip only if error rate < 5%"
-
-Custom SkipPolicy solves all of these.
-```
-
-**Step 2 — The interface:**
-
+### 💻 Code
 ```java
-public interface SkipPolicy {
-    boolean shouldSkip(Throwable t, long skipCount) throws SkipLimitExceededException;
-    // t = the exception that occurred
-    // skipCount = how many items have been skipped so far
-    // return true = skip this item
-    // return false = fail the step
-}
-```
-
-**Step 3 — Custom SkipPolicy example:**
-
-```java
-public class SmartSkipPolicy implements SkipPolicy {
-    
-    private static final int MAX_DATA_ERRORS = 100;
-    private static final int MAX_SYSTEM_ERRORS = 5;
-    
-    private int dataErrorCount = 0;
-    private int systemErrorCount = 0;
-    
-    @Override
-    public boolean shouldSkip(Throwable t, long skipCount) {
-        
-        // Data errors (bad input) — tolerate up to 100
-        if (t instanceof ValidationException || 
-            t instanceof FlatFileParseException) {
-            return ++dataErrorCount <= MAX_DATA_ERRORS;
-        }
-        
-        // System errors (DB timeout) — tolerate only 5
-        if (t instanceof DataAccessException) {
-            return ++systemErrorCount <= MAX_SYSTEM_ERRORS;
-        }
-        
-        // Unknown errors — never skip
-        return false;
-    }
-}
-
-// Usage:
-.faultTolerant()
-.skipPolicy(new SmartSkipPolicy())
-```
-
-### 🗣️ How to Explain in Interview
-
-> *"SkipPolicy is a custom interface for advanced skip logic. The default skip configuration lets you specify exception types and a global skip limit, which works for most cases. But sometimes you need finer control — like allowing 100 data validation errors but only 5 database errors, because 5 database errors suggest infrastructure problems. You implement the shouldSkip method that receives the exception and current skip count, and return true to skip or false to fail. I've used this in production where different error types had different tolerance levels."*
-
-### ⚡ Key Points to Remember
-
-1. **Custom interface** for advanced skip decisions
-2. Receives **exception** and **skipCount**
-3. Returns **true** = skip, **false** = fail
-4. Replaces both `skip()` and `skipLimit()` when used
-5. Use when you need **different limits per exception type**
-
----
-
-<a id="q75"></a>
-
-## Q75. What is RetryPolicy?
-
-### 🔑 Quick Answer
-
-> RetryPolicy controls **when and how many times** to retry. The default `SimpleRetryPolicy` retries by exception type + limit, but you can create custom policies with exception maps and backoff strategies.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — Built-in retry policies:**
-
-| Policy | Behavior |
-|--------|----------|
-| `SimpleRetryPolicy` | Retry specific exceptions up to N times (default) |
-| `TimeoutRetryPolicy` | Retry until a timeout period expires |
-| `NeverRetryPolicy` | Never retry (fail immediately) |
-| `AlwaysRetryPolicy` | Always retry (careful — infinite loop!) |
-
-**Step 2 — SimpleRetryPolicy with exception map:**
-
-```java
-// Different retry limits per exception type
-Map<Class<? extends Throwable>, Boolean> retryableExceptions = new HashMap<>();
-retryableExceptions.put(DeadlockLoserDataAccessException.class, true);  // Retry
-retryableExceptions.put(ServiceTimeoutException.class, true);           // Retry
-retryableExceptions.put(NullPointerException.class, false);             // Don't retry
-
-SimpleRetryPolicy policy = new SimpleRetryPolicy(3, retryableExceptions);
-// 3 = max attempts for all retryable exceptions
-```
-
-**Step 3 — Combining with BackOffPolicy:**
-
-```java
-// Exponential backoff: wait longer each retry
-ExponentialBackOffPolicy backoff = new ExponentialBackOffPolicy();
-backoff.setInitialInterval(1000);   // First wait: 1 second
-backoff.setMultiplier(2.0);         // Double each time
-backoff.setMaxInterval(30000);      // Never wait more than 30 seconds
-
-// Retry 1: wait 1s
-// Retry 2: wait 2s
-// Retry 3: wait 4s
-// Retry 4: wait 8s (if needed)
-```
-
-### 🗣️ How to Explain in Interview
-
-> *"RetryPolicy controls the retry behavior. The default SimpleRetryPolicy retries based on exception types and a limit — like retry DeadlockException up to 3 times. You can customize with an exception map that specifies which exceptions should and shouldn't be retried. The real power comes from combining it with a BackOffPolicy — exponential backoff that waits longer between each retry, giving the external system time to recover. For database deadlocks, I use 3 retries with exponential backoff starting at 1 second."*
-
-### ⚡ Key Points to Remember
-
-1. **SimpleRetryPolicy** = most common (exception type + limit)
-2. **Exception map** = different behavior per exception type
-3. **ExponentialBackOffPolicy** = best for production
-4. **TimeoutRetryPolicy** = retry until time expires (not by count)
-5. Retry + Backoff = **best practice** for transient errors
-
----
-
-<a id="q76"></a>
-
-## Q76. How do you handle bad records in production?
-
-### 🔑 Quick Answer
-
-> Use **skip + SkipListener** to log bad records, write them to an **error table or error file**, and continue processing good records. In production, always track, log, and make bad records queryable for investigation.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — Production error handling strategy:**
-
-```
-Good record → Normal processing → Write to target ✅
-Bad record  → Skip → Log → Write to error table → Alert team ❌
-
-Never silently skip — always track what was skipped and why!
-```
-
-**Step 2 — Complete production setup:**
-
-```java
-// Step configuration
 @Bean
-public Step step(JobRepository repo, PlatformTransactionManager tx) {
-    return new StepBuilder("processOrders", repo)
+public Step limitedSkipStep(JobRepository repo, PlatformTransactionManager tx) {
+    return new StepBuilder("limitedSkipStep", repo)
             .<Order, Order>chunk(500, tx)
             .reader(reader())
             .processor(processor())
             .writer(writer())
             .faultTolerant()
             .skip(ValidationException.class)
-            .skip(DataIntegrityViolationException.class)
-            .skipLimit(100)
-            .listener(new ErrorTrackingSkipListener(errorRepository))
+            .skip(FlatFileParseException.class)
+            .skipLimit(100)   // max 100 total skips across all phases
+            .listener(new StepExecutionListener() {
+                @Override
+                public ExitStatus afterStep(StepExecution se) {
+                    double skipRate = (double) se.getSkipCount() / se.getReadCount() * 100;
+                    if (skipRate > 1.0) {
+                        log.warn("HIGH SKIP RATE: {:.1f}% — investigate data quality!", skipRate);
+                    }
+                    return se.getExitStatus();
+                }
+            })
             .build();
 }
 ```
 
-**Step 3 — SkipListener that writes to error table:**
+### ⚠️ Pitfalls / Gotchas
+- skipLimit is TOTAL (read + process + write), not per phase *(total count hai — sab phases ka combined)*
+- `skipLimit(-1)` = unlimited skips (dangerous, can skip ALL records)
+- `skipLimit(0)` = no skips allowed (same as no fault tolerance)
+- Exceeding limit throws `SkipLimitExceededException` and fails the step
+- Monitor skip rate, not just absolute count
 
-```java
-@Component
-public class ErrorTrackingSkipListener implements SkipListener<Order, Order> {
-    
-    private final JdbcTemplate jdbc;
-    
-    @Override
-    public void onSkipInRead(Throwable t) {
-        jdbc.update(
-            "INSERT INTO batch_errors (phase, error_msg, timestamp) VALUES (?, ?, ?)",
-            "READ", t.getMessage(), LocalDateTime.now()
-        );
-    }
-    
-    @Override
-    public void onSkipInProcess(Order item, Throwable t) {
-        jdbc.update(
-            "INSERT INTO batch_errors (phase, item_id, error_msg, item_data, timestamp) " +
-            "VALUES (?, ?, ?, ?, ?)",
-            "PROCESS", item.getOrderId(), t.getMessage(),
-            item.toString(), LocalDateTime.now()
-        );
-    }
-    
-    @Override
-    public void onSkipInWrite(Order item, Throwable t) {
-        jdbc.update(
-            "INSERT INTO batch_errors (phase, item_id, error_msg, item_data, timestamp) " +
-            "VALUES (?, ?, ?, ?, ?)",
-            "WRITE", item.getOrderId(), t.getMessage(),
-            item.toString(), LocalDateTime.now()
-        );
-    }
-}
-```
+### ⚡ Remember
+- Safety net: too many skips = systemic problem *(limit se zyada skip = kuch galat hai)*
+- Total across all phases (read + process + write)
+- Set proportional to data size (~0.1%)
+- `skipLimit(-1)` = unlimited (avoid in production)
+- Monitor skip rate after each run
 
-### 🗣️ How to Explain in Interview
-
-> *"In production, I never just skip and ignore. My approach is: configure skip for known exception types, implement a SkipListener that captures every skipped record with the phase (read/process/write), the item ID, the error message, and the full item data — and writes it to an error table. After the job completes, we can query that table to see exactly what failed and why. We also set alerts on the skip rate — if more than 1% of records are skipped, the on-call team is notified. Some teams prefer an error file instead of a table — that works too, especially if the business team needs to review and re-submit the records."*
-
-### ⚡ Key Points to Remember
-
-1. **Never silently skip** — always log to error table or file
-2. Track **phase + itemId + errorMessage + itemData + timestamp**
-3. Set **alerts on skip rate** (> 1% = investigate)
-4. Make errors **queryable** (error table with indexes)
-5. Give business team a way to **review and fix** bad records
+### 🔗 Follow-ups
+- [Q70 → Skip logic basics](#q70)
+- [Q73 → Retry limit](#q73)
+- [Q74 → Custom SkipPolicy for per-exception limits](#q74)
 
 ---
 
-<a id="q77"></a>
+## Q73. What is retry limit?
+
+### 📝 One-Liner
+Retry limit is the maximum number of total attempts per item — `retryLimit(3)` means try at most 3 times before giving up.
+
+### 🔑 Quick Answer
+`retryLimit(3)` means Spring Batch will attempt the operation up to 3 times total for each failing item. After exhaustion: if skip is configured for that exception → item is skipped; otherwise → step fails. Keep retry limits small (3-5) because retries are expensive. Combine with exponential backoff to avoid hammering the failing service. *(3 baar try karega — phir bhi fail toh skip ya fail)*
+
+### 📖 How It Works
+```
+retryLimit(3) behavior:
+
+Attempt 1: processor.process(item) → TimeoutException → retry
+Attempt 2: processor.process(item) → TimeoutException → retry
+Attempt 3: processor.process(item) → TimeoutException → EXHAUSTED
+  → skip configured? → skip item + continue
+  → no skip? → STEP FAILED
+
+With backoff:
+  Attempt 1 → fail → wait 1s
+  Attempt 2 → fail → wait 2s
+  Attempt 3 → fail → wait 4s → EXHAUSTED
+```
+
+### 🗣️ How to Say in Interview
+"Retry limit sets the maximum number of attempts for each failing item. I keep it at 3 for most transient errors — database deadlocks often resolve in 1-2 retries, and network timeouts in 2-3. I always combine it with exponential backoff to avoid hammering the service and with skip for cases where all retries are exhausted. In my project, we saw that 95% of deadlocks resolved within 2 retries, so retryLimit of 3 was sufficient. For external API timeouts, we used retryLimit of 3 with initial backoff of 2 seconds."
+
+### 💻 Code
+```java
+@Bean
+public Step retryLimitStep(JobRepository repo, PlatformTransactionManager tx) {
+    return new StepBuilder("retryLimitStep", repo)
+            .<Order, Order>chunk(500, tx)
+            .reader(reader())
+            .processor(apiProcessor())
+            .writer(writer())
+            .faultTolerant()
+            .retry(DeadlockLoserDataAccessException.class)
+            .retry(SocketTimeoutException.class)
+            .retryLimit(3)    // 3 total attempts per item
+            // If all retries fail → skip
+            .skip(DeadlockLoserDataAccessException.class)
+            .skip(SocketTimeoutException.class)
+            .skipLimit(50)
+            .build();
+}
+```
+
+### ⚠️ Pitfalls / Gotchas
+- retryLimit applies per ITEM, not per chunk *(har item ke liye alag count hai)*
+- High retryLimit without backoff → rapid-fire retries → worsen the problem
+- Retrying in WRITE triggers chunk rollback + re-processing (expensive)
+- Don't retry permanent errors — wastes time multiplied by retryLimit
+
+### ⚡ Remember
+- retryLimit(3) = 3 total attempts per item
+- Keep small: 3-5 for most cases *(3-5 attempts kaafi hain)*
+- Always add backoff between retries
+- After exhaustion → skip or fail
+- Per item, not per chunk
+
+### 🔗 Follow-ups
+- [Q71 → Retry logic basics](#q71)
+- [Q75 → RetryPolicy for advanced control](#q75)
+- [Q72 → Skip limit comparison](#q72)
+
+---
+
+## Q74. What is SkipPolicy?
+
+### 📝 One-Liner
+SkipPolicy is a custom interface for advanced skip decisions — different limits per exception type or conditional logic beyond simple type + count.
+
+### 🔑 Quick Answer
+`SkipPolicy` is the interface behind skip logic: it has one method `shouldSkip(Throwable, int skipCount)` that returns true (skip) or false (fail). The default `LimitCheckingItemSkipPolicy` implements the standard type + limit behavior. Create a custom SkipPolicy when you need: different limits per exception type, conditional skip based on item data, or custom logging before deciding. A custom SkipPolicy replaces BOTH `.skip()` and `.skipLimit()` config. *(Standard skip se zyada control chahiye toh custom SkipPolicy banao)*
+
+### 📖 How It Works
+```
+SkipPolicy Interface:
+
+boolean shouldSkip(Throwable exception, int skipCount)
+  ├── return true  → skip the item, continue
+  └── return false → fail the step
+
+Default: LimitCheckingItemSkipPolicy
+  → checks exception type in skip list
+  → checks skipCount < skipLimit
+
+Custom: different limits per exception
+  → ValidationException: up to 100
+  → ParseException: up to 50
+  → DataIntegrityViolation: up to 10
+```
+
+### 🗣️ How to Say in Interview
+"SkipPolicy is the interface behind Spring Batch's skip mechanism. The default implementation checks exception type and skip count. I create a custom SkipPolicy when I need different skip limits per exception type — for example, allowing 100 validation errors but only 10 constraint violations, since constraint violations are more likely to indicate a systemic issue. This gives finer control than the basic skip() configuration which shares a single limit across all exception types."
+
+### 💻 Code
+```java
+// Custom SkipPolicy with per-exception limits
+public class GranularSkipPolicy implements SkipPolicy {
+    
+    @Override
+    public boolean shouldSkip(Throwable t, int skipCount) {
+        if (t instanceof ValidationException) {
+            return skipCount < 100;   // allow up to 100 validation errors
+        }
+        if (t instanceof FlatFileParseException) {
+            return skipCount < 50;    // allow up to 50 parse errors
+        }
+        if (t instanceof DuplicateKeyException) {
+            return skipCount < 10;    // only 10 duplicates tolerated
+        }
+        // All other exceptions → don't skip, fail
+        return false;
+    }
+}
+
+// Register custom policy
+@Bean
+public Step customSkipStep(JobRepository repo, PlatformTransactionManager tx) {
+    return new StepBuilder("customSkipStep", repo)
+            .<Order, Order>chunk(500, tx)
+            .reader(reader())
+            .writer(writer())
+            .faultTolerant()
+            .skipPolicy(new GranularSkipPolicy())  // replaces skip() + skipLimit()
+            .listener(skipLogger())
+            .build();
+}
+```
+
+### ⚠️ Pitfalls / Gotchas
+- Custom SkipPolicy replaces `.skip()` and `.skipLimit()` — don't mix them *(custom policy use karo toh skip() aur skipLimit() mat lagao)*
+- `skipCount` parameter is the TOTAL skips so far (not per exception type) — track per type yourself
+- Must return false for fatal exceptions (don't skip everything)
+- Test thoroughly — wrong policy can silently skip all data
+
+### ⚡ Remember
+- Interface: `shouldSkip(Throwable, skipCount)` → true/false
+- Use for: per-exception limits, conditional logic *(alag alag exception ke liye alag limit)*
+- Replaces both skip() and skipLimit()
+- Default: LimitCheckingItemSkipPolicy
+- Test thoroughly — data safety depends on it
+
+### 🔗 Follow-ups
+- [Q70 → Basic skip logic](#q70)
+- [Q75 → RetryPolicy (similar pattern)](#q75)
+- [Q76 → Production bad record handling](#q76)
+
+---
+
+## Q75. What is RetryPolicy?
+
+### 📝 One-Liner
+RetryPolicy controls when and how many times to retry — SimpleRetryPolicy for basic count-based retry, with backoff policies for wait intervals.
+
+### 🔑 Quick Answer
+`RetryPolicy` determines if an operation should be retried. **SimpleRetryPolicy** (most common) retries based on exception type and max count. **ExponentialBackOffPolicy** adds increasing wait time between retries (1s → 2s → 4s). You can create a Map of exception → limit for per-exception retry counts. For production, always combine RetryPolicy with BackOffPolicy. *(SimpleRetryPolicy sabse common hai — exception type + count check karta hai)*
+
+### 📖 How It Works
+```
+RetryPolicy + BackOffPolicy:
+
+SimpleRetryPolicy:
+  maxAttempts: 3
+  retryableExceptions: {TimeoutException: true, DeadlockException: true}
+
+ExponentialBackOffPolicy:
+  initialInterval: 1000ms
+  multiplier: 2.0
+  maxInterval: 10000ms
+
+Combined behavior:
+  Attempt 1 → TimeoutException → wait 1s
+  Attempt 2 → TimeoutException → wait 2s
+  Attempt 3 → TimeoutException → EXHAUSTED (3 attempts done)
+```
+
+### 🗣️ How to Say in Interview
+"RetryPolicy controls retry behavior in Spring Batch. SimpleRetryPolicy is the most common — it specifies retryable exception types and maximum attempt count. I always pair it with ExponentialBackOffPolicy in production to avoid rapid-fire retries that can worsen the problem. In my project, we had a per-exception retry map — 3 retries for deadlocks with 1-second backoff, and 5 retries for external API timeouts with 2-second initial backoff and exponential increase. This gave us fine-grained control based on the error type."
+
+### 💻 Code
+```java
+// SimpleRetryPolicy with per-exception limits
+@Bean
+public Step advancedRetryStep(JobRepository repo, PlatformTransactionManager tx) {
+    // Different retry limits per exception
+    Map<Class<? extends Throwable>, Boolean> retryableExceptions = new HashMap<>();
+    retryableExceptions.put(DeadlockLoserDataAccessException.class, true);  // retry
+    retryableExceptions.put(SocketTimeoutException.class, true);             // retry
+    retryableExceptions.put(ValidationException.class, false);               // DON'T retry
+
+    SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(3, retryableExceptions);
+
+    // Exponential backoff
+    ExponentialBackOffPolicy backoff = new ExponentialBackOffPolicy();
+    backoff.setInitialInterval(1000);   // 1 second
+    backoff.setMultiplier(2.0);          // double each time
+    backoff.setMaxInterval(10000);       // cap at 10 seconds
+
+    return new StepBuilder("advancedRetryStep", repo)
+            .<Order, Order>chunk(500, tx)
+            .reader(reader())
+            .processor(processor())
+            .writer(writer())
+            .faultTolerant()
+            .retryPolicy(retryPolicy)
+            .backOffPolicy(backoff)
+            .skip(SocketTimeoutException.class)  // skip after retries exhausted
+            .skipLimit(50)
+            .build();
+}
+```
+
+### ⚠️ Pitfalls / Gotchas
+- Without backoff, retries are immediate → can worsen congestion *(bina backoff ke turant retry = problem aur badh sakti hai)*
+- SimpleRetryPolicy's maxAttempts includes the initial attempt
+- Don't mix `.retryPolicy()` with `.retry().retryLimit()` — use one or the other
+- Exponential backoff can cause long delays — set maxInterval to cap wait time
+
+### ⚡ Remember
+- SimpleRetryPolicy = exception type + count *(sabse common — type + count)*
+- ExponentialBackOffPolicy = increasing wait (1s → 2s → 4s)
+- Don't retry without backoff in production
+- Per-exception map for fine-grained control
+- maxInterval caps the wait time
+
+### 🔗 Follow-ups
+- [Q71 → Retry logic basics](#q71)
+- [Q73 → Retry limit](#q73)
+- [Q74 → SkipPolicy (similar custom pattern)](#q74)
+
+---
+
+## Q76. How do you handle bad records in production?
+
+### 📝 One-Liner
+Skip + SkipListener to log bad records to an error table or file — never silently skip; always track, alert, and make errors queryable.
+
+### 🔑 Quick Answer
+Production bad record handling strategy: **(1) Skip** the bad record (don't fail the whole job for one bad item). **(2) Log** every skip via SkipListener — write to a dedicated error table or error file. **(3) Alert** the operations team if skip rate exceeds threshold. **(4) Make errors queryable** — store in a table with timestamp, error details, original data for investigation. **(5) Reprocess** — after fixing root cause, reprocess skipped records from error table. Never silently skip. *(Skip karo, log karo, alert karo, queryable banao — kabhi chup-chaap skip mat karo)*
+
+### 📖 How It Works
+```
+Production Error Handling Pipeline:
+
+Bad Record → Skip (don't fail job)
+    ↓
+SkipListener → Write to ERROR_RECORDS table
+    ↓
+Post-Step Listener → Check skip rate
+    ↓
+skip rate > 1%? → ALERT ops team
+    ↓
+Ops team → Query ERROR_RECORDS → Fix root cause
+    ↓
+Reprocess → Run separate job on error records
+
+ERROR_RECORDS table:
+| ID | JOB_EXEC_ID | STEP | PHASE | ITEM_DATA | ERROR_MSG | TIMESTAMP |
+| 1  | 456         | processStep | WRITE | {order:123} | Duplicate | 2024-01-15 |
+```
+
+### 🗣️ How to Say in Interview
+"In production, I follow a five-step approach for bad records: skip, log, alert, query, reprocess. First, configure skip for expected error types so one bad record doesn't fail the entire job. Second, use SkipListener to write every skipped record to a dedicated ERROR_RECORDS table with the original item data, error message, phase, and timestamp. Third, monitor skip rate after each step — if it exceeds 1%, trigger an alert. Fourth, the ops team queries the error table to investigate. Fifth, after fixing the root cause, we run a separate reprocessing job on the error records. In my project, this approach reduced our incident response time from hours to minutes because errors were immediately visible and queryable."
+
+### 💻 Code
+```java
+@Component
+public class ProductionSkipListener implements SkipListener<Order, ProcessedOrder> {
+
+    @Autowired private ErrorRecordRepository errorRepo;
+    @Autowired private AlertService alertService;
+
+    @Override
+    public void onSkipInRead(Throwable t) {
+        errorRepo.save(ErrorRecord.builder()
+                .phase("READ")
+                .errorMessage(t.getMessage())
+                .errorType(t.getClass().getSimpleName())
+                .timestamp(LocalDateTime.now())
+                .build());
+    }
+
+    @Override
+    public void onSkipInProcess(Order item, Throwable t) {
+        errorRepo.save(ErrorRecord.builder()
+                .phase("PROCESS")
+                .itemData(toJson(item))
+                .errorMessage(t.getMessage())
+                .errorType(t.getClass().getSimpleName())
+                .timestamp(LocalDateTime.now())
+                .build());
+    }
+
+    @Override
+    public void onSkipInWrite(ProcessedOrder item, Throwable t) {
+        errorRepo.save(ErrorRecord.builder()
+                .phase("WRITE")
+                .itemData(toJson(item))
+                .errorMessage(t.getMessage())
+                .errorType(t.getClass().getSimpleName())
+                .timestamp(LocalDateTime.now())
+                .build());
+    }
+}
+
+// Post-step alert
+@Bean
+public StepExecutionListener skipRateMonitor() {
+    return new StepExecutionListener() {
+        @Override
+        public ExitStatus afterStep(StepExecution se) {
+            if (se.getReadCount() > 0) {
+                double skipRate = (double) se.getSkipCount() / se.getReadCount() * 100;
+                if (skipRate > 1.0) {
+                    alertService.sendAlert("HIGH SKIP RATE: " + skipRate + "% in " + 
+                        se.getStepName());
+                }
+            }
+            return se.getExitStatus();
+        }
+    };
+}
+```
+
+### ⚠️ Pitfalls / Gotchas
+- NEVER skip silently — always log and alert *(chup-chaap skip karna = data loss — kabhi mat karo)*
+- Error table inserts should be in separate transaction (not the chunk transaction)
+- Large error messages → truncate to fit DB column
+- Reprocessing job should be idempotent (safe to run multiple times)
+
+### ⚡ Remember
+- Five steps: skip → log → alert → query → reprocess
+- SkipListener writes to ERROR_RECORDS table *(har skip ka record rakho)*
+- Monitor skip rate (> 1% = alert)
+- Error table: queryable by phase, error type, timestamp
+- Never skip silently in production
+
+### 🔗 Follow-ups
+- [Q77 → Logging failed records](#q77)
+- [Q78 → Storing rejected records](#q78)
+- [Q70 → Skip logic configuration](#q70)
+
+---
 
 ## Q77. How do you log failed records?
 
+### 📝 One-Liner
+Use SkipListener to capture skipped items at each phase, then log to file, database error table, or monitoring system.
+
 ### 🔑 Quick Answer
+Three logging destinations: **(1) Log file** — use SLF4J logger in SkipListener for immediate visibility. **(2) Error database table** — store structured error data for querying and reporting. **(3) Error CSV file** — write a parallel error file alongside main output for easy review. For production, use both log file (for real-time monitoring) AND error table (for querying and reprocessing). *(SkipListener se log file, error table, ya error CSV mein likho)*
 
-> Implement **SkipListener** (for skipped records), **ItemReadListener** / **ItemWriteListener** (for all records), or write to an **error database table**. The most production-ready approach is SkipListener + error table.
+### 📖 How It Works
+```
+SkipListener → Three Output Channels:
 
-### 📖 Step-by-Step Explanation
+onSkipInRead(Throwable t):
+  ├── log.error("Skip in read: {}", t.getMessage())    → log file
+  ├── errorRepo.save(new ErrorRecord(...))              → error table
+  └── errorWriter.write(rawLine + "," + t.getMessage()) → error CSV
 
-**Step 1 — Three approaches:**
+onSkipInProcess(Order item, Throwable t):
+  ├── log.error("Skip in process: id={}", item.getId()) → log file
+  ├── errorRepo.save(new ErrorRecord(item, t))          → error table
+  └── errorWriter.write(item.toCsv() + "," + error)    → error CSV
 
-| Approach | What it captures | Best for |
-|----------|-----------------|----------|
-| **SkipListener** | Only skipped records | Production error tracking |
-| **ItemReadListener.onReadError()** | All read errors | Debugging read phase |
-| **ItemWriteListener.onWriteError()** | All write errors | Debugging write phase |
-| **Log files (SLF4J)** | Custom logging | Development/debugging |
+onSkipInWrite(ProcessedOrder item, Throwable t):
+  ├── log.error("Skip in write: id={}", item.getId())  → log file
+  ├── errorRepo.save(new ErrorRecord(item, t))          → error table
+  └── errorWriter.write(item.toCsv() + "," + error)    → error CSV
+```
 
-**Step 2 — SkipListener (recommended for production):**
+### 🗣️ How to Say in Interview
+"I use SkipListener to log failed records through multiple channels. For real-time visibility, I log to the application log file using SLF4J. For querying and analysis, I write to a dedicated error table with item data, error message, and timestamp. In my project, we also generated an error CSV file alongside the main output — our operations team could open it in Excel for quick review. The error table was the primary source for our reprocessing pipeline, while the log file triggered real-time alerts through our log aggregation system."
 
-Already shown in Q76 — this is the most common and recommended approach.
-
-**Step 3 — Adding SLF4J logging for development:**
-
+### 💻 Code
 ```java
 @Component
-@Slf4j
-public class LoggingSkipListener implements SkipListener<Order, Order> {
+public class MultiChannelSkipListener implements SkipListener<Order, ProcessedOrder> {
+
+    private static final Logger log = LoggerFactory.getLogger(MultiChannelSkipListener.class);
     
-    @Override
-    public void onSkipInRead(Throwable t) {
-        log.error("SKIP IN READ: {}", t.getMessage());
-    }
-    
+    @Autowired private ErrorRecordRepository errorRepo;
+    private FlatFileItemWriter<String> errorFileWriter;
+
     @Override
     public void onSkipInProcess(Order item, Throwable t) {
-        log.error("SKIP IN PROCESS: OrderId={}, Error={}", 
-                  item.getOrderId(), t.getMessage());
+        // Channel 1: Log file (real-time monitoring)
+        log.error("SKIP [PROCESS] id={}, error={}, type={}", 
+            item.getId(), t.getMessage(), t.getClass().getSimpleName());
+
+        // Channel 2: Error table (queryable)
+        errorRepo.save(new ErrorRecord(
+            "PROCESS", item.getId(), toJson(item), 
+            t.getMessage(), LocalDateTime.now()));
+
+        // Channel 3: Error file (easy review)
+        try {
+            errorFileWriter.write(new Chunk<>(
+                item.getId() + "|" + t.getMessage() + "|" + item.toCsv()));
+        } catch (Exception e) {
+            log.error("Failed to write error record to file", e);
+        }
     }
-    
-    @Override
-    public void onSkipInWrite(Order item, Throwable t) {
-        log.error("SKIP IN WRITE: OrderId={}, Error={}", 
-                  item.getOrderId(), t.getMessage());
+}
+
+// Annotation-based listener (simpler)
+@Component
+public class SimpleSkipLogger {
+
+    @OnSkipInRead
+    public void onSkipRead(Throwable t) {
+        log.error("Skipped in read: {}", t.getMessage());
+    }
+
+    @OnSkipInProcess
+    public void onSkipProcess(Order item, Throwable t) {
+        log.error("Skipped in process: id={} error={}", item.getId(), t.getMessage());
+    }
+
+    @OnSkipInWrite
+    public void onSkipWrite(ProcessedOrder item, Throwable t) {
+        log.error("Skipped in write: id={} error={}", item.getId(), t.getMessage());
     }
 }
 ```
 
-### 🗣️ How to Explain in Interview
+### ⚠️ Pitfalls / Gotchas
+- Error logging should NOT throw exceptions — catch and log separately *(error log mein exception aaye toh catch karo — job fail nahi hona chahiye)*
+- `onSkipInRead` doesn't have the item (only exception) because read failed before creating object
+- Use separate transaction for error table writes (don't participate in chunk transaction)
+- Annotation listeners (`@OnSkipInRead`) are simpler but less flexible
 
-> *"For logging failed records, I use a layered approach. SkipListener is the primary mechanism — it captures the actual item that was skipped along with the exception. In development, I log to SLF4J. In production, I write to an error database table with structured columns — item ID, phase, error message, timestamp — so the support team can query and investigate. I also set up structured logging with MDC (Mapped Diagnostic Context) to include the job ID and step name in every log entry, making it easy to correlate logs with specific job runs."*
+### ⚡ Remember
+- Three channels: log file + error table + error CSV
+- `onSkipInRead` → only Throwable (no item) *(read skip mein item nahi milta)*
+- `onSkipInProcess` → item + Throwable
+- `onSkipInWrite` → processed item + Throwable
+- Error logging must not fail the main job
 
-### ⚡ Key Points to Remember
-
-1. **SkipListener** = primary mechanism for skip tracking
-2. **Error table** = production standard for queryable errors
-3. **SLF4J logs** = supplementary for debugging
-4. Include **item ID + phase + error + timestamp** in every log
-5. Use **MDC** (jobId, stepName) for log correlation
+### 🔗 Follow-ups
+- [Q76 → Production bad record strategy](#q76)
+- [Q78 → Storing rejected records for reprocessing](#q78)
+- [Q70 → Skip logic setup](#q70)
 
 ---
-
-<a id="q78"></a>
 
 ## Q78. How do you store rejected records for later processing?
 
+### 📝 One-Liner
+Write rejected records to a dedicated error table with full item data, error details, and status — then run a reprocessing job on that table.
+
 ### 🔑 Quick Answer
+Store rejected records in a queryable error table: item data (as JSON), error message, error type, phase, timestamp, and a `status` field (PENDING → REPROCESSED / IGNORED). After fixing the root cause, run a separate reprocessing job that reads from the error table (status=PENDING), processes the items, and updates status. For file-based flows, write an error CSV file alongside the main output. *(Error table mein rakho — status field se track karo — baad mein reprocess karo)*
 
-> Four approaches: **Error database table** (most common), **error file** (CSV/JSON), **dead letter queue** (messaging), or **staging table** with status flag. All use SkipListener to capture rejected items.
+### 📖 How It Works
+```
+Rejected Record Lifecycle:
 
-### 📖 Step-by-Step Explanation
+Main Job → skip item → SkipListener → INSERT into ERROR_RECORDS (status=PENDING)
+                                           ↓
+Ops Team → query ERROR_RECORDS → investigate root cause → fix
+                                           ↓
+Reprocess Job → READ from ERROR_RECORDS (status=PENDING)
+             → process item → write to main table
+             → UPDATE ERROR_RECORDS set status=REPROCESSED
 
-**Step 1 — Approach comparison:**
-
-| Approach | Best For | Retry Possible? |
-|----------|---------|----------------|
-| **Error DB table** | Most applications | ✅ Query and re-process |
-| **Error CSV file** | Business review (Excel) | ✅ Re-import the file |
-| **Dead letter queue** | Event-driven systems | ✅ Automatic retry |
-| **Staging table + status** | Complex workflows | ✅ Update status and re-run |
-
-**Step 2 — Error table approach (most common):**
-
-```sql
-CREATE TABLE batch_failed_records (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    job_execution_id BIGINT,
-    step_name VARCHAR(100),
-    phase VARCHAR(10),          -- READ, PROCESS, WRITE
-    item_id VARCHAR(100),
-    item_data TEXT,              -- Full serialized item
-    error_message TEXT,
-    error_class VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- After job completes, query:
-SELECT item_id, error_message, COUNT(*) 
-FROM batch_failed_records 
-WHERE job_execution_id = 123
-GROUP BY error_message;
+ERROR_RECORDS schema:
+| Column | Type | Description |
+|--------|------|-------------|
+| id | BIGINT | Auto-increment PK |
+| job_execution_id | BIGINT | Which job run |
+| step_name | VARCHAR | Which step |
+| phase | VARCHAR | READ/PROCESS/WRITE |
+| item_data | TEXT (JSON) | Original item as JSON |
+| error_message | VARCHAR | Exception message |
+| error_type | VARCHAR | Exception class name |
+| status | VARCHAR | PENDING/REPROCESSED/IGNORED |
+| created_at | TIMESTAMP | When skipped |
+| reprocessed_at | TIMESTAMP | When reprocessed (nullable) |
 ```
 
-**Step 3 — Re-processing failed records:**
+### 🗣️ How to Say in Interview
+"I store rejected records in a dedicated ERROR_RECORDS table with the full item data serialized as JSON, error details, and a status field — initially PENDING. The ops team queries this table to investigate patterns. After fixing the root cause, we run a separate reprocessing job that reads PENDING records from the error table, processes them, writes to the main table, and updates the status to REPROCESSED. In my project, this pattern recovered 95% of rejected records — only 5% were genuinely invalid and marked as IGNORED after manual review."
 
+### 💻 Code
+```java
+// Error record entity
+@Entity
+@Table(name = "error_records")
+public class ErrorRecord {
+    @Id @GeneratedValue
+    private Long id;
+    private Long jobExecutionId;
+    private String stepName;
+    private String phase;           // READ, PROCESS, WRITE
+    @Column(columnDefinition = "TEXT")
+    private String itemData;        // JSON-serialized item
+    private String errorMessage;
+    private String errorType;       // Exception class name
+    private String status;          // PENDING, REPROCESSED, IGNORED
+    private LocalDateTime createdAt;
+    private LocalDateTime reprocessedAt;
+}
+
+// SkipListener stores rejected records
+@Component
+public class RejectedRecordLogger implements SkipListener<Order, ProcessedOrder> {
+    @Autowired private ErrorRecordRepository repo;
+    @Autowired private ObjectMapper mapper;
+
+    @Override
+    public void onSkipInProcess(Order item, Throwable t) {
+        repo.save(ErrorRecord.builder()
+            .phase("PROCESS")
+            .itemData(mapper.writeValueAsString(item))
+            .errorMessage(t.getMessage())
+            .errorType(t.getClass().getSimpleName())
+            .status("PENDING")
+            .createdAt(LocalDateTime.now())
+            .build());
+    }
+}
+
+// Reprocessing job
+@Bean
+public Job reprocessJob(JobRepository repo, Step reprocessStep) {
+    return new JobBuilder("reprocessFailedRecords", repo)
+            .start(reprocessStep)
+            .build();
+}
+
+@Bean
+public Step reprocessStep(JobRepository repo, PlatformTransactionManager tx) {
+    return new StepBuilder("reprocessStep", repo)
+            .<ErrorRecord, Order>chunk(100, tx)
+            .reader(errorTableReader())      // read PENDING records
+            .processor(reprocessProcessor()) // deserialize + process
+            .writer(mainTableWriter())       // write to main table
+            .listener(reprocessStatusUpdater()) // update status
+            .build();
+}
 ```
-Option 1: Fix data, run a separate "cleanup" batch job that reads from error table
-Option 2: Fix source data, re-run the whole job (skip already-processed records)
-Option 3: Manual review by business team, update source, re-trigger
-```
 
-### 🗣️ How to Explain in Interview
+### ⚠️ Pitfalls / Gotchas
+- Reprocess job must be idempotent — safe to run multiple times *(reprocess job idempotent hona chahiye)*
+- Store item as JSON, not Java serialization (survives class changes)
+- Error table can grow large — add retention policy (archive/delete old records)
+- Use separate datasource connection for error writes to avoid chunk transaction interference
 
-> *"I store rejected records in an error database table with columns for the job execution ID, step name, phase, item ID, full item data, error message, and timestamp. After the job runs, I can query this table to see a summary of failures — which items failed, at what phase, and why. For re-processing, I either fix the source data and re-run the job — which is possible because Spring Batch only processes items it hasn't committed yet — or I run a separate cleanup job that reads from the error table, applies fixes, and writes to the target. In messaging systems, a dead letter queue is the natural choice for rejected items."*
+### ⚡ Remember
+- Error table: item_data (JSON) + error + status (PENDING/REPROCESSED) *(JSON mein save karo — class badle toh bhi kaam kare)*
+- Reprocessing job reads PENDING → processes → updates status
+- Always queryable by ops team
+- Retention policy for table growth
+- Reprocess job must be idempotent
 
-### ⚡ Key Points to Remember
-
-1. **Error table** = most versatile (query, analyze, re-process)
-2. Include **full item data** for re-processing
-3. Include **job_execution_id** for correlation
-4. Build a **summary query** for quick analysis
-5. Plan for **re-processing** from day one
-
----
-
-> **🎯 Navigation:** [← Transactions & Restart (Q63-69)](07-transactions-restart.md) | [Next → Tasklet (Q79-83)](09-tasklet.md) | [📋 All Sections](README.md)
+### 🔗 Follow-ups
+- [Q76 → Production error handling strategy](#q76)
+- [Q77 → Logging failed records](#q77)
+- [Q117 → Production scenarios](#q117)

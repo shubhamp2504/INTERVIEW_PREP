@@ -1,417 +1,609 @@
-# 🟡 Spring Batch — Database & Metadata Tables (Q110–Q116)
-
-> 🔑 Quick Answer → 📖 Step-by-Step Explanation → 🗣️ How to Say in Interview → 💻 Code → ⚡ Remember → 🔗 Follow-ups
+# 🟡 Database & Metadata Tables — Q110 to Q116
 
 ---
-
-<a id="q110"></a>
 
 ## Q110. What tables does Spring Batch create?
 
+### 📝 One-Liner
+6 metadata tables + 3 sequence tables = 9 total. Core hierarchy: JOB_INSTANCE → JOB_EXECUTION → STEP_EXECUTION, plus params and context tables.
+
 ### 🔑 Quick Answer
+**6 tables**: **(1) BATCH_JOB_INSTANCE** — unique job identity (name + params hash). **(2) BATCH_JOB_EXECUTION** — each attempt to run an instance. **(3) BATCH_JOB_EXECUTION_PARAMS** — parameters per execution. **(4) BATCH_JOB_EXECUTION_CONTEXT** — job-level shared state (across steps). **(5) BATCH_STEP_EXECUTION** — per-step detailed stats (read/write/skip counts). **(6) BATCH_STEP_EXECUTION_CONTEXT** — step-level state (reader position for restart). **3 sequences**: for generating IDs. These tables enable restart, monitoring, and duplicate prevention. *(6 tables + 3 sequences = 9 total — ye sab automatically create hote hain)*
 
-> **6 metadata tables** + **3 sequence tables**. The core tables are: BATCH_JOB_INSTANCE (unique jobs), BATCH_JOB_EXECUTION (each run attempt), BATCH_STEP_EXECUTION (step-level stats), BATCH_JOB_EXECUTION_PARAMS (parameters), and two EXECUTION_CONTEXT tables (state for restart).
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — The complete schema:**
-
+### 📖 How It Works
 ```
-BATCH_JOB_INSTANCE ──────────── "What job was defined?"
-  │                               One row per unique Job + Params combo
+Schema Hierarchy:
+
+BATCH_JOB_INSTANCE (unique identity)
+  │ JOB_NAME + JOB_KEY (hash of identifying params)
   │
-  └──→ BATCH_JOB_EXECUTION ──── "Each attempt to run that job"
-        │                         COMPLETED, FAILED, or STOPPED
-        │
-        ├──→ BATCH_JOB_EXECUTION_PARAMS ── "What parameters were passed?"
-        │                                    file=/data/march.csv, date=2026-03-15
-        │
-        ├──→ BATCH_JOB_EXECUTION_CONTEXT ─ "Job-level shared state"
-        │                                    Data shared between steps
-        │
-        └──→ BATCH_STEP_EXECUTION ──────── "Each step's detailed stats"
-              │                              Read: 50000, Write: 49500, Skip: 500
-              │
-              └──→ BATCH_STEP_EXECUTION_CONTEXT ── "Step-level state for restart"
-                                                     FlatFileReader.read.count=25000
+  ├── BATCH_JOB_EXECUTION (each attempt)
+  │   │ STATUS, START_TIME, END_TIME, EXIT_CODE, EXIT_MESSAGE
+  │   │
+  │   ├── BATCH_JOB_EXECUTION_PARAMS (parameters)
+  │   │   PARAMETER_NAME, PARAMETER_TYPE, PARAMETER_VALUE, IDENTIFYING
+  │   │
+  │   ├── BATCH_JOB_EXECUTION_CONTEXT (job-level shared state)
+  │   │   SHORT_CONTEXT (JSON: data shared between steps)
+  │   │
+  │   └── BATCH_STEP_EXECUTION (per-step stats)
+  │       │ STEP_NAME, STATUS, READ_COUNT, WRITE_COUNT, SKIP_COUNT,
+  │       │ FILTER_COUNT, COMMIT_COUNT, ROLLBACK_COUNT
+  │       │
+  │       └── BATCH_STEP_EXECUTION_CONTEXT (step-level state)
+  │           SHORT_CONTEXT (JSON: reader position for restart)
+
+Sequences:
+  BATCH_JOB_SEQ, BATCH_JOB_EXECUTION_SEQ, BATCH_STEP_EXECUTION_SEQ
+
+Table Purposes:
+  JOB_INSTANCE    → "What job?" (identity + uniqueness)
+  JOB_EXECUTION   → "How did it go?" (status, timing)
+  STEP_EXECUTION  → "What happened in detail?" (counts)
+  *_CONTEXT       → "Where were we?" (restart state)
+  *_PARAMS        → "With what inputs?" (parameters)
 ```
 
-**Step 2 — What each table stores:**
+### 🗣️ How to Say in Interview
+"Spring Batch creates 6 metadata tables and 3 sequence tables. The hierarchy flows from BATCH_JOB_INSTANCE — which stores unique job identities based on job name and parameter hash — to BATCH_JOB_EXECUTION which records each attempt to run that instance. Each execution links to its parameters, a job-level context for sharing data between steps, and BATCH_STEP_EXECUTION which stores detailed per-step statistics like read, write, skip, and rollback counts. The step execution context stores the reader position enabling restart from where it left off. These tables are the backbone of Spring Batch's restartability, monitoring, and duplicate prevention."
 
-| Table | Purpose | Key Data |
-|-------|---------|----------|
-| BATCH_JOB_INSTANCE | Unique job identity | job_name + key (hash of params) |
-| BATCH_JOB_EXECUTION | Each run attempt | status, start/end time, exit_code |
-| BATCH_JOB_EXECUTION_PARAMS | Parameters per run | param name, type, value, identifying? |
-| BATCH_JOB_EXECUTION_CONTEXT | Job-level state | shared data between steps (JSON) |
-| BATCH_STEP_EXECUTION | Step-level stats | read/write/skip/commit/rollback counts |
-| BATCH_STEP_EXECUTION_CONTEXT | Step-level state | reader position, progress (JSON) |
-| BATCH_JOB_SEQ | Sequence | next job instance ID |
-| BATCH_JOB_EXECUTION_SEQ | Sequence | next job execution ID |
-| BATCH_STEP_EXECUTION_SEQ | Sequence | next step execution ID |
+### 💻 Code
+```java
+// Auto-create tables (Spring Boot)
+// spring.batch.jdbc.initialize-schema=always  (dev)
+// spring.batch.jdbc.initialize-schema=never   (production — use Flyway/Liquibase)
 
-### 🗣️ How to Explain in Interview
+// Manual creation — use scripts from Spring Batch:
+// org/springframework/batch/core/schema-*.sql
+// e.g., schema-mysql.sql, schema-postgresql.sql, schema-h2.sql
 
-> *"Spring Batch creates 6 metadata tables and 3 sequence tables. At the top level, BATCH_JOB_INSTANCE stores unique jobs — one row per unique job name plus identifying parameters. Below that, BATCH_JOB_EXECUTION stores each run attempt — if a job fails and restarts, that's two execution rows for one instance. Each execution has PARAMS for the input parameters, and CONTEXT for job-level shared state. Then BATCH_STEP_EXECUTION stores detailed per-step statistics — read count, write count, skip count, commit count, rollback count. And STEP_EXECUTION_CONTEXT stores the step's internal state like the reader position — this is what enables restart from the failure point."*
+// Query all tables
+// SELECT table_name FROM information_schema.tables
+// WHERE table_name LIKE 'BATCH_%';
+// → BATCH_JOB_INSTANCE
+// → BATCH_JOB_EXECUTION
+// → BATCH_JOB_EXECUTION_PARAMS
+// → BATCH_JOB_EXECUTION_CONTEXT
+// → BATCH_STEP_EXECUTION
+// → BATCH_STEP_EXECUTION_CONTEXT
+// → BATCH_JOB_SEQ
+// → BATCH_JOB_EXECUTION_SEQ
+// → BATCH_STEP_EXECUTION_SEQ
+```
 
-### ⚡ Key Points to Remember
+### ⚠️ Pitfalls / Gotchas
+- `initialize-schema=always` in production can DROP and recreate tables — use `never` with Flyway *(production mein always mat use karo — data ud jayega)*
+- Tables grow indefinitely — implement periodic cleanup
+- For remote partitioning, all JVMs must share the SAME metadata database
+- H2 (in-memory) loses all metadata on restart — use real DB for production
 
-1. **6 tables** + 3 sequences = 9 total
-2. **JOB_INSTANCE** = unique identity (name + params)
-3. **JOB_EXECUTION** = each attempt (1 instance → N executions)
-4. **STEP_EXECUTION** = detailed counts (read/write/skip/commit)
-5. **EXECUTION_CONTEXT** = state for restart (reader position)
+### ⚡ Remember
+- **6 tables + 3 sequences** *(6 tables + 3 sequences = 9 total)*
+- Hierarchy: INSTANCE → EXECUTION → STEP_EXECUTION
+- INSTANCE = identity, EXECUTION = attempt, STEP = details
+- CONTEXT tables = restart state
+- Production: `initialize-schema=never` + Flyway
+
+### 🔗 Follow-ups
+- [Q111 → BATCH_JOB_INSTANCE details](#q111)
+- [Q112 → BATCH_JOB_EXECUTION details](#q112)
+- [Q113 → BATCH_STEP_EXECUTION details](#q113)
 
 ---
-
-<a id="q111"></a>
 
 ## Q111. What is BATCH_JOB_INSTANCE?
 
+### 📝 One-Liner
+Stores unique job identities — each row = unique combination of job name + identifying parameters (JOB_KEY = MD5 hash of params).
+
 ### 🔑 Quick Answer
+BATCH_JOB_INSTANCE stores unique job identities. Uniqueness is determined by **job name + JOB_KEY** (MD5 hash of identifying parameters). Same job name + same identifying params = same instance → cannot re-run if COMPLETED. Different params = new instance → always allowed. Key columns: JOB_INSTANCE_ID, VERSION, JOB_NAME, JOB_KEY. If a COMPLETED job is launched with same params → `JobInstanceAlreadyCompleteException`. If FAILED → restart allowed (same instance, new execution). *(Ek job name + same params = same instance — COMPLETED ho toh dobara nahi chalega)*
 
-> Stores **unique job identities**. Each row = one unique combination of job name + identifying parameters. If you run the same job with the same params, it's the **same instance** (not a new row).
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — How uniqueness works:**
-
+### 📖 How It Works
 ```
-Run 1: jobName="dailyReport", params={date:"2026-03-15"}
-  → Creates INSTANCE ID=1, JOB_KEY=hash("date=2026-03-15")
+BATCH_JOB_INSTANCE Table:
+  JOB_INSTANCE_ID | VERSION | JOB_NAME    | JOB_KEY
+  1               | 0       | paymentJob  | abc123...  (hash of date=2024-01-01)
+  2               | 0       | paymentJob  | def456...  (hash of date=2024-01-02)
+  3               | 0       | reportJob   | abc123...  (hash of type=monthly)
 
-Run 2: jobName="dailyReport", params={date:"2026-03-16"}
-  → Creates INSTANCE ID=2, JOB_KEY=hash("date=2026-03-16")
-  → Different params → NEW instance
+Uniqueness via JOB_KEY (MD5 hash of identifying params):
+  paymentJob + {date=2024-01-01} → JOB_KEY = abc123
+  paymentJob + {date=2024-01-02} → JOB_KEY = def456 (different!)
+  paymentJob + {date=2024-01-01} → JOB_KEY = abc123 (SAME → rejected if completed)
 
-Run 3: jobName="dailyReport", params={date:"2026-03-15"}
-  → Same params as Run 1 → SAME INSTANCE ID=1
-  → If Run 1 COMPLETED → error (can't re-run completed instance)
-  → If Run 1 FAILED → creates new execution under same instance (restart)
-```
-
-**Step 2 — Table columns:**
-
-```sql
-SELECT * FROM BATCH_JOB_INSTANCE;
-
-| JOB_INSTANCE_ID | VERSION | JOB_NAME       | JOB_KEY                          |
-|-----------------|---------|----------------|----------------------------------|
-| 1               | 0       | dailyReport    | d41d8cd98f00b204e9800998ecf8427e |
-| 2               | 0       | dailyReport    | 5ab2c8d7e1f3a9b4c6d8e0f2a4b6c8d0 |
-| 3               | 0       | monthlyBilling | a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6 |
-
-JOB_KEY = MD5 hash of identifying parameters
-Same JOB_NAME + same JOB_KEY = same instance (rejected if already COMPLETED)
+Scenarios:
+  1. New params → new instance → ✅ always runs
+  2. Same params + COMPLETED → ❌ JobInstanceAlreadyCompleteException
+  3. Same params + FAILED → ✅ restart (new execution for same instance)
 ```
 
-### 🗣️ How to Explain in Interview
+### 🗣️ How to Say in Interview
+"BATCH_JOB_INSTANCE stores the unique identity of each job run, determined by job name plus a JOB_KEY which is an MD5 hash of the identifying parameters. If I launch a job with the same parameters and the previous instance completed successfully, Spring Batch throws JobInstanceAlreadyCompleteException — this prevents duplicate processing. If the previous instance failed, it allows a restart by creating a new execution under the same instance. In my project, we use the processing date as an identifying parameter, so each day creates a new instance while preventing accidental re-runs of the same day's data."
 
-> *"BATCH_JOB_INSTANCE stores unique job identities. Uniqueness is determined by job name plus the hash of identifying parameters. If I run a daily report with date=2026-03-15, it creates instance 1. Running with date=2026-03-16 creates instance 2 — different params, new instance. But running again with date=2026-03-15 references the same instance 1. If that instance already completed, Spring Batch rejects it — you can't re-run a completed instance with the same params. This is why I always include a timestamp parameter when I need to re-run."*
+### 💻 Code
+```java
+// Parameters that create unique instances
+JobParameters params = new JobParametersBuilder()
+        .addString("date", "2024-01-15")              // IDENTIFYING (default)
+        .addString("note", "test run", false)          // NON-IDENTIFYING (false)
+        .toJobParameters();
+// JOB_KEY = hash of "date=2024-01-15" only (non-identifying excluded)
 
-### ⚡ Key Points to Remember
+// Re-running with same params after COMPLETED → exception
+try {
+    jobLauncher.run(paymentJob, sameParams);
+} catch (JobInstanceAlreadyCompleteException e) {
+    // "A job instance already exists and is complete for parameters={date=2024-01-15}"
+}
 
-1. **Unique identity** = job name + hash of identifying params
-2. **Same params** = same instance (not a new run)
-3. **COMPLETED instance** can't be re-run with same params
-4. **FAILED instance** can be restarted (new execution, same instance)
-5. Add **timestamp param** if you need to re-run anytime
+// To always allow re-run → add unique param
+JobParameters params = new JobParametersBuilder()
+        .addString("date", "2024-01-15")
+        .addLocalDateTime("runTime", LocalDateTime.now())  // unique each time
+        .toJobParameters();
+```
+
+### ⚠️ Pitfalls / Gotchas
+- Non-identifying params (false flag) do NOT affect JOB_KEY → same params despite different notes *(non-identifying params JOB_KEY mein nahi jaate)*
+- JOB_KEY is MD5 hash → can't see original params from it
+- Batch 5 changed default: all params are identifying unless explicitly non-identifying
+- Table grows indefinitely — each day's run adds a row forever
+
+### ⚡ Remember
+- Unique = job name + JOB_KEY (MD5 of identifying params) *(naam + params ka hash = uniqueness)*
+- COMPLETED + same params = rejected
+- FAILED + same params = restart allowed
+- Add timestamp for guaranteed uniqueness
+- Non-identifying params excluded from hash
+
+### 🔗 Follow-ups
+- [Q112 → BATCH_JOB_EXECUTION](#q112)
+- [Q55 → JobInstance concept](#q55)
+- [Q114 → BATCH_JOB_EXECUTION_PARAMS](#q114)
 
 ---
-
-<a id="q112"></a>
 
 ## Q112. What is BATCH_JOB_EXECUTION?
 
+### 📝 One-Liner
+Stores each attempt to run a job instance — 1 instance can have N executions (first run FAILED, restart COMPLETED = 2 rows).
+
 ### 🔑 Quick Answer
+BATCH_JOB_EXECUTION records every attempt to run a job instance. One instance can have **multiple executions** (fail + restart = 2 rows, fail + fail + success = 3 rows). Key columns: STATUS (STARTED, COMPLETED, FAILED, STOPPED), EXIT_CODE, EXIT_MESSAGE (exception details), START_TIME, END_TIME, JOB_INSTANCE_ID (FK to instance). This is the **first table to check** when debugging — tells you if the job succeeded or failed and why. *(Ek instance ke multiple executions ho sakte hain — fail + restart = 2 rows)*
 
-> Stores **each attempt to run** a job instance. One instance can have multiple executions (first try fails, second try succeeds = 2 execution rows).
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — One instance, multiple executions:**
-
+### 📖 How It Works
 ```
-JobInstance ID=1 (dailyReport, date=2026-03-15):
+Example: 3 executions for 1 instance
 
-  Execution 1: STARTED → FAILED (disk full at 2:05 AM)
-  Execution 2: STARTED → FAILED (code bug at 3:00 AM)
-  Execution 3: STARTED → COMPLETED (fix deployed, ran at 4:00 AM) ✅
+JOB_EXECUTION_ID | JOB_INSTANCE_ID | STATUS    | EXIT_MESSAGE
+1                | 100             | FAILED    | "Disk full: cannot write..."
+2                | 100             | FAILED    | "NullPointerException at..."
+3                | 100             | COMPLETED | ""
 
-  = 3 rows in BATCH_JOB_EXECUTION for 1 row in BATCH_JOB_INSTANCE
-```
+Instance 100 was:
+  Execution 1: FAILED (disk full) → fixed disk space
+  Execution 2: FAILED (code bug) → fixed NullPointer
+  Execution 3: COMPLETED ✅
 
-**Step 2 — Key columns:**
+Status Lifecycle:
+  STARTING → STARTED → COMPLETING → COMPLETED ✅
+                     → FAILED ❌
+                     → STOPPING → STOPPED ⏸️
 
-```sql
-SELECT JOB_EXECUTION_ID, JOB_INSTANCE_ID, STATUS, EXIT_CODE,
-       EXIT_MESSAGE, START_TIME, END_TIME, CREATE_TIME
-FROM BATCH_JOB_EXECUTION
-WHERE JOB_INSTANCE_ID = 1
-ORDER BY CREATE_TIME;
-
-| ID | INSTANCE | STATUS    | EXIT_CODE | EXIT_MESSAGE         | START           | END             |
-|----|----------|-----------|-----------|----------------------|-----------------|-----------------|
-| 1  | 1        | FAILED    | FAILED    | Disk full            | 2026-03-15 02:00| 2026-03-15 02:05|
-| 2  | 1        | FAILED    | FAILED    | NullPointerException | 2026-03-15 03:00| 2026-03-15 03:02|
-| 3  | 1        | COMPLETED | COMPLETED | All steps completed  | 2026-03-15 04:00| 2026-03-15 04:10|
+Key Columns:
+  STATUS:       STARTED, COMPLETED, FAILED, STOPPED, ABANDONED
+  EXIT_CODE:    COMPLETED, FAILED, UNKNOWN, NOOP, custom
+  EXIT_MESSAGE: Exception stack trace (most useful for debugging)
+  START_TIME:   When execution started
+  END_TIME:     When execution ended (NULL if STARTED/crashed)
 ```
 
-### 🗣️ How to Explain in Interview
+### 🗣️ How to Say in Interview
+"BATCH_JOB_EXECUTION records every attempt to run a job instance. A single instance can have multiple executions — if the first run fails and we restart, that creates a second execution row under the same instance. The EXIT_MESSAGE column is the most valuable for debugging — it contains the actual exception that caused the failure. I always check this table first when investigating a batch issue. In my project, we had a job instance with 3 executions — first failed from a disk issue, second from a code bug, third completed successfully — all traceable through this table."
 
-> *"BATCH_JOB_EXECUTION stores each attempt to run a job instance. If a job fails and I restart it, that's a new execution under the same instance. So one instance can have multiple executions — first attempt failed, second attempt succeeded means 2 rows here. The important columns are STATUS (COMPLETED, FAILED, STOPPED), EXIT_MESSAGE which contains the exception message for failures, and START/END times for duration tracking. This is the first table I query when debugging — I look for FAILED status and read the EXIT_MESSAGE."*
+### 💻 Code
+```java
+// Query job executions
+// SELECT JOB_EXECUTION_ID, STATUS, EXIT_CODE, EXIT_MESSAGE,
+//        START_TIME, END_TIME
+// FROM BATCH_JOB_EXECUTION
+// WHERE JOB_INSTANCE_ID = 100
+// ORDER BY JOB_EXECUTION_ID DESC;
 
-### ⚡ Key Points to Remember
+// Programmatic access via JobExplorer
+List<JobExecution> executions = jobExplorer.getJobExecutions(jobInstance);
+for (JobExecution exec : executions) {
+    log.info("Execution #{}: status={}, exit={}",
+            exec.getId(), exec.getStatus(), exec.getExitStatus().getExitCode());
+    if (exec.getStatus() == BatchStatus.FAILED) {
+        log.error("  Failure: {}", exec.getExitStatus().getExitDescription());
+    }
+}
+```
 
-1. **1 instance → N executions** (failed attempts + final success)
-2. **STATUS**: STARTING, STARTED, COMPLETED, FAILED, STOPPED, ABANDONED
-3. **EXIT_MESSAGE** = exception details for failures
-4. **First table to check** when debugging failed jobs
-5. Only one execution can be STARTED at a time per instance
+### ⚠️ Pitfalls / Gotchas
+- Only ONE execution can be STARTED at a time for an instance — concurrent launch throws exception *(ek instance ka ek hi execution STARTED ho sakta hai — concurrent nahi chalega)*
+- After JVM crash, status stays STARTED (stale) — must manually mark FAILED before restart
+- EXIT_MESSAGE can be very long (full stack traces) — check column size in your DB
+- END_TIME is NULL for STARTED executions — useful for detecting stale/hung jobs
+
+### ⚡ Remember
+- 1 instance → N executions (fail + restart pattern) *(ek instance ke multiple attempts)*
+- **First debugging table** — check STATUS and EXIT_MESSAGE
+- StatusL: STARTING → STARTED → COMPLETED/FAILED/STOPPED
+- EXIT_MESSAGE = actual exception
+- Only 1 STARTED execution per instance at a time
+
+### 🔗 Follow-ups
+- [Q111 → BATCH_JOB_INSTANCE](#q111)
+- [Q113 → BATCH_STEP_EXECUTION (detailed counts)](#q113)
+- [Q106 → Debug failed jobs](#q106)
 
 ---
-
-<a id="q113"></a>
 
 ## Q113. What is BATCH_STEP_EXECUTION?
 
+### 📝 One-Liner
+Stores detailed execution statistics per step: read, write, skip, filter, commit, rollback counts — the most useful table for diagnosing batch issues.
+
 ### 🔑 Quick Answer
+BATCH_STEP_EXECUTION is the **most useful debugging table**. It stores per-step statistics including READ_COUNT, WRITE_COUNT, SKIP_COUNT (read + process + write skips), FILTER_COUNT (processor returned null), COMMIT_COUNT, and ROLLBACK_COUNT. The math must work: **read - filter - skip = write**. Example: read=50000, filter=1485, skip=15, write=48500 → 50000 - 1485 - 15 = 48500 ✅. Rollback count should be near 0. *(Ye sabse useful table hai — read, write, skip, rollback sab milta hai)*
 
-> Stores **detailed execution statistics** for each step: read count, write count, skip count, commit count, rollback count, filter count. This is the **most useful table for diagnosing issues**.
+### 📖 How It Works
+```
+BATCH_STEP_EXECUTION (key columns):
 
-### 📖 Step-by-Step Explanation
+STEP_EXECUTION_ID | STEP_NAME       | STATUS    | READ | WRITE | SKIP | FILTER | COMMIT | ROLLBACK
+42                | processPayments | COMPLETED | 50000| 48500 | 15   | 1485   | 97     | 3
 
-**Step 1 — What the counts mean:**
+Math Check:
+  READ - FILTER - SKIP = WRITE
+  50000 - 1485 - 15 = 48500 ✅
 
-```sql
-SELECT STEP_NAME, STATUS, READ_COUNT, WRITE_COUNT, COMMIT_COUNT,
-       ROLLBACK_COUNT, READ_SKIP_COUNT, WRITE_SKIP_COUNT, FILTER_COUNT
-FROM BATCH_STEP_EXECUTION
-WHERE JOB_EXECUTION_ID = 3;
+What Each Count Tells You:
+  READ_COUNT:     Total items read from source
+  FILTER_COUNT:   Processor returned null (intentionally filtered)
+  SKIP_COUNT:     Items skipped due to errors (read + process + write skips combined)
+  WRITE_COUNT:    Items successfully written
+  COMMIT_COUNT:   Successful chunk commits (≈ read / chunkSize)
+  ROLLBACK_COUNT: Chunk failures rolled back (should be near 0)
 
-| STEP       | STATUS    | READ  | WRITE | COMMITS | ROLLBACKS | R_SKIP | W_SKIP | FILTER |
-|-----------|-----------|-------|-------|---------|-----------|--------|--------|--------|
-| readData   | COMPLETED | 50000 | 50000 | 100     | 0         | 0      | 0      | 0      |
-| processData| COMPLETED | 50000 | 48500 | 97      | 3         | 5      | 10     | 1485   |
-| sendReport | COMPLETED | 1     | 1     | 1       | 0         | 0      | 0      | 0      |
+Red Flags:
+  ❌ SKIP_COUNT = 500 (high) → data quality issues
+  ❌ ROLLBACK_COUNT = 10 (high) → transient DB/network failures
+  ❌ WRITE_COUNT < expected → items lost or filtered
+  ❌ COMMIT_COUNT much lower than READ/chunkSize → large chunks or failures
 ```
 
-**Step 2 — Reading the processData step:**
+### 🗣️ How to Say in Interview
+"BATCH_STEP_EXECUTION is the most useful table for diagnosing batch issues. It stores detailed per-step statistics — read, write, skip, filter, commit, and rollback counts. The key formula is read minus filter minus skip equals write — if this math doesn't add up, something is wrong. Skip count tells me about data quality issues, rollback count about transient failures, and filter count about intentional exclusions. In my project, when we saw 500 skips in a daily job that normally has 5, we immediately knew the upstream data had quality issues. The combination of counts tells the complete story of what happened during processing."
 
+### 💻 Code
+```java
+// Query step execution details
+// SELECT step_name, status, read_count, write_count, skip_count,
+//        filter_count, commit_count, rollback_count,
+//        exit_code, exit_message
+// FROM BATCH_STEP_EXECUTION
+// WHERE JOB_EXECUTION_ID = ?
+// ORDER BY STEP_EXECUTION_ID;
+
+// Programmatic access
+for (StepExecution step : jobExecution.getStepExecutions()) {
+    log.info("Step '{}': read={}, written={}, skipped={}, filtered={}, " +
+             "commits={}, rollbacks={}",
+            step.getStepName(),
+            step.getReadCount(),
+            step.getWriteCount(),
+            step.getSkipCount(),
+            step.getFilterCount(),
+            step.getCommitCount(),
+            step.getRollbackCount());
+    
+    // Verify math
+    int expected = step.getReadCount() - step.getFilterCount() - step.getSkipCount();
+    if (expected != step.getWriteCount()) {
+        log.warn("Count mismatch! Expected write={}, actual={}", expected, step.getWriteCount());
+    }
+}
 ```
-READ_COUNT = 50,000      → Reader returned 50,000 items
-FILTER_COUNT = 1,485     → Processor returned null for 1,485 items (filtered)
-WRITE_COUNT = 48,500     → Writer received 48,500 items
-  (50,000 - 1,485 filtered - 15 skipped = 48,500)
-READ_SKIP_COUNT = 5      → 5 items caused read errors, skipped
-WRITE_SKIP_COUNT = 10    → 10 items caused write errors, skipped
-COMMIT_COUNT = 97        → 97 chunks committed successfully
-ROLLBACK_COUNT = 3       → 3 chunks rolled back (then chunk-level retry)
-```
 
-### 🗣️ How to Explain in Interview
+### ⚠️ Pitfalls / Gotchas
+- SKIP_COUNT combines read, process, AND write skips into one number — use SkipListener for per-phase breakdown *(skip count teen phases ka combined hai — detail ke liye SkipListener lagao)*
+- FILTER_COUNT > 0 is usually intentional (processor null = filter) — not an error
+- ROLLBACK_COUNT > 0 means chunks were retried before succeeding or being skipped
+- For partitioned steps, each partition has its OWN step execution row
 
-> *"BATCH_STEP_EXECUTION is the most diagnostic table. It stores read count, write count, filter count, skip counts, commit count, and rollback count for each step. With these numbers I can reconstruct exactly what happened: if read is 50,000 and write is 48,500 with 1,485 filtered and 15 skipped, I know the processor intentionally filtered 1,485 records by returning null, and 15 records had errors that were skipped. The rollback count tells me how many chunks had failures requiring a rollback. And the commit count tells me processing progress."*
+### 🎯 Tricky Interview Qs
 
-### ⚡ Key Points to Remember
+**Q: read=50000, write=48500, skip=15, filter=0 — what happened to 1485 records?**
+Math doesn't add up: 50000 - 0 - 15 = 49985, not 48500. Either the counts are wrong or there's a bug. Most likely FILTER_COUNT wasn't updated (processor returned null but filter count didn't increment — happens with custom processors that don't follow conventions).
 
-1. **read - filter - skip = write** (the math must add up)
-2. **FILTER_COUNT** = processor returned null (intentional)
-3. **SKIP_COUNT** = errors that were tolerated
-4. **ROLLBACK_COUNT** = chunks that failed (should be low)
-5. **Most useful table** for debugging production issues
+**Q: commit=97, chunk=500 — why not commit=100 for 50000 records?**
+50000 / 500 = 100 expected commits. But 3 rollbacks happened (chunks failed and retried, some items skipped) → 97 successful commits + 3 rollback-retry cycles ≈ 100.
+
+### ⚡ Remember
+- **read - filter - skip = write** (math must add up) *(ye formula yaad rakhna — agar match nahi karta toh problem hai)*
+- Most useful debugging table
+- SKIP_COUNT = combined (read + process + write skips)
+- ROLLBACK_COUNT should be near 0
+- Partitioned step: 1 row per partition
+
+### 🔗 Follow-ups
+- [Q112 → BATCH_JOB_EXECUTION](#q112)
+- [Q115 → BATCH_STEP_EXECUTION_CONTEXT](#q115)
+- [Q106 → Debug failed jobs](#q106)
 
 ---
-
-<a id="q114"></a>
 
 ## Q114. What is BATCH_JOB_EXECUTION_PARAMS?
 
+### 📝 One-Liner
+Stores parameters per execution with an IDENTIFYING flag — identifying params affect instance uniqueness (JOB_KEY hash), non-identifying are metadata only.
+
 ### 🔑 Quick Answer
+Stores JobParameters passed to each execution. Key column: **IDENTIFYING** flag. Identifying (Y) → included in JOB_KEY hash → different value = different job instance. Non-identifying (N) → metadata only, doesn't affect uniqueness. Example: `date=2024-01-15` (IDENTIFYING) determines uniqueness, `description="test run"` (NON-IDENTIFYING) is just a note. Viewable via JobExplorer for audit trail. *(IDENTIFYING params se uniqueness decide hoti hai — non-identifying sirf note hai)*
 
-> Stores the **parameters passed to each job execution**: name, type, value, and whether the parameter is **identifying** (used to determine job instance uniqueness).
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — Identifying vs non-identifying params:**
-
+### 📖 How It Works
 ```
-IDENTIFYING (Y):
-  → Used to compute JOB_KEY hash in BATCH_JOB_INSTANCE
-  → Different value = different JobInstance
-  → Example: date, fileName, customerId
+BATCH_JOB_EXECUTION_PARAMS:
 
-NON-IDENTIFYING (N):
-  → Metadata only, NOT used for uniqueness
-  → Same value or different value = same instance
-  → Example: description, triggeredBy, logLevel
-```
+JOB_EXECUTION_ID | PARAMETER_NAME | PARAMETER_TYPE | PARAMETER_VALUE | IDENTIFYING
+1                | date           | STRING         | 2024-01-15      | Y
+1                | filePath       | STRING         | /data/input.csv | Y
+1                | description    | STRING         | Daily payment   | N
+1                | runTime        | DATE           | 2024-01-15T02:00| Y
 
-```sql
-SELECT JOB_EXECUTION_ID, PARAMETER_NAME, PARAMETER_TYPE,
-       PARAMETER_VALUE, IDENTIFYING
-FROM BATCH_JOB_EXECUTION_PARAMS
-WHERE JOB_EXECUTION_ID = 1;
+IDENTIFYING = Y → affects JOB_KEY hash → uniqueness
+  date=2024-01-15 + filePath=/data/input.csv + runTime=...
+  → JOB_KEY = MD5(these values)
 
-| EXEC_ID | NAME        | TYPE             | VALUE              | IDENTIFYING |
-|---------|-------------|------------------|--------------------|-------------|
-| 1       | file        | java.lang.String | /data/march.csv    | Y           |
-| 1       | timestamp   | java.lang.Long   | 1710288000000      | Y           |
-| 1       | description | java.lang.String | Monthly processing | N           |
+IDENTIFYING = N → metadata only → NOT in hash
+  description="Daily payment" → just a label
+
+Consequence:
+  Same date + filePath + runTime = same JOB_KEY = same instance
+  Same date + filePath + runTime + different description = STILL same instance
 ```
 
-### 🗣️ How to Explain in Interview
+### 🗣️ How to Say in Interview
+"BATCH_JOB_EXECUTION_PARAMS stores all parameters passed to a job execution. The critical column is IDENTIFYING — when set to Y, that parameter is included in the JOB_KEY hash that determines instance uniqueness. When N, it's just metadata. In my project, we use the processing date and file path as identifying parameters, ensuring each day's file creates a unique instance. We add a description as non-identifying for audit purposes — it doesn't affect whether the job can re-run. Spring Batch 5 changed the default: all parameters are identifying unless explicitly marked non-identifying."
 
-> *"BATCH_JOB_EXECUTION_PARAMS stores the parameters for each execution. Each parameter has a name, type, value, and an identifying flag. Identifying parameters determine job uniqueness — if I run with file=/data/march.csv, that's a different instance than file=/data/april.csv. Non-identifying parameters like description are metadata — they don't affect uniqueness. This is why I always add a timestamp as an identifying parameter when I need to allow re-runs with otherwise identical parameters."*
+### 💻 Code
+```java
+// Creating parameters with identifying flag
+JobParameters params = new JobParametersBuilder()
+        .addString("date", "2024-01-15")              // identifying (default in Batch 5)
+        .addString("filePath", "/data/input.csv")      // identifying
+        .addString("description", "Daily run", false)   // NON-identifying (false)
+        .addLocalDateTime("runTime", LocalDateTime.now()) // identifying
+        .toJobParameters();
 
-### ⚡ Key Points to Remember
+// Query params for an execution
+// SELECT parameter_name, parameter_type, parameter_value, identifying
+// FROM BATCH_JOB_EXECUTION_PARAMS
+// WHERE JOB_EXECUTION_ID = ?;
 
-1. **IDENTIFYING=Y** → affects instance uniqueness (JOB_KEY hash)
-2. **IDENTIFYING=N** → metadata only
-3. Types: String, Long, Double, Date
-4. **timestamp** is common identifying param for re-runs
-5. All params viewable via `JobExplorer.getJobParameters()`
+// Programmatic access
+JobParameters params = jobExecution.getJobParameters();
+String date = params.getString("date");
+String desc = params.getString("description");
+```
+
+### ⚠️ Pitfalls / Gotchas
+- Spring Batch 5: ALL params are identifying by default — pass `false` explicitly for non-identifying *(Batch 5 mein sab params identifying hain by default — dhyan rakhna)*
+- Spring Batch 4: used type-based methods (addString/addLong/addDate)
+- Spring Batch 5: unified to String-based with type conversion
+- Non-identifying params still stored — just not in JOB_KEY hash
+
+### ⚡ Remember
+- **IDENTIFYING=Y** → affects JOB_KEY → uniqueness *(identifying = uniqueness decide karta hai)*
+- **IDENTIFYING=N** → metadata only
+- Batch 5: all params identifying by default
+- Add `false` for non-identifying: `addString("key", "val", false)`
+- Viewable via JobExplorer for audit
+
+### 🔗 Follow-ups
+- [Q111 → BATCH_JOB_INSTANCE (where JOB_KEY is)](#q111)
+- [Q55 → JobInstance uniqueness](#q55)
+- [Q56 → JobInstance vs JobExecution](#q56)
 
 ---
-
-<a id="q115"></a>
 
 ## Q115. What is BATCH_STEP_EXECUTION_CONTEXT?
 
+### 📝 One-Liner
+Stores serialized step state as JSON — most importantly the reader position — enabling restart from the last committed chunk.
+
 ### 🔑 Quick Answer
+BATCH_STEP_EXECUTION_CONTEXT stores step-level state as **JSON** (Spring Batch 5) or serialized Java (older versions). Primary use: **reader position for restart**. After each chunk commit, the reader position is saved. On restart, the reader reads this position and skips ahead to resume processing. Example: `{"FlatFileItemReader.read.count": 25000}` → on restart, skip 25000 records and continue from 25001. You can also store custom data via `executionContext.put()`. *(Reader ki position save hoti hai — restart pe wahi se shuru hota hai)*
 
-> Stores the **serialized state of each step** as JSON. This is **how restart works** — the reader's position (e.g., line 25000) is saved here, and on restart the reader skips to that position.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — What's stored:**
-
-```sql
-SELECT STEP_EXECUTION_ID, SHORT_CONTEXT
-FROM BATCH_STEP_EXECUTION_CONTEXT;
-
-| STEP_ID | SHORT_CONTEXT                                                       |
-|---------|---------------------------------------------------------------------|
-| 1       | {"FlatFileItemReader.read.count":25000}                              |
-| 2       | {"JdbcPagingItemReader.read.count":45000, "currentPage":90}         |
-| 3       | {"batch.taskletType":"org.springframework.batch.core.step.tasklet"} |
+### 📖 How It Works
 ```
+How Restart Works via Context:
 
-**Step 2 — How restart uses this:**
-
-```
-First Run (fails at record 25,000):
-  Reader processes: 1, 2, 3, ... 24,999, 25,000 → ERROR!
-  ExecutionContext saved: { "read.count": 25000 }
-  Step status: FAILED
+First Run (fails at record 25000):
+  Chunk 1: read 1-500     → commit → save context: {read.count: 500}
+  Chunk 2: read 501-1000  → commit → save context: {read.count: 1000}
+  ...
+  Chunk 50: read 24501-25000 → FAIL
+  Context saved: {read.count: 25000}  ← last committed position
 
 Restart:
-  Reader opens → reads ExecutionContext: { "read.count": 25000 }
-  Reader skips records 1-25,000
-  Reader resumes from record 25,001
-  Processing continues from where it left off ✅
+  Framework reads context: {read.count: 25000}
+  Reader skips records 1-25000
+  Resumes from record 25001
+  → No duplicate processing!
 
-Without this table → restart would re-process ALL records from the beginning
+Context Examples by Reader Type:
+  FlatFileItemReader:   {"FlatFileItemReader.read.count": 25000}
+  JdbcPagingItemReader: {"JdbcPagingItemReader.start.after": {"id": 25000}}
+                        {"JdbcPagingItemReader.read.count": 25000}
 ```
 
-### 🗣️ How to Explain in Interview
+### 🗣️ How to Say in Interview
+"BATCH_STEP_EXECUTION_CONTEXT stores the step's state as JSON, primarily the reader position. After every chunk commit, the current reader position is saved to this table. When a job restarts, the framework reads this context and tells the reader to skip ahead to the last committed position. This is how Spring Batch achieves restart without reprocessing — if a job fails at record 25,000, restart picks up from 25,001. In my project, I also use it to store custom state like running totals or error counters that I need to preserve across restarts."
 
-> *"BATCH_STEP_EXECUTION_CONTEXT stores each step's internal state as serialized JSON. The most important use is enabling restart. When a FlatFileItemReader processes 25,000 records and then fails, its position — read.count=25000 — is saved in this table. On restart, the reader reads this context, skips the first 25,000 records, and resumes from 25,001. Without this table, every restart would start from the beginning. You can also store custom state here using the ExecutionContext API — like counters or intermediate results that need to survive a restart."*
+### 💻 Code
+```java
+// Context is saved automatically after each chunk commit
+// Reader position stored by Spring Batch framework
 
-### ⚡ Key Points to Remember
+// Custom data in step context
+@Component
+@StepScope
+public class StatefulProcessor implements ItemProcessor<Order, Order>, StepExecutionListener {
+    private StepExecution stepExecution;
+    private int errorCount = 0;
 
-1. **Stores step state** as JSON (reader position, custom data)
-2. **Enables restart** — reader knows where to resume
-3. Saved **per chunk commit** (not just at end)
-4. Custom data via `executionContext.put("key", value)`
-5. Don't store large data here — only positions and counters
+    @Override
+    public void beforeStep(StepExecution stepExecution) {
+        this.stepExecution = stepExecution;
+        // Restore state from previous run (restart scenario)
+        errorCount = stepExecution.getExecutionContext().getInt("errorCount", 0);
+    }
+
+    @Override
+    public Order process(Order order) {
+        try {
+            return enrichOrder(order);
+        } catch (Exception e) {
+            errorCount++;
+            // Save state — persisted on next chunk commit
+            stepExecution.getExecutionContext().putInt("errorCount", errorCount);
+            return null;  // filter
+        }
+    }
+}
+
+// Query context
+// SELECT STEP_EXECUTION_ID, SHORT_CONTEXT
+// FROM BATCH_STEP_EXECUTION_CONTEXT
+// WHERE STEP_EXECUTION_ID = ?;
+// → {"FlatFileItemReader.read.count":25000, "errorCount":42}
+```
+
+### ⚠️ Pitfalls / Gotchas
+- Context is serialized to DB every chunk commit — don't store large objects! *(bada data mat dalo — har chunk mein DB mein jaata hai)*
+- Store only positions, counters, small metadata — never entities or collections
+- Large context slows every chunk commit
+- Spring Batch 5 = JSON serialization, older = Java serialization (migration issue)
+
+### ⚡ Remember
+- Stores reader position → enables restart *(position save = restart possible)*
+- Saved per chunk commit (automatically)
+- JSON format in Spring Batch 5
+- Store only small data (positions, counters)
+- Custom data via `executionContext.put()`
+
+### 🔗 Follow-ups
+- [Q116 → BATCH_JOB_EXECUTION_CONTEXT](#q116)
+- [Q66 → ExecutionContext concept](#q66)
+- [Q68 → Resume from failure point](#q68)
 
 ---
-
-<a id="q116"></a>
 
 ## Q116. What is BATCH_JOB_EXECUTION_CONTEXT?
 
+### 📝 One-Liner
+Stores job-level shared state — data that needs to be shared between steps within the same job execution.
+
 ### 🔑 Quick Answer
+BATCH_JOB_EXECUTION_CONTEXT stores **job-level shared state** as JSON. Unlike step context (private per step, for restart), job context is **shared across all steps** in the same execution. Use case: Step 1 counts total records, saves to job context → Step 3 reads it for a report. Write via `jobExecution.getExecutionContext().put()`, read via `@Value("#{jobExecutionContext['key']}")` in @StepScope beans. Only store small data — counters, flags, file paths. *(Job context = steps ke beech data share karne ke liye — step context = restart ke liye)*
 
-> Stores **job-level shared state** — data that needs to be shared **between steps** within the same job execution. Different from step-level context which is per-step.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — Step context vs Job context:**
-
+### 📖 How It Works
 ```
-STEP EXECUTION CONTEXT (per-step, private):
-  Step 1 context: { "read.count": 25000 }    ← Only Step 1 sees this
-  Step 2 context: { "read.count": 50000 }    ← Only Step 2 sees this
+Job Context vs Step Context:
 
-JOB EXECUTION CONTEXT (shared across all steps):
-  Job context: { "totalRecords": 100000, "outputFile": "/reports/march.pdf" }
-  ← ALL steps in this job can read/write this
-```
+Job Context (shared across steps):
+  Step 1 writes: jobContext.put("totalRecords", 50000)
+  Step 2 writes: jobContext.put("validRecords", 48500)
+  Step 3 reads:  jobContext.get("totalRecords")  → 50000
+                 jobContext.get("validRecords")   → 48500
+  → Uses data from previous steps for report generation
 
-**Step 2 — Common use case (passing data between steps):**
+Step Context (private per step, restart):
+  Step 1 context: {"reader.position": 25000}  ← only Step 1 sees this
+  Step 2 context: {"reader.position": 48500}  ← only Step 2 sees this
+  → Each step's restart state is independent
 
-```
-Step 1 (count records) → Job Context: { totalRecords: 50,000 }
-Step 2 (process data)  → reads totalRecords from Job Context for progress %
-Step 3 (generate report)→ reads totalRecords for report header
+Summary:
+  Job Context  = SHARED across steps = inter-step communication
+  Step Context = PRIVATE per step = restart state
 ```
 
-### 💻 Code Example
+### 🗣️ How to Say in Interview
+"BATCH_JOB_EXECUTION_CONTEXT stores job-level shared state that persists across steps within the same execution. The key difference from step context: step context is private to each step and stores restart state, while job context is shared across all steps for inter-step communication. In my project, the first step counted total records and wrote it to job context, and the final report step read that count to include in the summary email. I write to it using jobExecution.getExecutionContext().put() in a StepExecutionListener, and read from it using @Value with the jobExecutionContext SpEL expression in @StepScope beans."
 
+### 💻 Code
 ```java
-// Step 1: Save data to Job ExecutionContext
+// Step 1: Write to job context
 @Component
 public class CountingStepListener implements StepExecutionListener {
-    
     @Override
     public ExitStatus afterStep(StepExecution stepExecution) {
-        // Write to JOB context (accessible by other steps)
-        stepExecution.getJobExecution().getExecutionContext()
-                .putInt("totalRecords", stepExecution.getReadCount());
+        long totalRecords = stepExecution.getReadCount();
+        long validRecords = stepExecution.getWriteCount();
         
-        stepExecution.getJobExecution().getExecutionContext()
-                .putString("processedDate", LocalDate.now().toString());
+        // Write to JOB context (shared across steps)
+        ExecutionContext jobContext = stepExecution.getJobExecution().getExecutionContext();
+        jobContext.putLong("totalRecords", totalRecords);
+        jobContext.putLong("validRecords", validRecords);
         
-        return ExitStatus.COMPLETED;
+        return stepExecution.getExitStatus();
     }
 }
 
-// Step 3: Read data from Job ExecutionContext
+// Step 3: Read from job context
 @Component
 @StepScope
-public class ReportProcessor implements ItemProcessor<Summary, Report> {
-    
+public class ReportProcessor implements ItemProcessor<ReportRequest, Report> {
     @Value("#{jobExecutionContext['totalRecords']}")
-    private int totalRecords;
-    
-    @Value("#{jobExecutionContext['processedDate']}")
-    private String processedDate;
-    
+    private Long totalRecords;
+
+    @Value("#{jobExecutionContext['validRecords']}")
+    private Long validRecords;
+
     @Override
-    public Report process(Summary summary) {
+    public Report process(ReportRequest request) {
         Report report = new Report();
-        report.setTotalRecords(totalRecords);     // From Step 1
-        report.setDate(processedDate);             // From Step 1
-        report.setSummary(summary);
+        report.setTotalRecords(totalRecords);
+        report.setValidRecords(validRecords);
+        report.setSkippedRecords(totalRecords - validRecords);
         return report;
     }
 }
+
+// Query job context
+// SELECT SHORT_CONTEXT FROM BATCH_JOB_EXECUTION_CONTEXT
+// WHERE JOB_EXECUTION_ID = ?;
+// → {"totalRecords": 50000, "validRecords": 48500}
 ```
 
-### 🗣️ How to Explain in Interview
+### ⚠️ Pitfalls / Gotchas
+- Job context write from step: use `stepExecution.getJobExecution().getExecutionContext()` *(job context access karne ke liye jobExecution se jaana padta hai)*
+- Step context write: use `stepExecution.getExecutionContext()` — don't confuse the two
+- @Value("#{jobExecutionContext[...]}") requires @StepScope
+- Only store small data — job context is also serialized to DB per commit
 
-> *"BATCH_JOB_EXECUTION_CONTEXT stores job-level shared state — data that needs to be passed between steps. For example, Step 1 counts records and saves totalRecords=50000 to the job ExecutionContext. Step 3 reads that value to generate a report header. This is different from step ExecutionContext which is step-private — used for restart state like reader position. Job ExecutionContext is shared across all steps in the same job. I access it through stepExecution.getJobExecution().getExecutionContext() in listeners, or through @Value with jobExecutionContext SpEL expression in @StepScope beans."*
+### 🆚 vs. Comparison
+| Aspect | Job Context | Step Context |
+|--------|-----------|-------------|
+| Scope | Shared across ALL steps | Private to ONE step |
+| Purpose | Inter-step communication | Restart state |
+| Who reads | Any step in the job | Only that step |
+| Write via | jobExecution.getExecutionContext() | stepExecution.getExecutionContext() |
+| Read via | #{jobExecutionContext['key']} | #{stepExecutionContext['key']} |
 
-### ⚡ Key Points to Remember
+### ⚡ Remember
+- **Job context = shared** across steps *(job context = steps ke beech share)*
+- **Step context = private** per step (restart)
+- Write: `stepExecution.getJobExecution().getExecutionContext().put()`
+- Read: `@Value("#{jobExecutionContext['key']}")` + @StepScope
+- Only store small data (counters, flags)
 
-1. **Job context** = shared across all steps
-2. **Step context** = private to one step (restart state)
-3. Write: `jobExecution.getExecutionContext().put(key, value)`
-4. Read: `@Value("#{jobExecutionContext['key']}")` in @StepScope beans
-5. Store only **small data** (counts, names, paths) — not large objects
-
----
-
-> **🎯 Navigation:** [← Monitoring (Q104-109)](13-monitoring.md) | [Next → Production Scenarios (Q117-125)](15-production-scenarios.md) | [📋 All Sections](README.md)
+### 🔗 Follow-ups
+- [Q115 → BATCH_STEP_EXECUTION_CONTEXT](#q115)
+- [Q66 → ExecutionContext concept](#q66)
+- [Q110 → All metadata tables](#q110)

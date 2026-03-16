@@ -1,4 +1,3 @@
-
 # 🍃 Spring Batch — Complete Interview Guide
 
 [![Questions](https://img.shields.io/badge/Questions-125-blue.svg)](#)
@@ -7,6 +6,30 @@
 
 > _The most comprehensive Spring Batch interview preparation resource_
 
+---
+
+## 📋 Question Pattern (10-Section Format)
+
+Each question follows a **10-section pattern** (not all sections appear for every question — only relevant ones):
+
+| # | Section | Purpose |
+|---|---------|---------|
+| 📝 | **One-Liner** | 1-sentence summary for last-minute revision |
+| 🔑 | **Quick Answer** | 30-second spoken answer + *(Hindi layman brackets)* |
+| 📖 | **How It Works** | Deep explanation + diagrams + *(Hindi for hard concepts)* |
+| 🗣️ | **How to Say in Interview** | English-only interview script + "In my project..." |
+| 💻 | **Code** | Working example + Hindi comments where tricky |
+| ⚠️ | **Pitfalls / Gotchas** | Common mistakes + *(Hindi warnings)* |
+| 🆚 | **vs. Comparison** | Only when relevant (~50% of questions) |
+| 🎯 | **Tricky Interview Qs** | Curveball Q&A + *(Hindi quick explanation)* |
+| ⚡ | **Remember** | Bullet points + *(Hindi shortcuts for recall)* |
+| 🔗 | **Follow-ups** | Cross-links to related questions |
+
+### 🗣️ Hindi Brackets Rules
+- Romanized Hindi in **English letters** (NOT Devanagari)
+- In *italics*, 5-10 words max
+- Only for **hard/confusing concepts** (not for simple things)
+- **NOT** in the Interview Script section (that's English-only)
 
 ---
 
@@ -52,36 +75,28 @@
 │     │ ┌────────────┐  │ │    └─────────────┘             │
 │     │ │ ItemReader  │  │ │                               │
 │     │ └─────┬──────┘  │ │                               │
-│     │ ┌─────▼──────┐  │ │                               │
-│     │ │ItemProcessor│  │ │          JobRepository        │
-│     │ └─────┬──────┘  │ │         (Metadata DB)         │
-│     │ ┌─────▼──────┐  │ │    ┌─────────────────────┐   │
-│     │ │ ItemWriter  │  │ │    │ BATCH_JOB_INSTANCE  │   │
-│     │ └────────────┘  │ │    │ BATCH_JOB_EXECUTION  │   │
-│     └─────────────────┘ │    │ BATCH_STEP_EXECUTION │   │
-│                         │    │ BATCH_JOB_PARAMS     │   │
+│     │ ┌─────▼──────┐  │ │          JobRepository        │
+│     │ │ItemProcessor│  │ │         (Metadata DB)         │
+│     │ └─────┬──────┘  │ │    ┌─────────────────────┐   │
+│     │ ┌─────▼──────┐  │ │    │ BATCH_JOB_INSTANCE  │   │
+│     │ │ ItemWriter  │  │ │    │ BATCH_JOB_EXECUTION  │   │
+│     │ └────────────┘  │ │    │ BATCH_STEP_EXECUTION │   │
+│     └─────────────────┘ │    │ BATCH_JOB_PARAMS     │   │
 │                         │    └─────────────────────┘   │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🔥 Top 10 Must-Know Questions
+## 🎯 Prep Phase Guide
 
-| # | Question | Section |
-|---|----------|---------|
-| 1 | What is chunk processing and how does it work? | [Chunk](./02-chunk-processing.md#q1) |
-| 2 | Difference between Cursor and Paging reader | [Readers](./03-readers.md#q6) |
-| 3 | How does Spring Batch handle transactions? | [Transactions](./07-transactions-restart.md#q1) |
-| 4 | What is skip and retry logic? | [Error Handling](./08-error-handling.md#q1) |
-| 5 | Difference between Tasklet and Chunk processing | [Tasklet](./09-tasklet.md#q2) |
-| 6 | How does partitioning work? | [Parallel](./10-parallel-processing.md#q3) |
-| 7 | How to process millions of records efficiently? | [Performance](./11-performance.md#q1) |
-| 8 | How to restart a failed job? | [Job Execution](./06-job-execution.md#q7) |
-| 9 | Spring Batch metadata tables explained | [DB & Metadata](./14-database-metadata.md#q1) |
-| 10 | How to process a 10GB file? | [Production](./15-production-scenarios.md#q1) |
+| Phase | Focus | Strategy |
+|-------|-------|---------|
+| 🏁 **Last 1 Hour** | Scan all **📝 One-Liner** sections | Quick revision of all 125 Qs |
+| 📅 **Day Before** | Read all **🔑 Quick Answer** + **⚡ Remember** | 30-sec answers ready |
+| 📆 **Week Before** | Study **📖 How It Works** + **💻 Code** | Deep understanding |
+| 🗣️ **During Interview** | Use **🗣️ Interview Script** sections | Polished delivery |
 
 ---
 
 [← Back to Java](../java.md) | [← Back to Languages](../README.md) | [← Back to Home](../../../README.md)
-]]>

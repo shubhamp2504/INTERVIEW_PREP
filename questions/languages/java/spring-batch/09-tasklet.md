@@ -1,306 +1,404 @@
-# 🟢 Spring Batch — Tasklet (Q79–Q83)
-
-> 🔑 Quick Answer → 📖 Step-by-Step Explanation → 🗣️ How to Say in Interview → 💻 Code → ⚡ Remember → 🔗 Follow-ups
+# 📋 Tasklet — Q79 to Q83
 
 ---
-
-<a id="q79"></a>
 
 ## Q79. What is Tasklet in Spring Batch?
 
+### 📝 One-Liner
+Tasklet is a simple, single-operation step that executes one `execute()` method — used for setup, cleanup, file operations, and one-shot tasks.
+
 ### 🔑 Quick Answer
+A `Tasklet` is a step that runs a single task — no read-process-write cycle. It implements one method: `execute(StepContribution, ChunkContext)` which returns `RepeatStatus.FINISHED` (done) or `RepeatStatus.CONTINUABLE` (run again). Common uses: delete temp files, create directories, run DDL scripts, send notifications, call an API. Each `execute()` call runs in its own transaction. *(Tasklet = ek kaam karo aur khatam — read-process-write nahi hai)*
 
-> A Tasklet is a **simple, single-task step** — it runs a piece of code once (or repeatedly) without the read-process-write pattern. Use it for setup, cleanup, notifications, or any task that doesn't involve processing data records.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — Tasklet vs Chunk (the two step types):**
-
+### 📖 How It Works
 ```
-Job: "monthlyPayroll"
-│
-├── Step 1: "validateInputFiles"      ← TASKLET (check files exist)
-├── Step 2: "processEmployees"        ← CHUNK (read → process → write)
-├── Step 3: "generateReport"          ← CHUNK (read → process → write)
-├── Step 4: "archiveFiles"            ← TASKLET (move processed files)
-└── Step 5: "sendNotification"        ← TASKLET (send email)
+Tasklet vs Chunk:
+
+Chunk Step:                    Tasklet Step:
+┌──────────────────────┐      ┌──────────────────────┐
+│ Read → Process → Write│      │ execute() {          │
+│ Read → Process → Write│      │   deleteOldFiles();  │
+│ Read → Process → Write│      │   return FINISHED;   │
+│ ...repeat...         │      │ }                    │
+└──────────────────────┘      └──────────────────────┘
+ For: processing records       For: single operations
+
+Tasklet Lifecycle:
+  1. Spring Batch calls execute()
+  2. Returns FINISHED → step ends
+  3. Returns CONTINUABLE → execute() called again (new tx)
+  4. Throws exception → step FAILED
 ```
 
-**Step 2 — The interface:**
+### 🗣️ How to Say in Interview
+"A Tasklet is a step for single operations that don't fit the read-process-write pattern. It has one execute method that performs the task and returns a status. In my project, we used tasklets for setup and cleanup: a pre-processing tasklet downloaded the CSV file from SFTP, the main chunk step processed the data, and a post-processing tasklet moved the processed file to an archive directory and sent a completion notification email. Tasklets are simple and keep the job flow clean by separating infrastructure tasks from business logic."
 
+### 💻 Code
 ```java
-public interface Tasklet {
-    RepeatStatus execute(StepContribution contribution, 
-                         ChunkContext chunkContext) throws Exception;
+// Simple tasklet: cleanup old files
+@Component
+public class CleanupTasklet implements Tasklet {
+
+    @Override
+    public RepeatStatus execute(StepContribution contribution, 
+                                ChunkContext chunkContext) throws Exception {
+        // Access job parameters
+        String directory = chunkContext.getStepContext()
+                .getJobParameters().get("outputDir").toString();
+
+        // Delete files older than 30 days
+        Path dir = Path.of(directory);
+        try (Stream<Path> files = Files.list(dir)) {
+            files.filter(f -> isOlderThan30Days(f))
+                 .forEach(f -> {
+                     try { Files.delete(f); } 
+                     catch (IOException e) { log.warn("Failed to delete: {}", f); }
+                 });
+        }
+
+        return RepeatStatus.FINISHED;  // done — step ends
+    }
 }
 
-// Return values:
-// RepeatStatus.FINISHED    → task done, move to next step
-// RepeatStatus.CONTINUABLE → run this tasklet again (loop)
-```
-
-**Step 3 — Common use cases:**
-
-| Use Case | What the Tasklet does |
-|----------|----------------------|
-| File validation | Check if input file exists before processing |
-| Cleanup | Delete temp files after processing |
-| Database setup | Run DDL scripts, create indexes |
-| Notification | Send email/SMS after job completes |
-| External API | Call REST API (e.g., trigger downstream system) |
-| Archive | Move processed files to archive directory |
-| Count/summary | Count records, store in ExecutionContext |
-
-### 🗣️ How to Explain in Interview
-
-> *"A Tasklet is the simpler of the two step types in Spring Batch. It's for tasks that don't follow the read-process-write pattern — like checking if an input file exists, deleting temporary files, sending a notification, or calling an external API. You implement the execute() method which runs your logic, and return RepeatStatus.FINISHED when done. Tasklets are typically used as setup steps before chunk processing or cleanup steps afterward."*
-
-### 💻 Code Example
-
-```java
-// Simple tasklet: cleanup temporary files
+// Register tasklet in a step
 @Bean
-public Step cleanupStep(JobRepository repo, PlatformTransactionManager tx) {
-    return new StepBuilder("cleanup", repo)
-            .tasklet((contribution, chunkContext) -> {
-                
-                Path tempDir = Path.of("/data/temp/batch");
-                
-                if (Files.exists(tempDir)) {
-                    Files.walk(tempDir)
-                         .sorted(Comparator.reverseOrder())
-                         .forEach(path -> {
-                             try { Files.deleteIfExists(path); }
-                             catch (IOException e) { /* log warning */ }
-                         });
-                }
-                
-                return RepeatStatus.FINISHED;  // Done — move to next step
-                
-            }, tx)
+public Step cleanupStep(JobRepository repo, PlatformTransactionManager tx,
+                        CleanupTasklet tasklet) {
+    return new StepBuilder("cleanupStep", repo)
+            .tasklet(tasklet, tx)
+            .build();
+}
+
+// Typical job: setup tasklet → chunk step → cleanup tasklet
+@Bean
+public Job dailyJob(JobRepository repo, Step setupStep, Step processStep, Step cleanupStep) {
+    return new JobBuilder("dailyJob", repo)
+            .start(setupStep)       // Tasklet: download file, create dirs
+            .next(processStep)      // Chunk: read → process → write
+            .next(cleanupStep)      // Tasklet: cleanup, notify
             .build();
 }
 ```
 
-### ⚡ Key Points to Remember
+### ⚠️ Pitfalls / Gotchas
+- Tasklet has NO built-in skip/retry — must handle errors yourself *(tasklet mein skip/retry khud handle karo)*
+- Each `execute()` call runs in its own transaction
+- Don't use tasklet for processing collections of records — that's what chunk steps are for
+- Returning `CONTINUABLE` without a termination condition = infinite loop
+- Can access JobParameters and ExecutionContext via ChunkContext
 
-1. **No read-process-write** — just execute a task
-2. Return `FINISHED` → done; `CONTINUABLE` → run again
-3. Use for **setup, cleanup, notifications, API calls**
-4. Each execution = **one transaction**
-5. Can access **JobParameters** and **ExecutionContext**
+### 🆚 vs. Comparison
+| Aspect | Tasklet | Chunk Processing |
+|--------|---------|-----------------|
+| Model | Single execute() | Read → Process → Write loop |
+| Transaction | Per execute() call | Per chunk |
+| Use case | One-shot tasks | Data record processing |
+| Skip/Retry | Manual | Built-in |
+| Restart | Manual (use ExecutionContext) | Automatic (checkpoint) |
+| Examples | Delete files, send email, DDL | CSV processing, DB migration |
+
+### 🎯 Tricky Interview Qs
+
+**Q: Can a tasklet access job parameters?**
+Yes. Via `chunkContext.getStepContext().getJobParameters()` or inject `@Value("#{jobParameters['key']}")` with `@StepScope`.
+
+**Q: Is tasklet transactional?**
+Yes. Each execute() call runs inside a transaction. If it throws, the transaction rolls back.
+
+### ⚡ Remember
+- Single `execute()` method — no read/write cycle
+- Returns FINISHED (done) or CONTINUABLE (run again) *(FINISHED = khatam, CONTINUABLE = phir se chalao)*
+- No built-in skip/retry (handle manually)
+- Great for: file ops, DDL, notifications, cleanup
+- Typical job: Tasklet → Chunk → Tasklet
+
+### 🔗 Follow-ups
+- [Q80 → Tasklet vs Chunk comparison](#q80)
+- [Q81 → When to use which](#q81)
+- [Q82 → Running tasklet multiple times](#q82)
 
 ---
-
-<a id="q80"></a>
 
 ## Q80. What is the difference between Tasklet and Chunk processing?
 
-### 🔑 Quick Answer
-
-> **Tasklet** = single task execution (no data records). **Chunk** = read-process-write loop for data records. Use Tasklet for setup/cleanup, Chunk for processing data.
-
-### 📖 Step-by-Step Explanation
-
-| Feature | Tasklet | Chunk-Based |
-|---------|---------|-------------|
-| **Pattern** | Execute single task | Read → Process → Write loop |
-| **Data processing** | ❌ Not designed for it | ✅ Designed for it |
-| **Transaction** | One per execute() call | One per chunk |
-| **Components** | Just the Tasklet | Reader + Processor + Writer |
-| **Repeat** | Optional (via CONTINUABLE) | Repeats until Reader returns null |
-| **Skip/Retry** | Not built-in | ✅ Built-in skip/retry |
-| **Restartability** | Re-runs from beginning | Resumes from last chunk |
-| **Use case** | Cleanup, notifications, setup | Processing data records |
-
-**Decision guide:**
-
-```
-Do you need to process DATA RECORDS (CSV, DB rows, messages)?
-  → Chunk-based (Reader + Processor + Writer)
-
-Do you need to do ONE TASK (delete file, send email, run SQL)?
-  → Tasklet
-
-Can you frame it as "read N items, do something, write N items"?
-  → Chunk-based
-
-Is it a single operation that doesn't loop over records?
-  → Tasklet
-```
-
-### 🗣️ How to Explain in Interview
-
-> *"Tasklet and Chunk are the two step types. The key difference: Chunk is for processing data records — it reads one item at a time, processes it, and writes in batches with built-in skip, retry, and restart from checkpoint. Tasklet is for single tasks that don't process records — like validating files exist, cleaning up temp files, or sending notifications. Chunk gives you all the batch processing features automatically. Tasklet is just 'run this code, return FINISHED.' I use Tasklets for steps before and after the main chunk processing."*
-
-### ⚡ Key Points to Remember
-
-1. **Chunk** = data records; **Tasklet** = single task
-2. Chunk has **skip/retry/restart**; Tasklet doesn't
-3. Chunk loop = automatic; Tasklet = you control the loop
-4. Most jobs = **Tasklet setup + Chunk processing + Tasklet cleanup**
-
----
-
-<a id="q81"></a>
-
-## Q81. When should you use Tasklet vs Chunk?
+### 📝 One-Liner
+Tasklet runs a single operation per step; Chunk processes collections of records in a read-process-write loop with built-in fault tolerance and restart.
 
 ### 🔑 Quick Answer
+**Tasklet**: executes `execute()` method once (or repeatedly with CONTINUABLE). No reader/writer. No built-in skip/retry. Manual restart handling. Use for one-shot tasks. **Chunk**: reads items one-at-a-time, processes each, writes in batches. Built-in fault tolerance (skip, retry), checkpointing, and restart. Use for processing collections of records. *(Tasklet = ek kaam, Chunk = bahut saare records process karo read-write loop mein)*
 
-> Use **Tasklet** when there are NO data records to loop over: file operations, DDL scripts, notifications, API calls. Use **Chunk** when you process a collection of records: CSV rows, DB records, messages.
-
-### 📖 Step-by-Step Explanation
-
-**Use Tasklet for:**
-
-| Task | Why Tasklet |
-|------|------------|
-| ✅ Check if input file exists | One check, boolean result |
-| ✅ Delete temporary files | Single operation |
-| ✅ Run `ALTER TABLE` or `CREATE INDEX` | DDL operations |
-| ✅ Send completion email | One email |
-| ✅ Call REST API | Trigger downstream, get status |
-| ✅ Count records, set ExecutionContext | Pre-processing |
-| ✅ Move files to archive | File operations |
-
-**Use Chunk for:**
-
-| Task | Why Chunk |
-|------|----------|
-| ✅ Process CSV file → insert to DB | Many records, need chunk transactions |
-| ✅ Read DB → transform → write report | Data pipeline |
-| ✅ Validate 1M records | Each needs validation logic |
-| ✅ Send individual emails per customer | Loop over customer records |
-| ✅ Sync data between systems | Record-by-record comparison |
-
-### 🗣️ How to Explain in Interview
-
-> *"The rule is simple: if you're processing a collection of data records, use Chunk. If you're doing a single operation, use Tasklet. Chunk gives you automatic chunking, transactions, skip/retry, and restart. Tasklet is just 'run this code.' In practice, most of my jobs have 1-2 Tasklet steps for setup and cleanup, and 1-3 Chunk steps for the actual data processing in between."*
-
-### ⚡ Key Points to Remember
-
-1. **Records to loop over** → Chunk
-2. **Single operation** → Tasklet
-3. Typical job: Tasklet → Chunk → Chunk → Tasklet
-4. When in doubt, ask: "Am I processing a LIST of things?" → Chunk
-
----
-
-<a id="q82"></a>
-
-## Q82. Can a Tasklet run multiple times?
-
-### 🔑 Quick Answer
-
-> Yes! Return `RepeatStatus.CONTINUABLE` and Spring Batch will call the Tasklet again. Each call is a **separate transaction**. Return `FINISHED` to stop.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — CONTINUABLE = run again:**
-
+### 📖 How It Works
 ```
-execute() call 1 → return CONTINUABLE → runs again
-execute() call 2 → return CONTINUABLE → runs again
-execute() call 3 → return FINISHED    → step done!
+Tasklet:
+  Step → execute() → FINISHED
+  ├── One operation per call
+  ├── One transaction per call
+  └── No read/process/write pattern
+
+Chunk:
+  Step → [Read x N → Process x N → Write N] → COMMIT → repeat
+  ├── Reads collection of records
+  ├── One transaction per chunk
+  ├── Built-in skip / retry / checkpoint
+  └── Automatic restart from last commit
 ```
 
-**Step 2 — Real use case: Batch delete (delete in pages):**
+### 🗣️ How to Say in Interview
+"The key difference is that chunk processing is designed for record-by-record data processing with built-in fault tolerance and restartability, while tasklets are for single operations. Chunk steps have readers, processors, and writers with skip/retry logic and automatic checkpointing. Tasklets have a single execute method with manual error handling. In my project, I used the rule: 'Am I processing a list of things?' — yes means chunk, no means tasklet. Our job had a tasklet to validate the input file exists, a chunk step to process 500K records, and another tasklet to archive the file and send email."
 
+### 💻 Code
 ```java
+// Job structure: tasklet + chunk + tasklet
 @Bean
-public Step archiveStep(JobRepository repo, PlatformTransactionManager tx) {
-    return new StepBuilder("archiveOldOrders", repo)
-            .tasklet(new Tasklet() {
-                private static final int BATCH_SIZE = 1000;
-                
-                @Override
-                public RepeatStatus execute(StepContribution contribution, 
-                                           ChunkContext chunkContext) {
-                    // Delete 1000 old orders per call
-                    int deleted = jdbcTemplate.update(
-                        "DELETE FROM orders WHERE created_date < ? LIMIT ?",
-                        LocalDate.now().minusYears(2), BATCH_SIZE
-                    );
-                    
-                    if (deleted < BATCH_SIZE) {
-                        return RepeatStatus.FINISHED;    // No more to delete
-                    }
-                    return RepeatStatus.CONTINUABLE;     // More records remain
+public Job completeJob(JobRepository repo, 
+                       Step validateStep,    // Tasklet
+                       Step processStep,     // Chunk
+                       Step notifyStep) {    // Tasklet
+    return new JobBuilder("completeJob", repo)
+            .start(validateStep)    // Tasklet: check file exists
+            .next(processStep)      // Chunk: read→process→write 500K records
+            .next(notifyStep)       // Tasklet: send email notification
+            .build();
+}
+
+// Tasklet step: single operation
+@Bean
+public Step validateStep(JobRepository repo, PlatformTransactionManager tx) {
+    return new StepBuilder("validateStep", repo)
+            .tasklet((contribution, chunkContext) -> {
+                String file = chunkContext.getStepContext()
+                    .getJobParameters().get("inputFile").toString();
+                if (!Files.exists(Path.of(file))) {
+                    throw new FileNotFoundException("Input file not found: " + file);
                 }
-            }, tx)
+                return RepeatStatus.FINISHED;
+            }, tx).build();
+}
+
+// Chunk step: process records
+@Bean
+public Step processStep(JobRepository repo, PlatformTransactionManager tx) {
+    return new StepBuilder("processStep", repo)
+            .<Order, ProcessedOrder>chunk(500, tx)
+            .reader(csvReader()).processor(orderProcessor()).writer(dbWriter())
+            .faultTolerant().skip(ValidationException.class).skipLimit(100)
             .build();
 }
 ```
 
-**What happens:**
-```
-Call 1: DELETE 1000 old orders → COMMIT → CONTINUABLE
-Call 2: DELETE 1000 old orders → COMMIT → CONTINUABLE
-Call 3: DELETE 1000 old orders → COMMIT → CONTINUABLE
-...
-Call 50: DELETE 700 old orders → COMMIT → FINISHED (only 700 < 1000)
-Step done! Deleted 49,700 old orders in 50 transactions.
-```
+### ⚠️ Pitfalls / Gotchas
+- Don't use tasklet to process records one-by-one in a loop — use chunk step *(records process karne ke liye tasklet mat use karo — chunk use karo)*
+- Tasklet has no concept of `readCount`, `writeCount`, `skipCount`
+- Chunk step's restart/checkpoint only works with chunk (not tasklet)
+- A tasklet step always shows as COMPLETED or FAILED (no partial progress)
 
-### 🗣️ How to Explain in Interview
+### ⚡ Remember
+- **Tasklet** = single operation (no R/P/W cycle) *(ek kaam — file delete, email bhejo)*
+- **Chunk** = record processing (R → P → W loop)
+- Chunk has skip/retry/checkpoint; Tasklet doesn't
+- Rule: "Processing a LIST?" → Chunk; "Single task?" → Tasklet
+- Typical job: Tasklet setup → Chunk process → Tasklet cleanup
 
-> *"Yes, a Tasklet can run multiple times by returning RepeatStatus.CONTINUABLE. Each call is a separate transaction. This is useful for batch operations that shouldn't be done in one giant transaction — like deleting millions of old records. Instead of one DELETE that locks the table for minutes, I delete 1000 per transaction. When the delete returns fewer than 1000 rows, I know there's no more data and return FINISHED. This keeps transactions small and avoids lock contention."*
-
-### ⚡ Key Points to Remember
-
-1. `CONTINUABLE` = run again; `FINISHED` = stop
-2. Each call = **separate transaction**
-3. Great for **batch deletes** (avoid giant transactions)
-4. Implement **termination condition** (otherwise infinite loop!)
-5. Each execution is **not restartable** at sub-call level (restarts from beginning)
+### 🔗 Follow-ups
+- [Q79 → Tasklet basics](#q79)
+- [Q81 → When to use which](#q81)
+- [Q21 → Chunk processing basics](#q21)
 
 ---
 
-<a id="q83"></a>
+## Q81. When should you use Tasklet vs Chunk?
 
-## Q83. What is RepeatStatus?
+### 📝 One-Liner
+Use Tasklet for one-shot operations (file ops, notifications, DDL); use Chunk for processing collections of records.
 
 ### 🔑 Quick Answer
+Ask: **"Am I processing a LIST of things?"** Yes → Chunk. No → Tasklet. **Tasklet** use cases: delete/move/download files, create directories, run SQL scripts, send notifications, call an API once, validate preconditions. **Chunk** use cases: process CSV records, migrate database rows, process messages, transform data sets. The decision is about the nature of the work, not complexity. *(LIST process karna hai? = Chunk. Single operation? = Tasklet)*
 
-> RepeatStatus is an **enum** with two values: `FINISHED` (task is done, move to next step) and `CONTINUABLE` (run this tasklet again). It controls whether the Tasklet step repeats.
+### 📖 How It Works
+```
+Decision Guide:
 
-### 📖 Step-by-Step Explanation
+"Am I processing a LIST of things?"
+├── YES → Chunk Processing
+│   ├── CSV rows
+│   ├── Database records
+│   ├── Messages from queue
+│   └── API records to process
+│
+└── NO → Tasklet
+    ├── Delete temp files
+    ├── Download file from SFTP
+    ├── Create output directory
+    ├── Send email notification
+    ├── Execute DDL script
+    ├── Call API once
+    └── Validate file exists
+```
 
+### 🗣️ How to Say in Interview
+"I follow a simple rule: if I'm processing a collection of records, I use a chunk step because I get built-in fault tolerance, checkpointing, and restart for free. If it's a single operation like moving a file or sending a notification, I use a tasklet. In my project, we had a job with five steps: tasklet to download the file from SFTP, chunk step to validate records, chunk step to process and write to database, tasklet to archive the file, and tasklet to send summary email. Each step type matched the nature of the operation."
+
+### 💻 Code
 ```java
-public enum RepeatStatus {
-    CONTINUABLE,  // "I'm not done yet — call me again"
-    FINISHED      // "I'm done — move to the next step"
+// Full job demonstrating when to use each
+@Bean
+public Job endToEndJob(JobRepository repo,
+                       Step downloadStep,      // Tasklet: SFTP download
+                       Step validateStep,       // Chunk: validate 500K records
+                       Step processStep,        // Chunk: process records
+                       Step archiveStep,        // Tasklet: move file
+                       Step notifyStep) {       // Tasklet: email
+    return new JobBuilder("endToEndJob", repo)
+            .start(downloadStep)
+            .next(validateStep)
+            .next(processStep)
+            .next(archiveStep)
+            .next(notifyStep)
+            .build();
 }
 ```
 
-| Value | What happens | When to use |
-|-------|-------------|-------------|
-| `FINISHED` | Step completes, moves to next step | Task is done (most common) |
-| `CONTINUABLE` | execute() is called again | Batch delete, paginated API calls |
+### ⚡ Remember
+- **"Am I processing a LIST?"** — the key question
+- Chunk: records, rows, messages *(list of items = Chunk)*
+- Tasklet: file ops, notifications, DDL, single API call
+- Chunk gets skip/retry/restart for free
+- Mix both in a job: Tasklet → Chunk → Tasklet
 
-**Helper method:**
-
-```java
-// RepeatStatus.continueIf(condition)
-return RepeatStatus.continueIf(moreRecordsExist);
-
-// Equivalent to:
-return moreRecordsExist ? RepeatStatus.CONTINUABLE : RepeatStatus.FINISHED;
-```
-
-### 🗣️ How to Explain in Interview
-
-> *"RepeatStatus is a simple enum that controls Tasklet repetition. FINISHED means the task is complete, move to the next step. CONTINUABLE means call this Tasklet again — useful for operations you want to do in multiple transactions, like deleting records in batches. Most Tasklets return FINISHED because they're simple single-operation tasks."*
-
-### ⚡ Key Points to Remember
-
-1. `FINISHED` = done, next step (most common)
-2. `CONTINUABLE` = run again (batch operations)
-3. `RepeatStatus.continueIf(boolean)` = convenience method
-4. **Always have a termination condition** for CONTINUABLE
-5. 95% of Tasklets just return `FINISHED`
+### 🔗 Follow-ups
+- [Q79 → Tasklet details](#q79)
+- [Q80 → Tasklet vs Chunk comparison](#q80)
+- [Q21 → Chunk processing basics](#q21)
 
 ---
 
-> **🎯 Navigation:** [← Error Handling (Q70-78)](08-error-handling.md) | [Next → Parallel Processing (Q84-91)](10-parallel-processing.md) | [📋 All Sections](README.md)
+## Q82. Can a Tasklet run multiple times?
+
+### 📝 One-Liner
+Yes — return `RepeatStatus.CONTINUABLE` to run again; each call gets its own transaction; must have a termination condition to avoid infinite loop.
+
+### 🔑 Quick Answer
+When `execute()` returns `RepeatStatus.CONTINUABLE`, Spring Batch calls `execute()` again immediately in a new transaction. Returns `FINISHED` to stop. Use case: batch deletes (delete 1000 records per call to avoid giant transactions). Each call = separate transaction. MUST have a termination condition — otherwise infinite loop. `RepeatStatus.continueIf(boolean)` is a convenience method. *(CONTINUABLE return karo toh phir se chalega — FINISHED karo toh ruk jaayega)*
+
+### 📖 How It Works
+```
+Tasklet Repeat Behavior:
+
+Call 1: execute() → delete 1000 rows → return CONTINUABLE → new tx
+Call 2: execute() → delete 1000 rows → return CONTINUABLE → new tx
+Call 3: execute() → delete 500 rows  → return FINISHED → STOP
+
+Each call = separate transaction
+Total: 2500 rows deleted across 3 transactions
+(vs. one giant DELETE 2500 in single tx → lock issues)
+```
+
+### 🗣️ How to Say in Interview
+"Yes, a tasklet can run multiple times by returning RepeatStatus.CONTINUABLE. Each call runs in its own transaction. I used this pattern for batch cleanup — deleting old records 1000 at a time to avoid long-running transactions that would lock the table. Each call deleted 1000 rows and returned CONTINUABLE. When fewer than 1000 were deleted, it returned FINISHED. This gave us controlled, incremental cleanup without giant transactions."
+
+### 💻 Code
+```java
+// Batch delete tasklet — runs multiple times
+@Component
+public class BatchDeleteTasklet implements Tasklet {
+
+    @Autowired private JdbcTemplate jdbc;
+    private static final int BATCH_SIZE = 1000;
+
+    @Override
+    public RepeatStatus execute(StepContribution contribution,
+                                ChunkContext chunkContext) {
+        int deleted = jdbc.update(
+            "DELETE FROM old_records WHERE created_date < ? LIMIT ?",
+            LocalDate.now().minusDays(90), BATCH_SIZE);
+
+        log.info("Deleted {} old records", deleted);
+
+        // CONTINUABLE if more to delete, FINISHED if done
+        return RepeatStatus.continueIf(deleted == BATCH_SIZE);
+    }
+}
+
+// Simple one-shot tasklet (most common — 95% of tasklets)
+@Bean
+public Step oneTimeStep(JobRepository repo, PlatformTransactionManager tx) {
+    return new StepBuilder("oneTimeStep", repo)
+            .tasklet((contribution, context) -> {
+                sendEmail("Job completed successfully");
+                return RepeatStatus.FINISHED;  // run once only
+            }, tx).build();
+}
+```
+
+### ⚠️ Pitfalls / Gotchas
+- No termination condition = INFINITE LOOP *(CONTINUABLE mein condition nahi diya toh infinite loop)*
+- Each call is a separate transaction — not one big transaction
+- No built-in checkpoint like chunk processing
+- `RepeatStatus.continueIf(deleted >= BATCH_SIZE)` — convenience method
+- Most tasklets (95%) just return FINISHED
+
+### ⚡ Remember
+- CONTINUABLE = run again, FINISHED = stop *(CONTINUABLE = phir chalao, FINISHED = band karo)*
+- Each call = new transaction
+- Great for: batch deletes, incremental cleanup
+- MUST have termination condition
+- `RepeatStatus.continueIf(boolean)` for cleaner code
+
+### 🔗 Follow-ups
+- [Q83 → RepeatStatus details](#q83)
+- [Q79 → Tasklet basics](#q79)
+- [Q80 → Tasklet vs Chunk](#q80)
+
+---
+
+## Q83. What is RepeatStatus?
+
+### 📝 One-Liner
+RepeatStatus is an enum with two values: `FINISHED` (step complete, move on) and `CONTINUABLE` (call execute again).
+
+### 🔑 Quick Answer
+`RepeatStatus` controls tasklet repetition: **FINISHED** = done, proceed to next step (used 95% of the time). **CONTINUABLE** = call execute() again in a new transaction (used for incremental operations). Convenience method: `RepeatStatus.continueIf(condition)` returns CONTINUABLE if condition is true, FINISHED if false. *(FINISHED = khatam agla step pe jao, CONTINUABLE = ek aur baar chalao)*
+
+### 📖 How It Works
+```
+RepeatStatus Enum:
+
+RepeatStatus.FINISHED:
+  execute() → FINISHED → step COMPLETED → move to next step
+
+RepeatStatus.CONTINUABLE:
+  execute() → CONTINUABLE → execute() again (new tx) → CONTINUABLE → ...
+  → eventually FINISHED → step COMPLETED
+
+RepeatStatus.continueIf(boolean):
+  continueIf(true)  → CONTINUABLE
+  continueIf(false) → FINISHED
+```
+
+### 🗣️ How to Say in Interview
+"RepeatStatus is an enum that controls whether a tasklet runs again or finishes. FINISHED means the step is done and the job moves to the next step — this is what 95% of tasklets return. CONTINUABLE tells Spring Batch to call execute again in a new transaction, useful for batch operations like deleting records in chunks. The continueIf convenience method makes conditional returns cleaner."
+
+### 💻 Code
+```java
+// Most common: FINISHED (one-shot)
+return RepeatStatus.FINISHED;
+
+// Repeat: CONTINUABLE
+return RepeatStatus.CONTINUABLE;
+
+// Conditional: continueIf
+int deleted = deleteOldRecords(1000);
+return RepeatStatus.continueIf(deleted == 1000);  // continue if full batch deleted
+```
+
+### ⚡ Remember
+- Two values: FINISHED and CONTINUABLE
+- FINISHED = done (95% of tasklets) *(zyada tar FINISHED use hota hai)*
+- CONTINUABLE = run again (batch operations)
+- `continueIf(boolean)` = convenience method
+- Each CONTINUABLE call = new transaction
+
+### 🔗 Follow-ups
+- [Q82 → Running tasklet multiple times](#q82)
+- [Q79 → Tasklet basics](#q79)
+- [Q80 → When to use tasklet](#q80)

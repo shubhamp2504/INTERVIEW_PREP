@@ -1,530 +1,643 @@
-# 🔴 Spring Batch — Transactions & Restartability (Q63–Q69)
-
-> 🔑 Quick Answer → 📖 Step-by-Step Explanation → 🗣️ How to Say in Interview → 💻 Code → ⚡ Remember → 🔗 Follow-ups
+# 🔄 Transactions & Restart — Q63 to Q69
 
 ---
 
-<a id="q63"></a>
-
 ## Q63. How does Spring Batch handle transactions?
 
+### 📝 One-Liner
+Each chunk runs in its own transaction — commit on success, rollback on failure — with metadata updates always persisted in a separate transaction.
+
 ### 🔑 Quick Answer
+Spring Batch wraps each chunk in a transaction using `PlatformTransactionManager`. Read → Process → Write all happen in ONE transaction per chunk. On success → commit. On failure → rollback (only current chunk). Critical design: metadata updates (StepExecution, ExecutionContext) run in a SEPARATE transaction that always commits — even if the chunk fails. This is how Spring Batch knows where to restart. *(Har chunk ka apna transaction — fail hua toh sirf woh rollback, metadata hamesha save)*
 
-> Each **chunk** runs in its own transaction. Spring Batch begins a transaction before reading, commits after writing, and rolls back the entire chunk if anything fails. **Metadata updates happen in a separate transaction** so they persist even on failure.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — One chunk = One transaction:**
-
+### 📖 How It Works
 ```
-Chunk 1 (records 1-500):
-  BEGIN TRANSACTION
-    reader.read() × 500
-    processor.process() × 500
-    writer.write(500 items)
-  COMMIT ✅
+Per-Chunk Transaction:
 
-Chunk 2 (records 501-1000):
-  BEGIN TRANSACTION
-    reader.read() × 500
-    processor.process() × 500
-    writer.write(500 items)
-  COMMIT ✅
+┌─ CHUNK TRANSACTION (data) ──────────────────┐
+│  read 500 items → process 500 → write 500   │
+│  SUCCESS → COMMIT ✅                         │
+│  FAILURE → ROLLBACK ❌                       │
+└─────────────────────────────────────────────┘
+         ↓
+┌─ METADATA TRANSACTION (always commits) ─────┐
+│  UPDATE BATCH_STEP_EXECUTION                 │
+│  UPDATE BATCH_STEP_EXECUTION_CONTEXT         │
+│  COMMIT ✅ (even if chunk failed!)           │
+└─────────────────────────────────────────────┘
 
-Chunk 3 (records 1001-1500):
-  BEGIN TRANSACTION
-    reader.read() × 500
-    processor.process() × 300
-    💥 Exception!
-  ROLLBACK ❌  ← Only this chunk's data is lost
-
-Records 1-1000: ✅ Permanently in database (already committed)
-Records 1001-1500: ❌ Rolled back (none written)
+Why separate transactions?
+→ If chunk fails, metadata still records WHERE it failed
+→ On restart, Spring Batch reads metadata → knows where to resume
 ```
 
-**Step 2 — Metadata is in a SEPARATE transaction:**
+### 🗣️ How to Say in Interview
+"Spring Batch handles transactions at the chunk level. Each chunk runs within its own transaction — successful chunks commit, failed chunks roll back. The critical design insight is that metadata updates happen in a separate transaction that always commits, even when the data chunk fails. This separation is what makes restartability possible — the metadata preserves the exact failure point. In my project, we verified this by looking at BATCH_STEP_EXECUTION_CONTEXT after a failure — the read count and commit count were preserved, allowing the restart to resume from the exact chunk that failed."
 
-```
-BUSINESS TRANSACTION (chunk data):
-  BEGIN → Read/Process/Write → COMMIT or ROLLBACK
-
-METADATA TRANSACTION (independent):
-  BEGIN → Update StepExecution counts → Save ExecutionContext → COMMIT
-
-Why separate?
-  Even if business transaction rolls back,
-  the metadata still records that the failure happened.
-  This is ESSENTIAL for restart — without it, Spring Batch
-  wouldn't know where the job failed.
-```
-
-**Step 3 — Transaction manager:**
-
+### 💻 Code
 ```java
 @Bean
-public Step step(JobRepository repo, PlatformTransactionManager tx) {
-    return new StepBuilder("step", repo)
-            .<Order, Order>chunk(500, tx)  // tx manages the chunk transaction
+public Step transactionalStep(JobRepository jobRepository,
+                               PlatformTransactionManager tx) {
+    return new StepBuilder("transactionalStep", jobRepository)
+            .<Order, Order>chunk(500, tx)  // each chunk = one tx
             .reader(reader())
             .processor(processor())
             .writer(writer())
             .build();
 }
 
-// PlatformTransactionManager can be:
-// - DataSourceTransactionManager (JDBC)
-// - JpaTransactionManager (JPA/Hibernate)
-// - JtaTransactionManager (distributed transactions)
+// Custom transaction attributes
+@Bean
+public Step customTxStep(JobRepository jobRepository,
+                         PlatformTransactionManager tx) {
+    DefaultTransactionAttribute txAttr = new DefaultTransactionAttribute();
+    txAttr.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
+    txAttr.setTimeout(300);  // 5 min per chunk transaction
+    txAttr.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+
+    return new StepBuilder("customTxStep", jobRepository)
+            .<Order, Order>chunk(500, tx)
+            .reader(reader())
+            .writer(writer())
+            .transactionAttribute(txAttr)
+            .build();
+}
 ```
 
-### 🗣️ How to Explain in Interview
+### ⚠️ Pitfalls / Gotchas
+- Transaction timeout is per CHUNK, not per step or job *(timeout har chunk ke liye hai, poore job ke liye nahi)*
+- Don't use `@Transactional` on batch components — Spring Batch manages transactions itself
+- External API calls in writer are NOT transactional — rollback won't undo them
+- File writes are NOT transactional — written data stays even after rollback
 
-> *"Spring Batch manages transactions at the chunk level. Each chunk — say 500 records — runs in its own transaction. If the chunk succeeds, it commits and those records are permanent. If it fails, only that chunk rolls back — previous chunks are safe. The clever part is that metadata updates happen in a separate transaction. So even when a chunk fails and rolls back, the metadata — read counts, the last successful position — is still saved. This is what makes restart possible: the metadata knows exactly where the job left off."*
+### 🎯 Tricky Interview Qs
 
-### ⚡ Key Points to Remember
+**Q: Why doesn't Spring Batch use one big transaction for the entire step?**
+Because a single transaction for millions of records would: (1) hold DB locks too long, (2) consume massive memory for undo logs, (3) risk timeout, (4) lose ALL work on single failure. Per-chunk transactions limit blast radius.
 
-1. **One chunk = One transaction**
-2. Failure → **only current chunk** rolls back
-3. Previous chunks are **permanently committed**
-4. **Metadata** in separate transaction (persists even on failure)
-5. Transaction manager is injected in Step configuration
+### ⚡ Remember
+- One chunk = one transaction (commit or rollback)
+- Metadata = SEPARATE transaction (always commits) *(metadata hamesha save — restart ke liye zaruri)*
+- DataSourceTransactionManager for JDBC, JpaTransactionManager for JPA
+- Don't add @Transactional on batch beans
+- Non-transactional resources (files, APIs) won't rollback
+
+### 🔗 Follow-ups
+- [Q25 → Transaction details in chunk processing](#q25)
+- [Q64 → What rollback means in batch](#q64)
+- [Q66 → Restartability mechanism](#q66)
 
 ---
-
-<a id="q64"></a>
 
 ## Q64. What is rollback in Spring Batch?
 
+### 📝 One-Liner
+Rollback undoes all database changes from the current failed chunk — but file writes and external API calls are NOT rolled back.
+
 ### 🔑 Quick Answer
+When a chunk fails, the transaction manager rolls back all database changes made by that chunk's write operation. All INSERTs, UPDATEs, DELETEs from that chunk are undone. But non-transactional operations are NOT rolled back: file writes stay on disk, API calls already sent can't be unsent, messages already published to Kafka remain. The `rollbackCount` metric in StepExecution tracks how many chunk rollbacks occurred. *(Database changes wapas ho jaate hain, lekin file write aur API calls wapas nahi hote)*
 
-> Rollback means the **current chunk's data changes are undone** — nothing from that chunk is written to the database. It happens when an exception occurs during read, process, or write. Previous chunks remain committed.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — What gets rolled back and what doesn't:**
-
+### 📖 How It Works
 ```
-ROLLED BACK (undone):
-  ✗ Database INSERTs/UPDATEs from writer
-  ✗ JPA entity changes
-  ✗ JMS messages (if transactional)
+Rollback Scope:
 
-NOT ROLLED BACK (still happens):
-  ✓ File writes (files don't support transactions!)
-  ✓ External API calls already made
-  ✓ Emails/SMS already sent
-  ✓ Metadata updates (separate transaction)
-  ✓ Previously committed chunks
-```
+ROLLED BACK (transactional):
+├── Database INSERTs from this chunk → undone
+├── Database UPDATEs from this chunk → reverted
+└── Database DELETEs from this chunk → restored
 
-**Step 2 — Scenario: failure at different phases:**
+NOT ROLLED BACK (non-transactional):
+├── File already written → stays on disk ❌
+├── API calls already made → can't unsend ❌
+├── Kafka messages published → stay in topic ❌
+├── Emails sent → can't unsend ❌
+└── Cache updates → still in cache ❌
 
-```
-Failure during READ:
-  No data was processed or written → rollback is trivial
-  Reader may retry or skip (if configured)
-
-Failure during PROCESS:
-  Some items read but nothing written → rollback discards processed items
-  With skip: bad item excluded, chunk retried
-
-Failure during WRITE:
-  ALL items in chunk rolled back (even good ones)
-  With skip: scan mode (one-by-one) to find bad item
+StepExecution tracks:
+  rollbackCount: 3  → 3 chunks were rolled back during this step
 ```
 
-**Step 3 — The rollbackCount metric:**
+### 🗣️ How to Say in Interview
+"Rollback in Spring Batch undoes all database changes from the failed chunk — all INSERTs, UPDATEs, and DELETEs for that chunk revert. However, non-transactional operations like file writes and external API calls cannot be rolled back. In my project, we had a step that wrote to both a database and a file. When a chunk failed, the database data rolled back but the file retained the partially written data. We solved this by writing to a temporary file first and renaming it only after the step completed successfully — a common pattern for transactional-like file handling."
 
+### 💻 Code
+```java
+// Monitoring rollbacks
+@Bean
+public StepExecutionListener rollbackMonitor() {
+    return new StepExecutionListener() {
+        @Override
+        public ExitStatus afterStep(StepExecution se) {
+            if (se.getRollbackCount() > 0) {
+                log.warn("Step '{}' had {} rollbacks out of {} chunks",
+                    se.getStepName(), se.getRollbackCount(), se.getCommitCount());
+            }
+            return se.getExitStatus();
+        }
+    };
+}
+
+// Safe file writing pattern (temp file + rename)
+@Bean
+public Step safeFileStep(JobRepository repo, PlatformTransactionManager tx) {
+    return new StepBuilder("safeFileStep", repo)
+            .<Order, Order>chunk(500, tx)
+            .reader(reader())
+            .writer(tempFileWriter())          // write to temp file
+            .listener(new StepExecutionListener() {
+                @Override
+                public ExitStatus afterStep(StepExecution se) {
+                    if (se.getStatus() == BatchStatus.COMPLETED) {
+                        Files.move(tempFile, finalFile);  // rename on success
+                    } else {
+                        Files.delete(tempFile);           // delete on failure
+                    }
+                    return se.getExitStatus();
+                }
+            })
+            .build();
+}
 ```
-StepExecution after completion:
-  commitCount: 97         ← 97 chunks committed successfully
-  rollbackCount: 3        ← 3 chunks had to be rolled back
 
-rollbackCount > 0 means something went wrong
-Check logs and SkipListener to find what failed
-```
+### ⚠️ Pitfalls / Gotchas
+- File operations = NOT transactional → must handle cleanup manually *(file ka rollback manual karna padta hai)*
+- `rollbackCount` includes retry rollbacks (if retry is configured)
+- JPA entities may still be in first-level cache after rollback → clear EntityManager
+- High rollbackCount indicates data quality or configuration issues
 
-### 🗣️ How to Explain in Interview
+### ⚡ Remember
+- Rollback = undo DB changes for current chunk only
+- Files, APIs, messages = NOT rolled back *(non-transactional cheezein rollback nahi hoti)*
+- `rollbackCount` tracks number of rolled-back chunks
+- Use temp file + rename for safe file writing
+- Previous chunks (already committed) are safe
 
-> *"Rollback in Spring Batch means the current chunk's database changes are completely undone. If the writer was inserting 500 records and it fails at record 300, all 500 are rolled back — none are written. This is standard database transaction behavior. What's important to know is that non-transactional operations like file writes or API calls can't be rolled back. If I wrote to a file AND a database in the same step and the database write fails, the file already has the data — that's a potential inconsistency. In such cases, I use separate steps or idempotent writes."*
-
-### ⚡ Key Points to Remember
-
-1. Rollback = **current chunk's DB changes undone**
-2. **Previous chunks** stay committed
-3. **File operations** can't be rolled back (not transactional)
-4. Check **rollbackCount** in StepExecution for monitoring
-5. Use **idempotent** operations for non-transactional resources
+### 🔗 Follow-ups
+- [Q63 → Transaction management](#q63)
+- [Q65 → What happens when chunk fails](#q65)
+- [Q24 → Chunk failure scenarios](#q24)
 
 ---
 
-<a id="q65"></a>
-
 ## Q65. What happens when a chunk fails?
 
+### 📝 One-Liner
+Current chunk rolls back; without fault tolerance the job fails; with skip/retry, bad items are handled and processing continues.
+
 ### 🔑 Quick Answer
+When a chunk fails: **(1) No fault tolerance** → chunk rolls back → step FAILED → job FAILED (immediate). **(2) With retry** → retry the operation up to N times (for transient errors like deadlocks). **(3) With skip** → skip the bad item, continue with rest (for data errors). **(4) With both** → retry first, then skip if retries exhausted. Previous committed chunks are ALWAYS safe. The `skipLimit` acts as a safety net — too many skips means systemic problem, fails the step. *(Pehle retry karo, phir skip karo, zyada ho gaye toh poora band)*
 
-> Transaction rolls back → if **no fault tolerance**: step FAILS, job FAILS. If **skip configured**: check exception type, skip bad item or fail. If **retry configured**: retry the operation before failing.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — Decision tree after chunk failure:**
-
+### 📖 How It Works
 ```
-Chunk fails with Exception
-│
-├── Is faultTolerant() configured?
-│   │
-│   ├── NO → ROLLBACK → Step FAILED → Job FAILED
-│   │
-│   └── YES →
-│       │
-│       ├── Is this exception retryable?
-│       │   ├── YES → Retry (up to retryLimit)
-│       │   │         If still fails after retries → check skip
-│       │   └── NO → check skip
-│       │
-│       └── Is this exception skippable?
-│           ├── YES → Is skipLimit reached?
-│           │   ├── NO → Skip item, continue processing
-│           │   └── YES → Step FAILED (too many skips)
-│           │
-│           └── NO → Step FAILED → Job FAILED
+Chunk Failure Decision Tree:
+
+Chunk fails with exception
+  ↓
+faultTolerant() configured?
+├── NO → ROLLBACK → STEP FAILED → JOB FAILED
+└── YES
+     ├── retry() configured for this exception?
+     │   ├── YES → retry up to retryLimit
+     │   │   ├── retry succeeds → continue ✅
+     │   │   └── all retries fail → check skip
+     │   └── NO → check skip
+     └── skip() configured for this exception?
+         ├── YES → skipCount < skipLimit?
+         │   ├── YES → skip item → continue ✅
+         │   └── NO → too many skips → STEP FAILED
+         └── NO → ROLLBACK → STEP FAILED
+
+Best Practice Config:
+  .faultTolerant()
+  .retry(DeadlockException.class).retryLimit(3)     // transient
+  .skip(ValidationException.class).skipLimit(100)     // data errors
+  .noSkip(FatalException.class)                       // must fail
+  .listener(skipListener)                             // audit trail
 ```
 
-**Step 2 — Complete example:**
+### 🗣️ How to Say in Interview
+"When a chunk fails, Spring Batch first checks the fault tolerance configuration. Without it, the step fails immediately. With retry configured, it retries the operation — useful for transient errors like deadlocks or timeouts. With skip, it skips the bad item and continues — useful for data errors like validation failures. I combine both: retry 3 times for transient errors, then skip if retries are exhausted. The skipLimit acts as a safety net — if we're skipping too many records, it's likely a systemic issue and the job should fail. In my project, we always logged skipped items through SkipListener for the operations team to review."
 
+### 💻 Code
 ```java
 @Bean
-public Step step(JobRepository repo, PlatformTransactionManager tx) {
-    return new StepBuilder("processOrders", repo)
-            .<Order, Order>chunk(500, tx)
+public Step resilientStep(JobRepository repo, PlatformTransactionManager tx) {
+    return new StepBuilder("resilientStep", repo)
+            .<Order, ProcessedOrder>chunk(500, tx)
             .reader(reader())
             .processor(processor())
             .writer(writer())
             .faultTolerant()
-            .retry(DeadlockLoserDataAccessException.class)     // Retry deadlocks
-            .retryLimit(3)                                      // Up to 3 times
-            .skip(DataIntegrityViolationException.class)        // Skip bad data
-            .skip(ValidationException.class)                    // Skip invalid items
-            .noSkip(FileNotFoundException.class)                // Never skip this!
-            .skipLimit(100)                                     // Max 100 skips total
-            .listener(new LoggingSkipListener())                // Log what was skipped
+            // Retry transient errors
+            .retry(DeadlockLoserDataAccessException.class)
+            .retry(TransientDataAccessException.class)
+            .retryLimit(3)
+            // Skip data errors
+            .skip(ValidationException.class)
+            .skip(FlatFileParseException.class)
+            .skipLimit(100)
+            // These must ALWAYS fail (never skip)
+            .noSkip(DatabaseConnectionException.class)
+            .noSkip(OutOfMemoryError.class)
+            // Audit trail
+            .listener(skipListener())
             .build();
 }
 ```
 
-### 🗣️ How to Explain in Interview
+### ⚠️ Pitfalls / Gotchas
+- Without `.faultTolerant()`, even one bad record kills the job *(bina fault tolerance ke ek error = job khatam)*
+- skipLimit is TOTAL (read + process + write combined)
+- Write failures trigger scan mode (slow — re-writes one-by-one)
+- `noSkip()` overrides `skip()` — use for fatal errors that must stop the job
+- Always add SkipListener — otherwise skipped items are invisible
 
-> *"When a chunk fails, it depends on whether fault tolerance is configured. Without it, the step and job fail immediately. With fault tolerance, Spring Batch checks: is this a retryable exception like a database deadlock? If so, retry up to N times. If retries fail or the exception isn't retryable, check if it's skippable — like a data validation error. If yes and skip limit isn't reached, skip the bad record and continue. If the skip limit is reached, the job fails because too many errors indicate a systemic problem. I always configure both retry and skip in production with a SkipListener to log every skipped record."*
+### ⚡ Remember
+- No config → one error kills job
+- Retry → for transient errors (deadlock, timeout)
+- Skip → for data errors (validation, parse) *(retry transient ke liye, skip data error ke liye)*
+- skipLimit = safety net (too many = systemic problem)
+- Always: retry + skip + noSkip + SkipListener
 
-### ⚡ Key Points to Remember
-
-1. No fault tolerance → **immediate failure**
-2. Retry first → for **transient errors** (deadlocks, timeouts)
-3. Skip next → for **data errors** (bad records)
-4. **skipLimit** = safety net (too many errors = systemic problem)
-5. Always **log skipped records** with SkipListener
+### 🔗 Follow-ups
+- [Q70 → Skip logic details](#q70)
+- [Q71 → Retry logic details](#q71)
+- [Q24 → Chunk failure in chunk processing](#q24)
 
 ---
-
-<a id="q66"></a>
 
 ## Q66. How does Spring Batch support restartability?
 
-### 🔑 Quick Answer
-
-> Through three mechanisms: (1) **Step-level status tracking** — skip completed steps on restart. (2) **ExecutionContext checkpointing** — save reader position after each chunk commit. (3) **Database persistence** — all state is in BATCH_* tables, survives JVM crashes.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — Mechanism 1: Step status tracking:**
-
-```
-First run:
-  Step 1: COMPLETED ✅
-  Step 2: FAILED ❌
-  Step 3: Not started
-
-Restart:
-  Step 1: Status=COMPLETED → SKIP ✅ (don't re-run)
-  Step 2: Status=FAILED → RESUME from checkpoint
-  Step 3: Status=null → Execute from beginning
-```
-
-**Step 2 — Mechanism 2: Chunk-level checkpointing:**
-
-```
-Step 2 processes 10,000 records (chunk size 500):
-  Chunk 1 (1-500):    COMMIT → Save: ExecutionContext{"read.count": 500}
-  Chunk 2 (501-1000): COMMIT → Save: ExecutionContext{"read.count": 1000}
-  ...
-  Chunk 10 (4501-5000): COMMIT → Save: ExecutionContext{"read.count": 5000}
-  Chunk 11 (5001-5500): 💥 CRASH
-
-On restart:
-  Load ExecutionContext from DB: {"read.count": 5000}
-  Reader starts from record 5001
-  Records 1-5000 are NOT re-processed ✅
-```
-
-**Step 3 — Mechanism 3: Database persistence:**
-
-```
-All of this works because:
-  - BATCH_JOB_EXECUTION stores: job status
-  - BATCH_STEP_EXECUTION stores: step status + counts
-  - BATCH_STEP_EXECUTION_CONTEXT stores: reader position (JSON)
-
-Even if the JVM crashes completely, the state is in the DATABASE.
-A new JVM can read it and resume.
-```
-
-### 🗣️ How to Explain in Interview
-
-> *"Spring Batch supports restartability through three mechanisms. First, step-level status tracking — completed steps are skipped on restart. Second, chunk-level checkpointing — after each chunk commits, the reader's current position is saved in the ExecutionContext, which is persisted to the database. So if the job crashes after processing 5000 records, on restart it reads the saved position and starts from record 5001. Third, all of this survives JVM crashes because it's stored in the database, not in memory. A completely new JVM instance can pick up exactly where the previous one left off."*
-
-### ⚡ Key Points to Remember
-
-1. **Step tracking**: completed steps skipped on restart
-2. **Chunk checkpoint**: reader position saved after each commit
-3. **Database**: all state persists across JVM crashes
-4. **At most one chunk** of work is lost on crash
-5. Built into framework — **no custom restart code needed**
-
----
-
-<a id="q67"></a>
-
-## Q67. How does ExecutionContext work?
+### 📝 One-Liner
+Three mechanisms: step-level status tracking (skip completed steps), chunk-level checkpointing (save position after each commit), and database persistence (survives JVM crashes).
 
 ### 🔑 Quick Answer
+Restartability is built on three pillars: **(1) Step-level tracking** — completed steps are skipped on restart. **(2) Chunk-level checkpointing** — after each chunk commits, the reader's position is saved in `ExecutionContext`. On restart, the reader initializes at the last saved position. **(3) Database persistence** — all metadata (execution status, context) is stored in Spring Batch tables, surviving JVM crashes. At most ONE chunk of work is lost on failure. *(Teen cheezein: step status, chunk checkpoint, aur database mein save — zyada se zyada ek chunk ka kaam jaata hai)*
 
-> ExecutionContext is a **serialized Map** (key-value pairs) that gets saved to the database after every chunk commit. Two scopes: **Job-level** (shared across steps) and **Step-level** (private to one step, used for checkpointing).
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — Two scopes, two tables:**
-
+### 📖 How It Works
 ```
-Job ExecutionContext:
-  - Stored in: BATCH_JOB_EXECUTION_CONTEXT
-  - Scope: Shared across ALL steps
-  - Use: Inter-step communication
-  - Example: {"totalRecords": 50000, "outputFile": "report.csv"}
+Restartability Architecture:
 
-Step ExecutionContext:
-  - Stored in: BATCH_STEP_EXECUTION_CONTEXT
-  - Scope: Private to ONE step
-  - Use: Reader position (checkpointing)
-  - Example: {"FlatFileItemReader.read.count": 25000}
-```
+Step Level:
+  Step 1 (COMPLETED) → SKIP on restart
+  Step 2 (FAILED)    → RESUME on restart
+  Step 3 (NOT RUN)   → EXECUTE on restart
 
-**Step 2 — When is it saved?**
-
-```
-Every chunk commit:
-  1. Read N items
-  2. Process N items
-  3. Write N items
-  4. COMMIT business transaction
-  5. Save ExecutionContext to DB ← happens here!
-  6. Update StepExecution counts
-
-It's saved AFTER each chunk, not after each record.
-So if you crash between two chunk commits, the LAST saved state is used.
-```
-
-**Step 3 — How to use it in code:**
-
-```java
-// WRITE to Job ExecutionContext (Step 1)
-@Bean
-public Tasklet step1Tasklet() {
-    return (contribution, chunkContext) -> {
-        ExecutionContext jobContext = chunkContext.getStepContext()
-                .getStepExecution()
-                .getJobExecution()
-                .getExecutionContext();
-        
-        jobContext.putInt("totalRecords", 50000);
-        jobContext.putString("reportDate", "2024-01-15");
-        
-        return RepeatStatus.FINISHED;
-    };
-}
-
-// READ from Job ExecutionContext (Step 2)
-@Bean
-@StepScope
-public ItemProcessor<Record, Record> step2Processor(
-        @Value("#{jobExecutionContext['totalRecords']}") int total) {
-    
-    return record -> {
-        // Use the value from Step 1
-        log.info("Processing record against total: {}", total);
-        return record;
-    };
-}
-```
-
-### 🗣️ How to Explain in Interview
-
-> *"ExecutionContext is a Map that Spring Batch serializes to the database. There are two scopes. Job ExecutionContext is shared across all steps — useful for passing data between steps, like a total count or output file name. Step ExecutionContext is private to one step — used mainly by readers to save their position for restart. The built-in FlatFileItemReader automatically saves 'read.count' in the Step ExecutionContext. The important thing is that it's saved after every chunk commit, so on restart, the last saved state is loaded and the reader picks up from there."*
-
-### ⚡ Key Points to Remember
-
-1. **Job context** = shared between steps
-2. **Step context** = private, used for checkpointing
-3. Saved **after every chunk commit**
-4. Serialized as **JSON** in BATCH_*_EXECUTION_CONTEXT tables
-5. Access: `#{jobExecutionContext['key']}` or `#{stepExecutionContext['key']}`
-
----
-
-<a id="q68"></a>
-
-## Q68. Where is ExecutionContext stored?
-
-### 🔑 Quick Answer
-
-> **Job ExecutionContext** → `BATCH_JOB_EXECUTION_CONTEXT` table. **Step ExecutionContext** → `BATCH_STEP_EXECUTION_CONTEXT` table. Both are serialized as **JSON** (Spring Batch 5+) and stored in the `SHORT_CONTEXT` column.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — The tables:**
-
-```sql
--- Job ExecutionContext
-SELECT * FROM BATCH_JOB_EXECUTION_CONTEXT WHERE JOB_EXECUTION_ID = 12;
-
-JOB_EXECUTION_ID | SHORT_CONTEXT
-12               | {"totalRecords":50000,"reportDate":"2024-01-15"}
-
--- Step ExecutionContext
-SELECT * FROM BATCH_STEP_EXECUTION_CONTEXT WHERE STEP_EXECUTION_ID = 45;
-
-STEP_EXECUTION_ID | SHORT_CONTEXT
-45                | {"FlatFileItemReader.read.count":25000}
-```
-
-**Step 2 — Serialization format:**
-
-| Spring Batch Version | Format |
-|---------------------|--------|
-| 4.x and earlier | Java serialization (binary) |
-| 5.x and later | **JSON** (human-readable) |
-
-**Step 3 — Size considerations:**
-
-```
-SHORT_CONTEXT column: VARCHAR(2500) by default
-SERIALIZED_CONTEXT column: TEXT/CLOB (for larger contexts)
-
-If your context fits in 2500 chars → goes to SHORT_CONTEXT
-If larger → goes to SERIALIZED_CONTEXT
-
-⚠️ Don't store large objects in ExecutionContext!
-Store only: counts, positions, file paths, small metadata
-```
-
-### 🗣️ How to Explain in Interview
-
-> *"ExecutionContext is stored in two tables: BATCH_JOB_EXECUTION_CONTEXT for job-level context and BATCH_STEP_EXECUTION_CONTEXT for step-level context. In Spring Batch 5, it's serialized as JSON in the SHORT_CONTEXT column — which has a 2500 character limit. For larger data, it overflows to the SERIALIZED_CONTEXT column which is a CLOB. The key thing is to keep the context small — just positions, counts, and paths. Don't store actual data records in it."*
-
-### ⚡ Key Points to Remember
-
-1. **Job context** → `BATCH_JOB_EXECUTION_CONTEXT` table
-2. **Step context** → `BATCH_STEP_EXECUTION_CONTEXT` table
-3. Format: **JSON** (Spring Batch 5+)
-4. Keep context **small** — counts, positions, paths only
-5. `SHORT_CONTEXT` (2500 chars) → `SERIALIZED_CONTEXT` (CLOB) for overflow
-
----
-
-<a id="q69"></a>
-
-## Q69. How does Spring Batch resume from the failure point?
-
-### 🔑 Quick Answer
-
-> It reads the **ExecutionContext from the database**, extracts the reader's last saved position, initializes the reader at that position, and continues reading from the next record. Only the last uncommitted chunk is lost.
-
-### 📖 Step-by-Step Explanation
-
-**Step 1 — Complete resume flow:**
-
-```
-ORIGINAL RUN:
-  Chunk 1 → 500 records → COMMIT → Save EC: {"read.count": 500}
-  Chunk 2 → 500 records → COMMIT → Save EC: {"read.count": 1000}
-  Chunk 3 → 500 records → COMMIT → Save EC: {"read.count": 1500}
-  Chunk 4 → reading record 1823 → 💥 JVM CRASH!
+Chunk Level (within failed step):
+  Chunk 1 → COMMITTED ✅ (saved: position=500)
+  Chunk 2 → COMMITTED ✅ (saved: position=1000)
+  Chunk 3 → COMMITTED ✅ (saved: position=1500)
+  Chunk 4 → IN-PROGRESS → 💥 CRASH
   
-  Last saved EC in DB: {"read.count": 1500}
-  Records 1-1500: ✅ In database (committed)
-  Records 1501-1823: ❌ Lost (uncommitted chunk)
+  On restart:
+  → Load position=1500 from ExecutionContext
+  → Reader starts at 1500 (chunks 1-3 skipped)
+  → Chunk 4 re-processed from 1501
 
-RESTART:
-  1. Load StepExecution from DB → status=FAILED
-  2. Load ExecutionContext from DB → {"read.count": 1500}
-  3. Initialize reader with read.count=1500
-  4. Reader: open file, skip to line 1501
-  5. Process from record 1501 (chunk 4 restarts from beginning)
-  
-  Records 1501-1823 are re-processed (they were never committed)
-  This is AT MOST one chunk's worth of duplicate processing.
+Database Persistence:
+  BATCH_STEP_EXECUTION → step status
+  BATCH_STEP_EXECUTION_CONTEXT → reader position, custom data
+  → Survives JVM crash, server restart, deployment
 ```
 
-**Step 2 — How the reader uses ExecutionContext:**
+### 🗣️ How to Say in Interview
+"Spring Batch's restartability is built on three pillars. First, step-level tracking — completed steps are skipped on restart. Second, chunk-level checkpointing — after each chunk commits, the reader's position is saved in the ExecutionContext. On restart, the reader initializes at the last checkpoint, so we only re-process the failed chunk. Third, database persistence — all this metadata is stored in the batch tables, so even a JVM crash doesn't lose restart information. In my project, our nightly job processing 10 million records crashed at 3 AM. The 6 AM restart picked up from the 8-millionth record because 80% was already checkpointed."
 
+### 💻 Code
 ```java
-// FlatFileItemReader internal implementation (simplified):
-public void open(ExecutionContext executionContext) {
-    this.resource = resource; // Open file
-    
-    // Check if this is a restart
-    if (executionContext.containsKey("read.count")) {
-        int savedPosition = executionContext.getInt("read.count");
-        
-        // Skip to saved position
-        for (int i = 0; i < savedPosition; i++) {
-            readLine(); // Skip already-processed lines
+// Built-in readers auto-save position
+// FlatFileItemReader → saves line number
+// JdbcPagingItemReader → saves page/offset
+
+// Custom reader with checkpoint support
+@Component
+public class CheckpointReader implements ItemStreamReader<Record> {
+    private int position = 0;
+
+    @Override
+    public void open(ExecutionContext ctx) {
+        if (ctx.containsKey("position")) {
+            position = ctx.getInt("position");  // restore on restart
         }
+    }
+
+    @Override
+    public Record read() {
+        return hasMore() ? fetchAt(position++) : null;
+    }
+
+    @Override
+    public void update(ExecutionContext ctx) {
+        ctx.putInt("position", position);  // save after each chunk
     }
 }
 
-public void update(ExecutionContext executionContext) {
-    // Called after each chunk commit
-    executionContext.putInt("read.count", currentLineNumber);
+// Disable restartability for a step (rare)
+@Bean
+public Step nonRestartableStep(JobRepository repo, PlatformTransactionManager tx) {
+    return new StepBuilder("nonRestartable", repo)
+            .<Order, Order>chunk(500, tx)
+            .reader(reader())
+            .writer(writer())
+            .allowStartIfComplete(false)  // default: don't re-run completed
+            .build();
 }
 ```
 
-**Step 3 — What about database readers?**
+### ⚠️ Pitfalls / Gotchas
+- Multi-threaded steps LOSE restartability — threads read out of order, position tracking breaks *(multi-threaded step mein restart reliable nahi)*
+- Custom readers MUST implement `ItemStreamReader` with open/update/close for restart
+- Partitioned steps restart at partition level (failed partitions only)
+- Database metadata tables must be on reliable storage (not in-memory DB in production)
 
-```
-JdbcPagingItemReader resume:
-  Saved EC: {"start.after": {"id": 1500}}
-  
-  On restart:
-  Normal query: SELECT * FROM emp WHERE id > 0 ORDER BY id LIMIT 500
-  Restart query: SELECT * FROM emp WHERE id > 1500 ORDER BY id LIMIT 500
-  
-  The reader automatically adjusts the WHERE clause!
-```
+### ⚡ Remember
+- Three pillars: step status + chunk checkpoint + DB persistence
+- At most one chunk lost on crash *(zyada se zyada ek chunk ka loss)*
+- ExecutionContext = checkpoint storage
+- Built-in readers auto-checkpoint; custom readers need ItemStreamReader
+- Multi-threaded = no reliable restart
 
-### 🗣️ How to Explain in Interview
-
-> *"The resume mechanism is elegant. After each chunk commits, the reader saves its current position in the ExecutionContext — for FlatFileItemReader it saves the line count, for JdbcPagingItemReader it saves the last processed ID. This is persisted to the database. On restart, the reader's open() method checks if the ExecutionContext has a saved position. If yes, it initializes to that position: the file reader skips ahead that many lines, the paging reader adjusts its WHERE clause. The key insight is that at most one chunk's worth of data might be re-processed — the uncommitted chunk. Everything before that was already committed."*
-
-### ⚡ Key Points to Remember
-
-1. **ExecutionContext** loaded from DB on restart
-2. Reader **skips to saved position** (line count or ID)
-3. **At most one chunk** of data re-processed
-4. File readers skip lines, DB readers adjust WHERE clause
-5. Built into framework — **readers handle this automatically**
+### 🔗 Follow-ups
+- [Q62 → Internal restart flow](#q62)
+- [Q67 → ExecutionContext details](#q67)
+- [Q69 → Resume from failure point](#q69)
 
 ---
 
-> **🎯 Navigation:** [← Job Execution (Q55-62)](06-job-execution.md) | [Next → Error Handling (Q70-78)](08-error-handling.md) | [📋 All Sections](README.md)
+## Q67. How does ExecutionContext work?
+
+### 📝 One-Liner
+ExecutionContext is a serialized key-value map stored in the database — job-level context is shared across steps, step-level context is private to one step.
+
+### 🔑 Quick Answer
+ExecutionContext is a `Map<String, Object>` that persists between job/step executions. Two scopes: **Job ExecutionContext** — shared across all steps (store data to pass between steps). **Step ExecutionContext** — private to one step (store reader position, custom counters). It's saved to the database after every chunk commit, making it survive crashes. Access via `@BeforeStep` injection or SpEL expressions. *(Do scope: Job context = sab steps ke liye shared, Step context = ek step ka private)*
+
+### 📖 How It Works
+```
+ExecutionContext Scopes:
+
+Job ExecutionContext (shared):
+┌─────────────────────────────────┐
+│ key: "totalOrders" → 5000       │ ← shared across all steps
+│ key: "fileDate" → "2024-01-15"  │
+│ Stored in: BATCH_JOB_EXECUTION_CONTEXT
+└─────────────────────────────────┘
+  ↕ accessible from Step 1, Step 2, Step 3
+
+Step ExecutionContext (private):
+┌─────────────────────────────────┐
+│ Step 1 context:                 │
+│   reader.position → 7500        │ ← only Step 1 can see this
+│   commit.count → 15             │
+│ Stored in: BATCH_STEP_EXECUTION_CONTEXT
+└─────────────────────────────────┘
+
+Persistence: saved after EVERY chunk commit → survives crashes
+```
+
+### 🗣️ How to Say in Interview
+"ExecutionContext is a persistent key-value map with two scopes. Job-level context is shared across all steps — useful for passing data like file names or summary counts between steps. Step-level context is private to one step — used by readers for checkpoint positions and custom counters. It's serialized and saved to the database after every chunk commit, which is what makes restart work. In my project, we stored the total record count in job context from the validation step, then used it in the report step to verify data integrity after processing."
+
+### 💻 Code
+```java
+// Accessing Step ExecutionContext
+@Component
+public class ContextAwareProcessor implements ItemProcessor<Order, Order>, StepExecutionListener {
+    
+    private StepExecution stepExecution;
+
+    @Override
+    public void beforeStep(StepExecution se) {
+        this.stepExecution = se;
+    }
+
+    @Override
+    public Order process(Order order) {
+        // Write to step context (private to this step)
+        ExecutionContext stepCtx = stepExecution.getExecutionContext();
+        stepCtx.putInt("processedCount", 
+            stepCtx.getInt("processedCount", 0) + 1);
+
+        // Write to job context (shared across steps)
+        ExecutionContext jobCtx = stepExecution.getJobExecution().getExecutionContext();
+        jobCtx.putString("lastProcessedId", order.getId().toString());
+
+        return order;
+    }
+}
+
+// Pass data between steps using Job ExecutionContext
+@Bean
+public Step step1(JobRepository repo, PlatformTransactionManager tx) {
+    return new StepBuilder("step1", repo)
+            .tasklet((contribution, chunkContext) -> {
+                // Write to job context
+                chunkContext.getStepContext().getStepExecution()
+                    .getJobExecution().getExecutionContext()
+                    .putInt("totalRecords", countRecords());
+                return RepeatStatus.FINISHED;
+            }, tx).build();
+}
+
+// Read from job context in step 2 using SpEL
+@Bean
+@StepScope
+public ItemReader<Order> step2Reader(
+        @Value("#{jobExecutionContext['totalRecords']}") int totalRecords) {
+    log.info("Step 1 found {} records", totalRecords);
+    return buildReader(totalRecords);
+}
+```
+
+### ⚠️ Pitfalls / Gotchas
+- Context is serialized — only Serializable values can be stored *(sirf Serializable objects store ho sakte hain)*
+- SHORT_CONTEXT column has 2500 char limit — large data goes to SERIALIZED_CONTEXT
+- Don't store huge objects — context is saved EVERY chunk commit
+- Job context is loaded once at job start; step context is loaded at step start
+- SpEL: `#{jobExecutionContext['key']}` for job-level, `#{stepExecutionContext['key']}` for step-level
+
+### ⚡ Remember
+- Two scopes: Job (shared) and Step (private) *(Job context shared, Step context private)*
+- Saved after every chunk commit → survives crashes
+- Only Serializable values allowed
+- SpEL for late-binding: `#{jobExecutionContext['key']}`
+- Don't store large data — saved frequently
+
+### 🔗 Follow-ups
+- [Q68 → Where context is stored in DB](#q68)
+- [Q66 → Restartability using context](#q66)
+- [Q62 → Context in restart flow](#q62)
+
+---
+
+## Q68. Where is ExecutionContext stored?
+
+### 📝 One-Liner
+Job context in BATCH_JOB_EXECUTION_CONTEXT table, step context in BATCH_STEP_EXECUTION_CONTEXT table — serialized as JSON in Spring Batch 5.
+
+### 🔑 Quick Answer
+Two database tables: **BATCH_JOB_EXECUTION_CONTEXT** stores job-level context (one row per JobExecution). **BATCH_STEP_EXECUTION_CONTEXT** stores step-level context (one row per StepExecution). Each table has `SHORT_CONTEXT` (VARCHAR 2500) for small data and `SERIALIZED_CONTEXT` (CLOB) for overflow. Spring Batch 5 uses JSON serialization (Batch 4 used Java serialization by default). *(Do tables — ek job ke liye, ek step ke liye — JSON format mein serialize hota hai)*
+
+### 📖 How It Works
+```
+Database Storage:
+
+BATCH_JOB_EXECUTION_CONTEXT:
+┌──────────────────┬─────────────────────────────────────┐
+│ JOB_EXECUTION_ID │ SHORT_CONTEXT                       │
+│ 1                │ {"totalRecords": 5000, "file": ...} │
+│                  │ SERIALIZED_CONTEXT (CLOB for large)  │
+└──────────────────┴─────────────────────────────────────┘
+
+BATCH_STEP_EXECUTION_CONTEXT:
+┌───────────────────┬────────────────────────────────────┐
+│ STEP_EXECUTION_ID │ SHORT_CONTEXT                      │
+│ 1                 │ {"reader.position": 7500, ...}     │
+│                   │ SERIALIZED_CONTEXT (CLOB if needed) │
+└───────────────────┴────────────────────────────────────┘
+
+Serialization:
+  Spring Batch 5: JSON (human-readable, debuggable)
+  Spring Batch 4: Java serialization (binary, fragile)
+```
+
+### 🗣️ How to Say in Interview
+"ExecutionContext is stored in two database tables — BATCH_JOB_EXECUTION_CONTEXT for job-level data and BATCH_STEP_EXECUTION_CONTEXT for step-level data. Each has a SHORT_CONTEXT column for small data and a SERIALIZED_CONTEXT CLOB for larger objects. Spring Batch 5 uses JSON serialization, which makes debugging much easier compared to Batch 4's Java serialization. In my project, when troubleshooting restart issues, I directly queried BATCH_STEP_EXECUTION_CONTEXT to check the reader's saved position and verify it matched our expected checkpoint."
+
+### 💻 Code
+```sql
+-- Query job context
+SELECT jec.JOB_EXECUTION_ID, jec.SHORT_CONTEXT
+FROM BATCH_JOB_EXECUTION_CONTEXT jec
+JOIN BATCH_JOB_EXECUTION je ON je.JOB_EXECUTION_ID = jec.JOB_EXECUTION_ID
+WHERE je.JOB_INSTANCE_ID = 123;
+
+-- Query step context (check reader position)
+SELECT se.STEP_NAME, sec.SHORT_CONTEXT
+FROM BATCH_STEP_EXECUTION_CONTEXT sec
+JOIN BATCH_STEP_EXECUTION se ON se.STEP_EXECUTION_ID = sec.STEP_EXECUTION_ID
+WHERE se.JOB_EXECUTION_ID = 456;
+
+-- Example SHORT_CONTEXT value (JSON in Batch 5):
+-- {"@class":"java.util.HashMap","reader.position":7500,"commit.count":15}
+```
+
+### ⚠️ Pitfalls / Gotchas
+- SHORT_CONTEXT has 2500 char limit — storing large objects silently moves to SERIALIZED_CONTEXT *(2500 character ke baad CLOB mein chala jaata hai)*
+- Java serialization (Batch 4) breaks if class changes between deployments
+- JSON serialization (Batch 5) is more resilient to class changes
+- Don't query these tables in production without proper indexes
+
+### ⚡ Remember
+- Job context → BATCH_JOB_EXECUTION_CONTEXT
+- Step context → BATCH_STEP_EXECUTION_CONTEXT *(do tables yaad rakho)*
+- SHORT_CONTEXT (2500 chars) + SERIALIZED_CONTEXT (CLOB overflow)
+- Batch 5 = JSON, Batch 4 = Java serialization
+- Directly queryable for debugging
+
+### 🔗 Follow-ups
+- [Q67 → ExecutionContext usage](#q67)
+- [Q110 → All metadata tables](#q110)
+- [Q62 → Context used in restart](#q62)
+
+---
+
+## Q69. How does Spring Batch resume from the failure point?
+
+### 📝 One-Liner
+On restart, Spring Batch loads the reader's last saved position from ExecutionContext and initializes the reader at that position — skipping already-committed data.
+
+### 🔑 Quick Answer
+The resume mechanism: **(1)** Restart launches same JobInstance (same params). **(2)** For failed steps, Spring Batch loads the `ExecutionContext` from BATCH_STEP_EXECUTION_CONTEXT. **(3)** The context contains the reader's last saved position (line number, page offset, etc.). **(4)** Reader's `open(ExecutionContext)` method reads this position and initializes there. **(5)** Processing resumes from the next unprocessed chunk. At most ONE chunk of work is lost — the in-progress chunk at crash time. *(ExecutionContext se reader ka position load karta hai — wahi se shuru hota hai jahan chhoda tha)*
+
+### 📖 How It Works
+```
+Resume Flow:
+
+Original Run:
+  Chunk 1 → COMMIT (save position=500)
+  Chunk 2 → COMMIT (save position=1000)
+  Chunk 3 → COMMIT (save position=1500)
+  Chunk 4 → 💥 CRASH at item 1750
+  
+  ExecutionContext in DB: {position: 1500}  ← saved after last COMMIT
+
+Restart:
+  1. Load ExecutionContext → position: 1500
+  2. reader.open(context) → initialize at position 1500
+  3. Chunk 4 → READ from 1501 (items 1501-1750 re-read)
+  4. Chunk 5 → continues from 2001
+  5. ...until complete
+
+Lost work: items 1501-1750 (one chunk) → re-processed on restart
+```
+
+### 🗣️ How to Say in Interview
+"On restart, Spring Batch loads the ExecutionContext from the database, which contains the reader's last checkpointed position. The reader's open method receives this context and initializes at the saved position. This means all previously committed chunks are skipped and processing resumes from the last uncommitted chunk. At most one chunk of work is re-processed. In my project, our FlatFileItemReader saved line numbers and our JdbcPagingItemReader saved page offsets — both automatically handled by the framework. On a crash at 3 million out of 10 million records, the restart only re-processed 500 items (one chunk) plus the remaining 7 million."
+
+### 💻 Code
+```java
+// Built-in readers handle this automatically:
+// FlatFileItemReader → saves/restores line count
+// JdbcPagingItemReader → saves/restores page number
+
+// Verify resume point programmatically
+@Bean
+public StepExecutionListener resumeVerifier() {
+    return new StepExecutionListener() {
+        @Override
+        public void beforeStep(StepExecution se) {
+            ExecutionContext ctx = se.getExecutionContext();
+            if (!ctx.isEmpty()) {
+                log.info("RESUMING step '{}' from context: {}", 
+                    se.getStepName(), ctx.entrySet());
+            } else {
+                log.info("FRESH START for step '{}'", se.getStepName());
+            }
+        }
+    };
+}
+
+// Custom reader with resume support
+@Component
+public class ResumableApiReader implements ItemStreamReader<ApiRecord> {
+    private int offset = 0;
+
+    @Override
+    public void open(ExecutionContext ctx) {
+        if (ctx.containsKey("api.offset")) {
+            this.offset = ctx.getInt("api.offset");
+            log.info("Resuming API reader from offset: {}", offset);
+        }
+    }
+
+    @Override
+    public ApiRecord read() {
+        return hasMore(offset) ? fetchAndIncrement() : null;
+    }
+
+    @Override
+    public void update(ExecutionContext ctx) {
+        ctx.putInt("api.offset", offset);  // checkpoint after each chunk
+    }
+}
+```
+
+### ⚠️ Pitfalls / Gotchas
+- Multi-threaded steps break resume — threads read items out of order *(multi-threaded mein resume kaam nahi karta)*
+- If source data changed between runs (new inserts, deletes), offset-based resume may miss or duplicate data
+- Custom readers without `ItemStreamReader` implementation → no resume support
+- Partitioned steps resume at partition level — only failed partitions re-run
+
+### ⚡ Remember
+- ExecutionContext stores reader position → loaded on restart
+- Reader's `open()` restores position, `update()` saves position *(open = restore, update = save)*
+- At most one chunk lost on crash
+- Built-in readers handle resume automatically
+- Multi-threaded steps = resume not reliable
+
+### 🔗 Follow-ups
+- [Q66 → Restartability pillars](#q66)
+- [Q62 → Full restart internal flow](#q62)
+- [Q67 → ExecutionContext details](#q67)
