@@ -1,7 +1,7 @@
-# ☕ Core Java — ArrayList vs LinkedList, Collection vs Collections & CAS (Q1–Q3)
+# ☕ Core Java — ArrayList vs LinkedList, Collection vs Collections, CAS & Iterators (Q1–Q4)
 
-> **Source**: Capgemini + Java Developer Interview (4+ years)  
-> **Coverage**: List implementations, utility class distinction, lock-free concurrency primitive
+> **Source**: Capgemini + Java Developer Interview (4+ years) + American Express (2-4 YOE)  
+> **Coverage**: List implementations, utility class distinction, lock-free concurrency primitive, fail-fast vs fail-safe iterators
 
 ---
 
@@ -332,3 +332,147 @@ long total = adder.sum();  // aggregates all cells
 - [Q51-52 in multithreading/05 → ConcurrentHashMap internals (uses CAS)](../multithreading/05-concurrent-collections.md)
 - [Q58 in multithreading/06 → volatile keyword (visibility without atomicity)](../multithreading/06-memory-model.md#q58)
 - Lock-free data structures (Michael-Scott queue, Treiber stack)
+
+---
+
+<a id="q4"></a>
+## Q4. What is the difference between fail-fast and fail-safe iterators?
+
+### 📝 One-Liner
+**Fail-fast** iterators throw `ConcurrentModificationException` if the collection is modified during iteration; **fail-safe** iterators work on a **copy or weakly-consistent snapshot** and never throw.
+
+### 🔑 Quick Answer
+**Fail-fast** (`ArrayList`, `HashMap`, `HashSet` iterators) — track a `modCount` counter. If `modCount` changes during iteration (another thread or even the same thread modifies the collection without using `Iterator.remove()`), the iterator immediately throws `ConcurrentModificationException`. **Fail-safe** (`ConcurrentHashMap`, `CopyOnWriteArrayList`, `ConcurrentSkipListMap`) — iterate over a snapshot or weakly-consistent view. Modifications during iteration are either invisible (snapshot) or partially visible (weakly consistent). **Never throw CME.** *(Fail-fast = collection change hone pe turant exception; fail-safe = copy ya snapshot pe kaam karta hai, exception nahi aata)*
+
+### 📖 How It Works (Detailed Explanation)
+
+```
+FAIL-FAST (ArrayList, HashMap, HashSet):
+
+  List<String> list = new ArrayList<>(List.of("A", "B", "C"));
+  for (String s : list) {
+      list.add("D");   // ❌ ConcurrentModificationException!
+  }
+
+  Internal mechanism:
+  ┌────────────────────────────────────────┐
+  │ ArrayList.modCount = 3 (3 adds)        │
+  │ Iterator.expectedModCount = 3          │
+  │                                        │
+  │ list.add("D") → modCount becomes 4    │
+  │ iterator.next() checks:                │
+  │   modCount (4) != expectedModCount (3) │
+  │   → throw ConcurrentModificationException│
+  └────────────────────────────────────────┘
+
+FAIL-SAFE (ConcurrentHashMap, CopyOnWriteArrayList):
+
+  CopyOnWriteArrayList:
+  ┌──────────────────────────────────────────┐
+  │ Iterator created → snapshot of internal  │
+  │ array at that moment                     │
+  │ Modifications create NEW array copy      │
+  │ Iterator still reads OLD snapshot        │
+  │ → No CME, but won't see new elements     │
+  └──────────────────────────────────────────┘
+
+  ConcurrentHashMap:
+  ┌──────────────────────────────────────────┐
+  │ Weakly consistent iterator               │
+  │ Reflects some (not all) modifications    │
+  │ made after iterator creation             │
+  │ → No CME, may or may not see new entries │
+  └──────────────────────────────────────────┘
+```
+
+### 🗣️ Interview Script
+"Fail-fast and fail-safe describe how iterators behave when the underlying collection is modified during iteration. Fail-fast iterators — used by ArrayList, HashMap, HashSet — maintain an internal modCount. When the collection is structurally modified, modCount increments. The iterator checks modCount on every next() call, and if it doesn't match the expectedModCount captured when the iterator was created, it throws ConcurrentModificationException. This is a best-effort detection mechanism, not a guarantee. Fail-safe iterators — used by concurrent collections like ConcurrentHashMap and CopyOnWriteArrayList — never throw CME. CopyOnWriteArrayList creates a snapshot of the array when the iterator is created, so subsequent mutations don't affect it. ConcurrentHashMap uses a weakly-consistent iterator that may reflect some modifications made after creation. In my code, when I need to iterate and modify concurrently, I use ConcurrentHashMap or CopyOnWriteArrayList depending on read/write ratio."
+
+### 💻 Code Example
+
+```java
+// ❌ Fail-fast: ConcurrentModificationException
+List<String> names = new ArrayList<>(List.of("Alice", "Bob", "Charlie"));
+for (String name : names) {
+    if (name.equals("Bob")) {
+        names.remove(name);   // ❌ throws ConcurrentModificationException
+    }
+}
+
+// ✅ Fix 1: Use Iterator.remove()
+Iterator<String> it = names.iterator();
+while (it.hasNext()) {
+    if (it.next().equals("Bob")) {
+        it.remove();   // ✅ safe — updates expectedModCount
+    }
+}
+
+// ✅ Fix 2: Use removeIf() (Java 8+)
+names.removeIf(name -> name.equals("Bob"));
+
+// ✅ Fix 3: Use CopyOnWriteArrayList (fail-safe)
+List<String> cowList = new CopyOnWriteArrayList<>(List.of("Alice", "Bob", "Charlie"));
+for (String name : cowList) {
+    if (name.equals("Bob")) {
+        cowList.remove(name);   // ✅ no CME — iterator reads snapshot
+    }
+}
+// cowList = ["Alice", "Charlie"]
+
+// ✅ ConcurrentHashMap — weakly consistent iterator
+Map<String, Integer> map = new ConcurrentHashMap<>();
+map.put("A", 1);
+map.put("B", 2);
+map.put("C", 3);
+
+for (Map.Entry<String, Integer> entry : map.entrySet()) {
+    if (entry.getValue() < 3) {
+        map.remove(entry.getKey());   // ✅ no CME
+    }
+}
+// map = {"C": 3}
+
+// ❌ HashMap — same operation throws CME
+Map<String, Integer> hashMap = new HashMap<>(Map.of("A", 1, "B", 2, "C", 3));
+for (Map.Entry<String, Integer> entry : hashMap.entrySet()) {
+    if (entry.getValue() < 3) {
+        hashMap.remove(entry.getKey());   // ❌ ConcurrentModificationException
+    }
+}
+```
+
+### ⚠️ Common Pitfalls
+- **Single-threaded CME** — fail-fast triggers even in a single thread if you modify via the collection (not iterator) during for-each
+- **"Fail-safe" is misleading** — Java docs call concurrent iterators "weakly consistent", not fail-safe; they may miss updates
+- **CopyOnWriteArrayList performance** — every write copies the entire array; great for read-heavy, terrible for write-heavy
+- **Iterator.remove() is the only safe mutation** — `Iterator.add()` only exists on `ListIterator`
+
+### 🆚 Fail-Fast vs Fail-Safe
+
+| Aspect | Fail-Fast | Fail-Safe (Weakly Consistent) |
+|--------|----------|-------------------------------|
+| **Collections** | ArrayList, HashMap, HashSet, TreeMap | ConcurrentHashMap, CopyOnWriteArrayList |
+| **Throws CME** | ✅ Yes | ❌ Never |
+| **Mechanism** | modCount check | Snapshot or segment-level consistency |
+| **Sees modifications** | N/A (throws) | May or may not see concurrent changes |
+| **Memory overhead** | None | Copy (COWAL) or segment metadata |
+| **Thread-safety** | Not thread-safe | Thread-safe |
+| **Performance** | Faster iteration | Slightly slower (copy/consistency) |
+| **Use case** | Single-threaded, no concurrent modification | Multi-threaded concurrent access |
+
+### 🎯 Tricky Follow-up Questions
+- **"Can fail-fast happen with a single thread?"** → Yes! Modifying collection inside for-each loop (not using Iterator.remove()) triggers CME in the same thread
+- **"Is ConcurrentModificationException guaranteed?"** → No, it's best-effort. The Javadoc says "not guaranteed to be thrown" — don't rely on it for correctness
+- **"How does CopyOnWriteArrayList handle writes?"** → Creates a new copy of the internal array on every add/set/remove; existing iterators continue reading the old array
+
+### ⚡ Remember (Quick Recall)
+- **Fail-fast** = modCount mismatch → `ConcurrentModificationException`
+- **Fail-safe** = snapshot/weakly-consistent → never throws CME
+- ArrayList/HashMap = fail-fast; ConcurrentHashMap/CopyOnWriteArrayList = fail-safe
+- Fix CME: `Iterator.remove()`, `removeIf()`, or use concurrent collection
+- CopyOnWriteArrayList = read-heavy; ConcurrentHashMap = general concurrent
+
+### 🔗 Follow-up Topics
+- [ConcurrentHashMap internals](../multithreading/05-concurrent-collections.md)
+- [CAS (Compare-And-Swap)](#q3)
+- [ArrayList vs LinkedList](#q1)
