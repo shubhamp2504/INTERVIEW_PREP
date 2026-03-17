@@ -18,7 +18,7 @@
 | 6 | REST APIs | 0 | [Go →](./rest-apis.md) |
 | 7 | GraphQL | 0 | [Go →](./graphql.md) |
 | 8 | Next.js | 0 | [Go →](./nextjs.md) |
-| 9 | Angular | 0 | [Go →](./angular.md) |
+| 9 | Angular (Scenario-Based, 5-9 YOE) | 10 | [Go →](./02-angular-scenario-based.md) |
 | 10 | Vue.js | 0 | [Go →](./vuejs.md) |
 | 11 | Performance & Optimization | 0 | [Go →](./performance.md) |
 | 12 | Browser Internals | 0 | [Go →](./browser-internals.md) |
