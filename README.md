@@ -20,11 +20,11 @@
 
 | # | Category | Questions | Link |
 |---|----------|-----------|------|
-| 1 | 🧠 **DSA** | 5 | [Go →](./questions/dsa/) |
-| 2 | ☕ **Java — Core** | 55 | [Go →](./questions/languages/java/core/) |
+| 1 | 🧠 **DSA** | 6 | [Go →](./questions/dsa/) |
+| 2 | ☕ **Java — Core** | 213 | [Go →](./questions/languages/java/core/) |
 | 3 | 🌱 **Java — Spring Framework & Boot** | 40 | [Go →](./questions/languages/java/spring/) |
 | 4 | 🌿 **Java — Spring Batch** | 125 | [Go →](./questions/languages/java/spring-batch/) |
-| 5 | 🧵 **Java — Multithreading & Concurrency** | 96 | [Go →](./questions/languages/java/multithreading/) |
+| 5 | 🧵 **Java — Multithreading & Concurrency** | 112 | [Go →](./questions/languages/java/multithreading/) |
 | 6 | 🏗️ **Java — Architecture & System Design** | 15 | [Go →](./questions/languages/java/architecture/) |
 | 7 | 🛠️ **Java — Production Debugging** | 20 | [Go →](./questions/languages/java/production-debugging/) |
 | 8 | 🌐 **Web Development** | 14 | [Go →](./questions/web-dev/) |
@@ -32,7 +32,7 @@
 | 10 | 🏠 **System Design** | 14 | [Go →](./questions/system-design/) |
 | 11 | ☁️ **Cloud & DevOps** | 7 | [Go →](./questions/cloud-devops/) |
 | 12 | 🏗️ **Architecture** | 2 | [Go →](./questions/architecture/) |
-| 13 | 🧩 **OOPs & Design Patterns** | 1 | [Go →](./questions/oops-patterns/) |
+| 13 | 🧩 **OOPs & Design Patterns** | 3 | [Go →](./questions/oops-patterns/) |
 | 14 | 🔐 **Security** | 0 | [Go →](./questions/security/) |
 | 15 | 🧪 **Testing** | 0 | [Go →](./questions/testing/) |
 | 16 | 📱 **Mobile Development** | 0 | [Go →](./questions/mobile/) |
@@ -40,7 +40,7 @@
 | 18 | 🎯 **HR & Behavioral** | 0 | [Go →](./questions/hr-behavioral/) |
 | 19 | 📝 **Aptitude & Puzzles** | 0 | [Go →](./questions/aptitude/) |
 | 20 | 💼 **Company Specific** | 0 | [Go →](./questions/company-specific/) |
-| | | **408 total** | |
+| | | **584 total** | |
 
 ---
 
@@ -96,13 +96,13 @@ Each question has tags like: `#arrays` `#dp` `#amazon` `#medium` `#must-know`
 | System Design (Distributed, E-Commerce) | 14 |
 | Database (JPA, Hibernate, SQL) | 13 |
 | Cloud & DevOps (Observability, Infrastructure) | 7 |
-| DSA (Arrays & Strings) | 5 |
+| DSA (Arrays & Strings) | 6 |
 | Architecture (Service Communication) | 2 |
-| OOPs & Design Patterns | 1 |
+| OOPs & Design Patterns | 3 |
 | Security | 0 |
 | Testing | 0 |
 | HR & Behavioral | 0 |
-| **Grand Total** | **408** |
+| **Grand Total** | **584** |
 
 ---
 
@@ -121,6 +121,7 @@ Each question has tags like: `#arrays` `#dp` `#amazon` `#medium` `#must-know`
 | 2026-03-17 | 11 | ☕ 28 Java 8 Stream coding problems (basic + collectors) |
 | 2026-03-17 | 12 | 🌐 10 Angular scenario-based questions (5–9 YOE) |
 | 2026-03-18 | 13 | 10 Qs: OOP, REST, auth, SQL, exceptions, JVM, GC, ambiguous mapping |
+| 2026-03-18 | 14 | ☕ 176 Core Java Qs from 240-PDF (basics, exceptions, inner classes, misc, collections, serialization, OOP, threads) |
 
 ---
 

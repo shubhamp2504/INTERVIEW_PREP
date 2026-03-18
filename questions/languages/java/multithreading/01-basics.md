@@ -799,4 +799,88 @@ Hidden cost: CPU cache invalidation
 
 ---
 
+<a id="q18"></a>
+## Q18. What is multitasking? What are process-based vs thread-based multitasking?
+
+### 📝 One-Liner
+Multitasking = doing multiple things simultaneously; **Process-based** = multiple programs; **Thread-based** = multiple tasks within one program.
+
+### 🔑 Quick Answer
+**(1) Process-based multitasking** — running multiple programs concurrently (e.g., MS Word + Calculator). Each process has its own memory space. **(2) Thread-based multitasking** — running multiple parts of one program concurrently (e.g., spell-check while typing in Word). Threads share memory. Java provides built-in support for thread-based multitasking. *(Process-based = alag programs | Thread-based = ek program ke andar alag tasks)*
+
+### ⚡ Remember
+`Process multitasking = separate programs | Thread multitasking = within same program | Java = thread-based`
+
+---
+
+<a id="q19"></a>
+## Q19. Which Java APIs support threads?
+
+### 📝 One-Liner
+`java.lang.Thread`, `java.lang.Runnable`, `java.lang.Object` (wait/notify), and `java.util.concurrent` package.
+
+### 🔑 Quick Answer
+(1) `java.lang.Thread` — extend to create thread. (2) `java.lang.Runnable` — implement for task. (3) `java.lang.Object` — `wait()`, `notify()`, `notifyAll()` for inter-thread communication. (4) `java.util.concurrent` — Executor, Future, CompletableFuture, locks, concurrent collections, atomic variables. *(4 main APIs: Thread, Runnable, Object (wait/notify), java.util.concurrent)*
+
+### ⚡ Remember
+`Thread + Runnable + Object(wait/notify) + java.util.concurrent`
+
+---
+
+<a id="q20"></a>
+## Q20. Explain the main thread in Java?
+
+### 📝 One-Liner
+The main thread is the **first thread** started by JVM when `main()` is called — all child threads are spawned from it.
+
+### 🔑 Quick Answer
+When JVM calls `main()`, it starts a new thread called the "main thread." All child threads are spawned from main. The main thread is typically the **last to finish** (waits for non-daemon children). It's always a **non-daemon** thread. You can get it via `Thread.currentThread()` inside main(). *(Main thread = JVM ka pehla thread, sab child threads iske andar se bante hain)*
+
+### ⚡ Remember
+`Main thread = first thread | Spawns children | Non-daemon | Last to finish`
+
+---
+
+<a id="q21"></a>
+## Q21. Can we restart a dead thread in Java?
+
+### 📝 One-Liner
+No — calling `start()` on a terminated thread throws `IllegalThreadStateException`.
+
+### 🔑 Quick Answer
+Once a thread's `run()` completes, it enters TERMINATED state. Calling `start()` again throws `IllegalThreadStateException`. If you need the same task again, create a **new Thread** object. A thread object is one-use only. *(Dead thread restart nahi ho sakta — naya Thread banao)*
+
+### ⚡ Remember
+`Dead thread + start() = IllegalThreadStateException | Create new Thread instead`
+
+---
+
+<a id="q22"></a>
+## Q22. Can one thread block another thread?
+
+### 📝 One-Liner
+No — a thread can only block **itself** (via `sleep()`, `wait()`, `join()`); it cannot directly block another thread.
+
+### 🔑 Quick Answer
+Thread A cannot force Thread B to block. Thread B can only block itself by calling `sleep()`, `wait()`, or `join()`. However, Thread A can **indirectly** cause B to wait by holding a lock that B needs (synchronization). `interrupt()` can request a thread to stop, but it's cooperative. *(Ek thread doosre ko directly block nahi kar sakta — sirf khud ko block kar sakta hai)*
+
+### ⚡ Remember
+`Thread blocks itself only | sleep/wait/join = self-blocking | Indirect via lock contention`
+
+---
+
+<a id="q23"></a>
+## Q23. Can we overload the run() method?
+
+### 📝 One-Liner
+Yes, but Thread's `start()` always calls `run()` with **no arguments** — overloaded versions must be called explicitly.
+
+### 🔑 Quick Answer
+You can define `run(int x)` or `run(String s)` — they're valid overloaded methods. But `start()` will only invoke `public void run()` (no-arg). Overloaded versions need explicit calls: `thread.run(5)` — but this runs on the current thread, not a new one. *(run() overload ho sakta hai, lekin start() sirf no-arg run() call karega)*
+
+### ⚡ Remember
+`run() overload = yes | start() calls only run() (no-arg) | Overloaded run = explicit call`
+
+---
+
 > **🎯 Navigation:** [Next → Synchronization (Q18-28)](02-synchronization.md) | [📋 All Sections](README.md)

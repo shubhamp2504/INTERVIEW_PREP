@@ -1,6 +1,6 @@
-# 🧵 Java Multithreading — Interview Questions (96 Questions)
+# 🧵 Java Multithreading — Interview Questions (112 Questions)
 
-> Complete guide: 96 questions across 10 sections — from basics to production scenarios.
+> Complete guide: 112 questions across 10 sections — from basics to production scenarios.
 > Every question follows a 10-section interview-optimized format with Hindi brackets for instant understanding.
 
 ---
@@ -9,16 +9,16 @@
 
 | # | Section | Questions | Range | Link |
 |---|---------|-----------|-------|------|
-| 1 | **Core Multithreading Basics** | 17 | Q1–Q17 | [Go →](01-basics.md) |
-| 2 | **Synchronization & Locks** | 11 | Q18–Q28 | [Go →](02-synchronization.md) |
-| 3 | **Thread Communication** | 8 | Q29–Q36 | [Go →](03-thread-communication.md) |
-| 4 | **Concurrency Utilities** | 14 | Q37–Q50 | [Go →](04-concurrency-utilities.md) |
-| 5 | **Concurrent Collections** | 6 | Q51–Q56 | [Go →](05-concurrent-collections.md) |
-| 6 | **Memory Model & Visibility** | 6 | Q57–Q62 | [Go →](06-memory-model.md) |
-| 7 | **Deadlock & Concurrency Problems** | 7 | Q63–Q69 | [Go →](07-deadlock-problems.md) |
-| 8 | **Performance & Optimization** | 7 | Q70–Q76 | [Go →](08-performance.md) |
-| 9 | **Spring Boot / Spring Batch MT** | 10 | Q77–Q86 | [Go →](09-spring-multithreading.md) |
-| 10 | **Real Production Scenarios** | 10 | Q87–Q96 | [Go →](10-production-scenarios.md) |
+| 1 | **Core Multithreading Basics** | 23 | Q1–Q23 | [Go →](01-basics.md) |
+| 2 | **Synchronization & Locks** | 13 | Q24–Q36 | [Go →](02-synchronization.md) |
+| 3 | **Thread Communication** | 16 | Q37–Q52 | [Go →](03-thread-communication.md) |
+| 4 | **Concurrency Utilities** | 14 | Q53–Q66 | [Go →](04-concurrency-utilities.md) |
+| 5 | **Concurrent Collections** | 6 | Q67–Q72 | [Go →](05-concurrent-collections.md) |
+| 6 | **Memory Model & Visibility** | 6 | Q73–Q78 | [Go →](06-memory-model.md) |
+| 7 | **Deadlock & Concurrency Problems** | 7 | Q79–Q85 | [Go →](07-deadlock-problems.md) |
+| 8 | **Performance & Optimization** | 7 | Q86–Q92 | [Go →](08-performance.md) |
+| 9 | **Spring Boot / Spring Batch MT** | 10 | Q93–Q102 | [Go →](09-spring-multithreading.md) |
+| 10 | **Real Production Scenarios** | 10 | Q103–Q112 | [Go →](10-production-scenarios.md) |
 
 ---
 

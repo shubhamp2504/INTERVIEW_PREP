@@ -187,3 +187,50 @@ Inheritance is rigid (can't change at runtime), breaks encapsulation (subclass d
 - **SOLID**: SRP (one job) → OCP (extend, don't modify) → LSP (substitute safely) → ISP (thin interfaces) → DIP (depend on abstractions)
 - Composition > Inheritance for most cases
 - Spring framework is built on DIP — `@Autowired` injects abstractions
+
+---
+
+<a id="q2"></a>
+## Q2. Explain procedural (structured) programming vs object-oriented programming?
+
+### 📝 One-Liner
+Procedural = **top-down, function-centric** (C, Pascal); OOP = **bottom-up, object-centric** (Java) with encapsulation, inheritance, polymorphism.
+
+### 🔑 Quick Answer
+
+| Feature | Procedural | Object-Oriented |
+|---|---|---|
+| Approach | Top-down | Bottom-up |
+| Focus | Functions/procedures | Objects and data |
+| Data access | Global data, any function can access | Encapsulated inside objects |
+| Reusability | Limited (function libraries) | Inheritance + Composition |
+| Scalability | Works for small programs | Works for large, complex systems |
+| Examples | C, Pascal, FORTRAN | Java, C++, Python |
+
+Procedural concentrates on procedures first, then data. OOP concentrates on objects (data + behavior) first. OOP's main advantage: works well for large, complex systems. Procedural's drawback: global data manipulation by any function leads to maintenance issues. *(Procedural = function-centric, top-down, chhote programs ke liye | OOP = object-centric, bottom-up, bade systems ke liye)*
+
+### ⚡ Remember
+`Procedural = top-down + functions + global data | OOP = bottom-up + objects + encapsulated data`
+
+---
+
+<a id="q3"></a>
+## Q3. Differences between traditional and object-oriented programming?
+
+### 📝 One-Liner
+Traditional divides programs into **modules/procedures**; OOP divides into **objects** with tightly coupled data + behavior.
+
+### 🔑 Quick Answer
+
+| Traditional | Object-Oriented |
+|---|---|
+| Program divided into modules/procedures | Divided into objects |
+| Implementation through procedures | Through interfaces/messages |
+| No encapsulation — procedures access global data | Encapsulation — data + behavior in class |
+| Suitable for small programs | Suitable for large, complex problems |
+| Code reuse via function libraries | Reuse via inheritance + composition |
+
+Key OOP benefits: easy maintenance, code reusability, extendability, reliability. Objects communicate with each other through method calls. *(Traditional = procedure-based, sab global | OOP = object-based, data encapsulated, bade systems ke liye best)*
+
+### ⚡ Remember
+`Traditional = procedures + global data + small | OOP = objects + encapsulation + large scale`

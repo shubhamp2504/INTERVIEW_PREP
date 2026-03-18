@@ -537,4 +537,49 @@ High contention:
 
 ---
 
+<a id="q29"></a>
+## Q29. Can we synchronize static methods in Java?
+
+### 📝 One-Liner
+Yes — synchronizing a static method acquires the **class-level lock** (`ClassName.class`) instead of an object-level lock.
+
+### 🔑 Quick Answer
+Every class has a unique lock associated with the `Class` object. `synchronized static void method()` acquires this class lock. While a thread holds the class lock, no other thread can execute any other `synchronized static` method of that class. But they CAN execute: (1) Normal static methods. (2) Normal instance methods. (3) Synchronized instance methods (different lock). *(Static synchronized = class ka lock | Object lock alag, class lock alag)*
+
+### 💻 Code Example
+
+```java
+class Counter {
+    static int count = 0;
+    static synchronized void increment() {  // ⭐ class-level lock
+        count++;
+    }
+    // Equivalent to:
+    static void incrementV2() {
+        synchronized (Counter.class) {  // explicit class lock
+            count++;
+        }
+    }
+}
+```
+
+### ⚡ Remember
+`synchronized static = class lock (ClassName.class) | Object lock is separate | Both can coexist`
+
+---
+
+<a id="q30"></a>
+## Q30. Can we use synchronized block for primitives?
+
+### 📝 One-Liner
+No — `synchronized` requires an **object reference** as the lock. Primitives (`int`, `char`, etc.) cause a compile error.
+
+### 🔑 Quick Answer
+`synchronized(primitiveVar)` → compile error. Synchronized blocks work only with object references. If you need to synchronize on an int-like value, use `Integer` wrapper or a dedicated `Object lock = new Object()`. *(synchronized block sirf objects pe kaam karta hai, primitives pe compile error aayega)*
+
+### ⚡ Remember
+`synchronized(primitive) = compile error | Only object references | Use wrapper or dedicated lock object`
+
+---
+
 > **🎯 Navigation:** [← Basics (Q1-17)](01-basics.md) | [Next → Thread Communication (Q29-36)](03-thread-communication.md) | [📋 All Sections](README.md)

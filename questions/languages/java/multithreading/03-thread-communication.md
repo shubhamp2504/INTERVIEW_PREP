@@ -387,4 +387,168 @@ executor.submit(consumer);
 
 ---
 
+<a id="q37"></a>
+## Q37. What is IllegalMonitorStateException and when is it thrown?
+
+### 📝 One-Liner
+Thrown when `wait()`, `notify()`, or `notifyAll()` is called **outside** a `synchronized` context (thread doesn't own the monitor).
+
+### 🔑 Quick Answer
+`wait()`, `notify()`, `notifyAll()` must be called from within a `synchronized` block/method on the same object. If a thread calls these without holding the lock → `IllegalMonitorStateException` (RuntimeException). The thread must own the object's monitor before calling these methods. *(wait/notify bina synchronized ke call karoge toh IllegalMonitorStateException aayega)*
+
+### 💻 Code Example
+
+```java
+Object lock = new Object();
+
+// ❌ Wrong — not in synchronized context
+lock.wait();  // throws IllegalMonitorStateException!
+
+// ✅ Correct — inside synchronized block
+synchronized (lock) {
+    lock.wait();   // OK — thread owns lock's monitor
+    lock.notify(); // OK
+}
+```
+
+### ⚡ Remember
+`wait/notify outside synchronized = IllegalMonitorStateException | Must own the monitor first`
+
+---
+
+<a id="q38"></a>
+## Q38. Can sleep() method cause another thread to sleep?
+
+### 📝 One-Liner
+No — `Thread.sleep()` only makes the **current executing thread** sleep, not any other thread.
+
+### 🔑 Quick Answer
+`sleep()` is a static method — it always affects the currently executing thread. Even if you call `otherThread.sleep(1000)`, it's the **calling thread** that sleeps (misleading syntax — compiler warning). *(sleep() sirf current thread ko sulata hai, doosre ko nahi)*
+
+### ⚡ Remember
+`sleep() = current thread only | Static method | otherRef.sleep() = still current thread sleeps`
+
+---
+
+<a id="q39"></a>
+## Q39. Explain interrupt() method of Thread class?
+
+### 📝 One-Liner
+`interrupt()` sets a thread's **interrupt flag** to `true` — it's a polite request to stop, not a forced termination.
+
+### 🔑 Quick Answer
+Calling `thread.interrupt()` sets the thread's interrupted status to `true`. Effect depends on thread's state: (1) If sleeping/waiting → throws `InterruptedException` and clears the flag. (2) If running → flag is set, thread must check `Thread.interrupted()` or `isInterrupted()` to respond. It's a **cooperative mechanism** — the thread decides how to handle it. *(interrupt() = polite request to stop | Running thread ko check karna padta hai | Sleeping thread ko exception milta hai)*
+
+### 💻 Code Example
+
+```java
+Thread worker = new Thread(() -> {
+    while (!Thread.currentThread().isInterrupted()) {
+        // do work
+    }
+    System.out.println("Interrupted, cleaning up...");
+});
+worker.start();
+worker.interrupt();  // sets flag → loop exits on next check
+```
+
+### ⚡ Remember
+`interrupt() = sets flag | Sleeping → InterruptedException | Running → must check flag | Cooperative`
+
+---
+
+<a id="q40"></a>
+## Q40. What are thread groups?
+
+### 📝 One-Liner
+ThreadGroup is a way to **group threads** together for collective management (start, stop, set priority) — rarely used in modern Java.
+
+### 🔑 Quick Answer
+ThreadGroups organize threads so actions can be applied to all at once (security, priority). By default, all threads belong to the main thread's group. Threads in one group cannot modify threads in another group. Rarely used today — `ExecutorService` and `ThreadPoolExecutor` are better alternatives. *(ThreadGroup = threads ka group, collective management ke liye — aaj kal use nahi hota, ExecutorService use karo)*
+
+### ⚡ Remember
+`ThreadGroup = collective management | Legacy | Use ExecutorService instead`
+
+---
+
+<a id="q41"></a>
+## Q41. What are ThreadLocal variables?
+
+### 📝 One-Liner
+`ThreadLocal<T>` gives each thread its **own independent copy** of a variable — no synchronization needed.
+
+### 🔑 Quick Answer
+Declared as `private static ThreadLocal<T>`. Each thread accessing it via `get()`/`set()` gets its own copy. No sharing = no synchronization needed. Common uses: per-thread database connections, user sessions, SimpleDateFormat instances. ⚠️ Must call `remove()` after use (especially in thread pools) to prevent memory leaks. *(ThreadLocal = har thread ko apni copy milti hai — sharing nahi, sync nahi)*
+
+### 💻 Code Example
+
+```java
+private static ThreadLocal<SimpleDateFormat> dateFormat =
+    ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd"));
+
+// Each thread gets its own SimpleDateFormat instance
+String date = dateFormat.get().format(new Date());
+
+// ⚠️ MUST remove in thread pools to prevent memory leaks
+dateFormat.remove();
+```
+
+### ⚡ Remember
+`ThreadLocal = per-thread copy | No sync needed | MUST remove() in thread pools | Common for DateFormat, DB connections`
+
+---
+
+<a id="q42"></a>
+## Q42. What are daemon threads in Java?
+
+### 📝 One-Liner
+Daemon threads are **background service threads** that automatically terminate when all non-daemon threads finish.
+
+### 🔑 Quick Answer
+Daemon threads run in background providing services (GC is a daemon thread). JVM exits when only daemon threads remain — they don't prevent shutdown. By default, all threads are non-daemon. Child thread inherits daemon status from parent. Use `setDaemon(true)` **before** `start()`. *(Daemon thread = background service, JVM isko wait nahi karta — GC jaisa)*
+
+### 💻 Code Example
+
+```java
+Thread daemon = new Thread(() -> {
+    while (true) { /* background work */ }
+});
+daemon.setDaemon(true);  // ⭐ must be before start()
+daemon.start();
+// When main thread ends, this daemon dies automatically
+```
+
+### ⚡ Remember
+`Daemon = background | JVM doesn't wait | setDaemon(true) BEFORE start() | GC is daemon`
+
+---
+
+<a id="q43"></a>
+## Q43. How to make a non-daemon thread daemon?
+
+### 📝 One-Liner
+Call `thread.setDaemon(true)` **before** calling `start()` — doing it after start throws `IllegalThreadStateException`.
+
+### 🔑 Quick Answer
+`setDaemon(true)` switches a thread to daemon status. Must be called before `start()` — once started, daemon nature cannot be changed. If called after start → `IllegalThreadStateException`. Child threads inherit parent's daemon status. *(setDaemon(true) start() se pehle call karo — baad me change nahi hoga)*
+
+### ⚡ Remember
+`setDaemon(true) before start() | After start → IllegalThreadStateException | Child inherits parent's daemon status`
+
+---
+
+<a id="q44"></a>
+## Q44. Can we make the main thread a daemon?
+
+### 📝 One-Liner
+No — the main thread is always a **non-daemon** thread and its daemon status cannot be changed.
+
+### 🔑 Quick Answer
+The main thread is created by JVM as non-daemon. Calling `Thread.currentThread().setDaemon(true)` inside main → `IllegalThreadStateException` because the thread is already started. The main thread cannot be converted to daemon. *(Main thread = hamesha non-daemon, change nahi kar sakte)*
+
+### ⚡ Remember
+`Main thread = always non-daemon | Cannot change | Already started when main() runs`
+
+---
+
 > **🎯 Navigation:** [← Synchronization (Q18-28)](02-synchronization.md) | [Next → Concurrency Utilities (Q37-50)](04-concurrency-utilities.md) | [📋 All Sections](README.md)
