@@ -8,13 +8,15 @@
 
 ## 📂 Topics
 
-| # | Topic | Questions | Link |
-|---|-------|-----------|------|
-| 1 | Unit Testing | 0 | [Go →](./unit-testing.md) |
-| 2 | Integration Testing | 0 | [Go →](./integration-testing.md) |
-| 3 | E2E Testing | 0 | [Go →](./e2e-testing.md) |
-| 4 | TDD & BDD | 0 | [Go →](./tdd-bdd.md) |
-| 5 | Testing Tools (Jest, Mocha, Pytest) | 0 | [Go →](./testing-tools.md) |
+| # | Topic | Questions |
+|---|-------|-----------|
+| 1 | Unit Testing | 0 |
+| 2 | Integration Testing | 0 |
+| 3 | E2E Testing | 0 |
+| 4 | TDD & BDD | 0 |
+| 5 | Testing Tools (JUnit, Mockito, Jest) | 0 |
+
+> _Questions will be added as files are created._
 
 ---
 

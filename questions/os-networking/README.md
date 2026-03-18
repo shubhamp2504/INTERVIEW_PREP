@@ -8,16 +8,16 @@
 
 ## 📂 Topics
 
-| # | Topic | Questions | Link |
-|---|-------|-----------|------|
-| 1 | Process & Threads | 0 | [Go →](./process-threads.md) |
-| 2 | Memory Management | 0 | [Go →](./memory-management.md) |
-| 3 | Deadlocks & Synchronization | 0 | [Go →](./deadlocks-sync.md) |
-| 4 | File Systems | 0 | [Go →](./file-systems.md) |
-| 5 | OSI Model & TCP/IP | 0 | [Go →](./osi-tcpip.md) |
-| 6 | HTTP/HTTPS & WebSockets | 0 | [Go →](./http-websockets.md) |
-| 7 | DNS & CDN | 0 | [Go →](./dns-cdn.md) |
-| 8 | Network Security | 0 | [Go →](./network-security.md) |
+| # | Topic | Questions |
+|---|-------|-----------|
+| 1 | Process & Threads | 0 |
+| 2 | Memory Management | 0 |
+| 3 | Deadlocks & Synchronization | 0 |
+| 4 | OSI Model & TCP/IP | 0 |
+| 5 | HTTP/HTTPS & WebSockets | 0 |
+| 6 | DNS & CDN | 0 |
+
+> _Questions will be added as files are created._
 
 ---
 

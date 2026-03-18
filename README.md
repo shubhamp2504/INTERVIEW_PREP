@@ -16,25 +16,31 @@
 
 ---
 
-## 📚 Table of Contents
+## � Table of Contents
 
-| # | Category | Description | Link |
-|---|----------|-------------|------|
-| 1 | 🧠 **DSA** | Data Structures & Algorithms | [Go →](./questions/dsa/) |
-| 2 | 💻 **Programming Languages** | JavaScript, Python, Java, C++, etc. | [Go →](./questions/languages/) |
-| 3 | 🌐 **Web Development** | HTML, CSS, React, Node.js, APIs | [Go →](./questions/web-dev/) |
-| 4 | 🗄️ **Database** | SQL, NoSQL, MongoDB, PostgreSQL | [Go →](./questions/database/) |
-| 5 | ☁️ **Cloud & DevOps** | AWS, Docker, Kubernetes, CI/CD | [Go →](./questions/cloud-devops/) |
-| 6 | 🏗️ **System Design** | HLD, LLD, Architecture Patterns | [Go →](./questions/system-design/) |
-| 7 | 🧩 **OOPs & Design Patterns** | SOLID, Patterns, Clean Code | [Go →](./questions/oops-patterns/) |
-| 8 | 🖥️ **OS & Networking** | Operating Systems, Networks, Protocols | [Go →](./questions/os-networking/) |
-| 9 | 🔐 **Security** | Web Security, Auth, Encryption | [Go →](./questions/security/) |
-| 10 | 🧪 **Testing** | Unit, Integration, E2E, TDD | [Go →](./questions/testing/) |
-| 11 | 📱 **Mobile Development** | Android, iOS, React Native, Flutter | [Go →](./questions/mobile/) |
-| 12 | 🤖 **AI/ML** | Machine Learning, Deep Learning, NLP | [Go →](./questions/ai-ml/) |
-| 13 | 🎯 **HR & Behavioral** | Behavioral Questions, Soft Skills | [Go →](./questions/hr-behavioral/) |
-| 14 | 📝 **Aptitude & Puzzles** | Logical, Quantitative, Puzzles | [Go →](./questions/aptitude/) |
-| 15 | 💼 **Company Specific** | FAANG, Product, Startup wise | [Go →](./questions/company-specific/) |
+| # | Category | Questions | Link |
+|---|----------|-----------|------|
+| 1 | 🧠 **DSA** | 5 | [Go →](./questions/dsa/) |
+| 2 | ☕ **Java — Core** | 55 | [Go →](./questions/languages/java/core/) |
+| 3 | 🌱 **Java — Spring Framework & Boot** | 40 | [Go →](./questions/languages/java/spring/) |
+| 4 | 🌿 **Java — Spring Batch** | 125 | [Go →](./questions/languages/java/spring-batch/) |
+| 5 | 🧵 **Java — Multithreading & Concurrency** | 96 | [Go →](./questions/languages/java/multithreading/) |
+| 6 | 🏗️ **Java — Architecture & System Design** | 15 | [Go →](./questions/languages/java/architecture/) |
+| 7 | 🛠️ **Java — Production Debugging** | 20 | [Go →](./questions/languages/java/production-debugging/) |
+| 8 | 🌐 **Web Development** | 14 | [Go →](./questions/web-dev/) |
+| 9 | 🗄️ **Database** | 13 | [Go →](./questions/database/) |
+| 10 | 🏠 **System Design** | 14 | [Go →](./questions/system-design/) |
+| 11 | ☁️ **Cloud & DevOps** | 7 | [Go →](./questions/cloud-devops/) |
+| 12 | 🏗️ **Architecture** | 2 | [Go →](./questions/architecture/) |
+| 13 | 🧩 **OOPs & Design Patterns** | 1 | [Go →](./questions/oops-patterns/) |
+| 14 | 🔐 **Security** | 0 | [Go →](./questions/security/) |
+| 15 | 🧪 **Testing** | 0 | [Go →](./questions/testing/) |
+| 16 | 📱 **Mobile Development** | 0 | [Go →](./questions/mobile/) |
+| 17 | 🤖 **AI/ML** | 0 | [Go →](./questions/ai-ml/) |
+| 18 | 🎯 **HR & Behavioral** | 0 | [Go →](./questions/hr-behavioral/) |
+| 19 | 📝 **Aptitude & Puzzles** | 0 | [Go →](./questions/aptitude/) |
+| 20 | 💼 **Company Specific** | 0 | [Go →](./questions/company-specific/) |
+| | | **408 total** | |
 
 ---
 
@@ -78,24 +84,43 @@ Each question has tags like: `#arrays` `#dp` `#amazon` `#medium` `#must-know`
 
 ## 📈 Progress Tracker
 
-| Category | Total | Completed | Remaining |
-|----------|-------|-----------|-----------|
-| DSA | 0 | 0 | 0 |
-| Languages (Java - Spring Batch) | 125 | 0 | 125 |
-| Web Dev | 0 | 0 | 0 |
-| Database | 0 | 0 | 0 |
-| System Design | 0 | 0 | 0 |
-| HR & Behavioral | 0 | 0 | 0 |
-| **Total** | **125** | **0** | **125** |
+| Category | Total |
+|----------|-------|
+| Java — Spring Batch | 125 |
+| Java — Multithreading & Concurrency | 96 |
+| Java — Core (Collections, Streams, JVM, Fundamentals) | 55 |
+| Java — Spring Framework & Boot | 40 |
+| Java — Production Debugging | 20 |
+| Java — Architecture & System Design | 15 |
+| Web Development (Networking, Angular) | 14 |
+| System Design (Distributed, E-Commerce) | 14 |
+| Database (JPA, Hibernate, SQL) | 13 |
+| Cloud & DevOps (Observability, Infrastructure) | 7 |
+| DSA (Arrays & Strings) | 5 |
+| Architecture (Service Communication) | 2 |
+| OOPs & Design Patterns | 1 |
+| Security | 0 |
+| Testing | 0 |
+| HR & Behavioral | 0 |
+| **Grand Total** | **408** |
 
 ---
 
 ## 🔄 Update Log
 
-| Date | Changes |
-|------|---------|
-| 2026-03-13 | 🎉 System Created! Initial structure ready. |
-| 2026-03-13 | 🍃 Added 125 Spring Batch questions (15 sections, basic to advanced) |
+| Date | Batch | Changes |
+|------|-------|---------|
+| 2026-03-13 | — | 🎉 System Created! Initial structure ready. |
+| 2026-03-13 | 1 | 🌿 Added 125 Spring Batch questions (15 sections) |
+| 2026-03-13 | 2 | 🧵 Added 96 Multithreading questions (10 sections) |
+| 2026-03-14 | 3–5 | ☕ Core Java (collections, JVM, streams, serialization, performance tuning) |
+| 2026-03-14 | 6 | 🌱 Spring internals, AOP, enterprise practices |
+| 2026-03-14 | 7 | 🛠️ Production debugging, API design, architecture |
+| 2026-03-15 | 8 | 🌐 Cloud/DevOps, system design, database, web networking |
+| 2026-03-16 | 9–10 | 🌱 Spring Boot fundamentals/security, DSA, e-commerce system design |
+| 2026-03-17 | 11 | ☕ 28 Java 8 Stream coding problems (basic + collectors) |
+| 2026-03-17 | 12 | 🌐 10 Angular scenario-based questions (5–9 YOE) |
+| 2026-03-18 | 13 | 10 Qs: OOP, REST, auth, SQL, exceptions, JVM, GC, ambiguous mapping |
 
 ---
 

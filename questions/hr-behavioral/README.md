@@ -8,15 +8,16 @@
 
 ## 📂 Topics
 
-| # | Topic | Questions | Link |
-|---|-------|-----------|------|
-| 1 | Tell Me About Yourself | 0 | [Go →](./tell-me-about-yourself.md) |
-| 2 | Strengths & Weaknesses | 0 | [Go →](./strengths-weaknesses.md) |
-| 3 | Behavioral (STAR Method) | 0 | [Go →](./star-method.md) |
-| 4 | Situational Questions | 0 | [Go →](./situational.md) |
-| 5 | Salary Negotiation | 0 | [Go →](./salary-negotiation.md) |
-| 6 | Company Research | 0 | [Go →](./company-research.md) |
-| 7 | Questions to Ask Interviewer | 0 | [Go →](./questions-to-ask.md) |
+| # | Topic | Questions |
+|---|-------|-----------|
+| 1 | Tell Me About Yourself | 0 |
+| 2 | Strengths & Weaknesses | 0 |
+| 3 | Behavioral (STAR Method) | 0 |
+| 4 | Situational Questions | 0 |
+| 5 | Salary Negotiation | 0 |
+| 6 | Questions to Ask Interviewer | 0 |
+
+> _Questions will be added as files are created._
 
 ---
 

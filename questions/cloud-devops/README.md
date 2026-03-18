@@ -10,14 +10,8 @@
 
 | # | Topic | Questions | Link |
 |---|-------|-----------|------|
-| 1 | AWS | 0 | [Go →](./aws.md) |
-| 2 | Docker | 0 | [Go →](./docker.md) |
-| 3 | Kubernetes | 0 | [Go →](./kubernetes.md) |
-| 4 | CI/CD | 0 | [Go →](./cicd.md) |
-| 5 | Linux & Shell | 0 | [Go →](./linux-shell.md) |
-| 6 | Git & Version Control | 0 | [Go →](./git.md) |
-| 7 | Terraform / IaC | 0 | [Go →](./terraform.md) |
-| 8 | Monitoring & Logging | 0 | [Go →](./monitoring.md) |
+| 1 | Observability & Alerting | 3 | [Go →](./01-observability-alerting.md) |
+| 2 | Cloud Infrastructure & Processing | 4 | [Go →](./02-cloud-infra-processing.md) |
 
 ---
 

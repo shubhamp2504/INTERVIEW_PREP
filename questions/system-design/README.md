@@ -10,14 +10,9 @@
 
 | # | Topic | Questions | Link |
 |---|-------|-----------|------|
-| 1 | HLD — High Level Design | 0 | [Go →](./hld.md) |
-| 2 | LLD — Low Level Design | 0 | [Go →](./lld.md) |
-| 3 | Scalability & Load Balancing | 0 | [Go →](./scalability.md) |
-| 4 | Caching Strategies | 0 | [Go →](./caching.md) |
-| 5 | Microservices | 0 | [Go →](./microservices.md) |
-| 6 | Message Queues (Kafka, RabbitMQ) | 0 | [Go →](./message-queues.md) |
-| 7 | API Design | 0 | [Go →](./api-design.md) |
-| 8 | Real-World Systems (URL Shortener, Chat, etc.) | 0 | [Go →](./real-world-systems.md) |
+| 1 | Distributed Systems Fundamentals | 6 | [Go →](./01-distributed-systems-fundamentals.md) |
+| 2 | Coordination, Failover & Event Sourcing | 4 | [Go →](./02-coordination-failover-eventsourcing.md) |
+| 3 | E-Commerce & Payment Systems | 4 | [Go →](./03-ecommerce-payment-systems.md) |
 
 ---
 

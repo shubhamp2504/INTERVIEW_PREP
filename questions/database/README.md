@@ -10,14 +10,10 @@
 
 | # | Topic | Questions | Link |
 |---|-------|-----------|------|
-| 1 | SQL Fundamentals | 0 | [Go →](./sql-fundamentals.md) |
-| 2 | Advanced SQL (Joins, Subqueries) | 0 | [Go →](./advanced-sql.md) |
-| 3 | Database Design & Normalization | 0 | [Go →](./db-design.md) |
-| 4 | Indexing & Query Optimization | 0 | [Go →](./indexing-optimization.md) |
-| 5 | MongoDB (NoSQL) | 0 | [Go →](./mongodb.md) |
-| 6 | PostgreSQL | 0 | [Go →](./postgresql.md) |
-| 7 | Redis & Caching | 0 | [Go →](./redis-caching.md) |
-| 8 | Transactions & ACID | 0 | [Go →](./transactions-acid.md) |
+| 1 | JPA, SQL & Transactions | 5 | [Go →](./01-jpa-sql-transactions.md) |
+| 2 | Hibernate, Queries & Cursors | 5 | [Go →](./02-hibernate-queries-cursors.md) |
+| 3 | JPA Persistence Operations | 1 | [Go →](./03-jpa-persistence-ops.md) |
+| 4 | Hibernate Cache & Entity States | 2 | [Go →](./04-hibernate-cache-states.md) |
 
 ---
 

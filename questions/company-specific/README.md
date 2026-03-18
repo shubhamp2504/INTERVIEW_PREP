@@ -8,17 +8,18 @@
 
 ## 📂 Companies
 
-| # | Company | Questions | Link |
-|---|---------|-----------|------|
-| 1 | Google | 0 | [Go →](./google.md) |
-| 2 | Amazon | 0 | [Go →](./amazon.md) |
-| 3 | Microsoft | 0 | [Go →](./microsoft.md) |
-| 4 | Meta / Facebook | 0 | [Go →](./meta.md) |
-| 5 | Apple | 0 | [Go →](./apple.md) |
-| 6 | Netflix | 0 | [Go →](./netflix.md) |
-| 7 | TCS / Infosys / Wipro | 0 | [Go →](./service-companies.md) |
-| 8 | Startups | 0 | [Go →](./startups.md) |
-| 9 | Other Companies | 0 | [Go →](./others.md) |
+| # | Company | Questions |
+|---|---------|----------|
+| 1 | Google | 0 |
+| 2 | Amazon | 0 |
+| 3 | Microsoft | 0 |
+| 4 | Meta / Facebook | 0 |
+| 5 | Apple | 0 |
+| 6 | Netflix | 0 |
+| 7 | Service Companies | 0 |
+| 8 | Startups | 0 |
+
+> _Questions will be added as files are created._
 
 ---
 

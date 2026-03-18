@@ -8,12 +8,14 @@
 
 ## 📂 Topics
 
-| # | Topic | Questions | Link |
-|---|-------|-----------|------|
-| 1 | Logical Reasoning | 0 | [Go →](./logical-reasoning.md) |
-| 2 | Quantitative Aptitude | 0 | [Go →](./quantitative.md) |
-| 3 | Puzzles | 0 | [Go →](./puzzles.md) |
-| 4 | Pattern Recognition | 0 | [Go →](./pattern-recognition.md) |
+| # | Topic | Questions |
+|---|-------|-----------|
+| 1 | Logical Reasoning | 0 |
+| 2 | Quantitative Aptitude | 0 |
+| 3 | Puzzles | 0 |
+| 4 | Pattern Recognition | 0 |
+
+> _Questions will be added as files are created._
 
 ---
 

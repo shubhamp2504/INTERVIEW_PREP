@@ -1,8 +1,6 @@
-
-# 🧩 OOPs & Design Patterns
+# 🏗️ Architecture
 
 [![Last Updated](https://img.shields.io/badge/Updated-March%202026-green.svg)](#)
-
 
 ---
 
@@ -10,9 +8,8 @@
 
 | # | Topic | Questions | Link |
 |---|-------|-----------|------|
-| 1 | OOPs Concepts (4 Pillars) + SOLID | 1 | [Go →](./01-oop-principles.md) |
+| 1 | Service Communication (gRPC, REST, Messaging) | 2 | [Go →](./05-service-communication.md) |
 
 ---
 
 [← Back to Home](../../README.md)
-]]>
