@@ -550,5 +550,112 @@ Low selectivity (gender: M/F), small tables (< few thousand rows — seq scan is
 
 ### 🔗 Follow-ups
 - [Q11 → JPA lazy/eager loading (N+1 optimization)](#q11)
-- [Q15 → Pagination in REST APIs](#q15)
+- [Q15 → SQL aggregate queries with date filtering](#q15)
 - [Q13 → ACID properties (isolation levels affect query performance)](#q13)
+
+---
+
+<a id="q15"></a>
+## Q15. Write a SQL query to find total quantity sold per product in the last 30 days
+
+### 📝 One-Liner
+`GROUP BY product` with `SUM(quantity)` and a `WHERE` clause filtering orders from the last 30 days — this tests aggregate functions, date filtering, JOINs, and indexing awareness.
+
+### 🔑 Quick Answer
+**Core query**: `SELECT p.name, SUM(oi.quantity) FROM order_items oi JOIN products p ON oi.product_id = p.id JOIN orders o ON oi.order_id = o.id WHERE o.order_date >= CURRENT_DATE - INTERVAL '30' DAY GROUP BY p.name ORDER BY SUM(oi.quantity) DESC`. **Key decisions**: use `>=` not `BETWEEN` (avoids off-by-one with timestamps), index on `order_date` for performance, handle products with zero sales using `LEFT JOIN`, use `COALESCE` for null safety. *(GROUP BY + SUM = basic aggregation; WHERE date filter + index = production-ready)*
+
+### 📖 How It Works
+```
+Tables:
+  products:    id | name
+  orders:      id | order_date | customer_id
+  order_items: id | order_id | product_id | quantity | price
+
+Execution Order (SQL logical processing):
+  1. FROM + JOIN    → combine tables
+  2. WHERE          → filter last 30 days
+  3. GROUP BY       → group by product
+  4. HAVING         → (optional) filter groups
+  5. SELECT         → pick columns + SUM()
+  6. ORDER BY       → sort results
+  7. LIMIT/OFFSET   → paginate
+```
+
+### 🗣️ Interview Script
+"I'd write a query that joins products, order_items, and orders — filtering orders where order_date is within the last 30 days. I use SUM(quantity) grouped by product name. For the date filter, I prefer `order_date >= CURRENT_DATE - INTERVAL '30' DAY` over BETWEEN because BETWEEN with timestamps can accidentally include or exclude boundary records. I'd add an index on `orders.order_date` since this is a range scan on a potentially large table. If the interviewer asks about products with zero sales, I'd switch to a LEFT JOIN from products to order_items so those products appear with a 0 total. In a Spring Boot app, this would be a `@Query` annotation on the repository with a DTO projection for performance."
+
+### 💻 Code Example
+
+```sql
+-- ✅ Basic: total quantity per product in last 30 days
+SELECT p.name AS product_name,
+       SUM(oi.quantity) AS total_quantity
+FROM   order_items oi
+JOIN   orders o    ON oi.order_id = o.id
+JOIN   products p  ON oi.product_id = p.id
+WHERE  o.order_date >= CURRENT_DATE - INTERVAL '30' DAY
+GROUP BY p.name
+ORDER BY total_quantity DESC;
+
+-- ✅ Include products with zero sales (LEFT JOIN)
+SELECT p.name AS product_name,
+       COALESCE(SUM(oi.quantity), 0) AS total_quantity
+FROM   products p
+LEFT JOIN order_items oi ON p.id = oi.product_id
+LEFT JOIN orders o       ON oi.order_id = o.id
+                         AND o.order_date >= CURRENT_DATE - INTERVAL '30' DAY
+GROUP BY p.name
+ORDER BY total_quantity DESC;
+
+-- ✅ With HAVING (only products selling > 100 units)
+SELECT p.name, SUM(oi.quantity) AS total_qty
+FROM   order_items oi
+JOIN   orders o   ON oi.order_id = o.id
+JOIN   products p ON oi.product_id = p.id
+WHERE  o.order_date >= CURRENT_DATE - INTERVAL '30' DAY
+GROUP BY p.name
+HAVING SUM(oi.quantity) > 100
+ORDER BY total_qty DESC;
+
+-- ✅ Spring Data JPA — DTO projection
+@Query("""
+    SELECT new com.app.dto.ProductSalesDTO(p.name, SUM(oi.quantity))
+    FROM OrderItem oi
+    JOIN oi.order o
+    JOIN oi.product p
+    WHERE o.orderDate >= :since
+    GROUP BY p.name
+    ORDER BY SUM(oi.quantity) DESC
+    """)
+List<ProductSalesDTO> findTopSellingProducts(@Param("since") LocalDate since);
+
+-- ✅ Index for performance
+CREATE INDEX idx_orders_order_date ON orders(order_date);
+CREATE INDEX idx_order_items_product ON order_items(product_id, order_id);
+```
+
+### ⚠️ Pitfalls / Gotchas
+- **BETWEEN with timestamps**: `BETWEEN '2026-03-01' AND '2026-03-31'` misses records at `2026-03-31 14:00:00` — use `< '2026-04-01'` instead *(BETWEEN timestamp ke saath tricky hai — boundary miss ho sakta hai)*
+- **Missing index on date column** — full table scan on large orders table
+- **NULL in SUM** — `SUM(NULL)` returns NULL, not 0; wrap with `COALESCE`
+- **GROUP BY non-aggregated column** — MySQL allows it (silently picks random value), PostgreSQL rejects it — always GROUP BY what you SELECT
+
+### 🆚 WHERE vs HAVING
+
+| Clause | Filters | Runs | Use For |
+|--------|---------|------|---------|
+| **WHERE** | Individual rows | Before GROUP BY | `order_date >= ...` |
+| **HAVING** | Grouped results | After GROUP BY | `SUM(qty) > 100` |
+
+### 🎯 Tricky Interview Qs
+
+**Q: What if you need daily breakdown, not just total?**
+Add `o.order_date::date` (or `DATE(o.order_date)`) to both SELECT and GROUP BY.
+
+**Q: How would you optimize this for millions of rows?**
+Partition orders table by date range. Use covering index `(order_date, id)`. Materialize with a daily cron job into a summary table for dashboard queries.
+
+### ⚡ Remember
+- **JOIN → WHERE → GROUP BY → HAVING → SELECT → ORDER BY** (logical execution order)
+- `COALESCE(SUM(...), 0)` for null safety with LEFT JOINs
+- Index the date column + use `>=` over `BETWEEN` for timestamps

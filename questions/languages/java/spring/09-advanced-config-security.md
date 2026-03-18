@@ -889,3 +889,129 @@ public class DashboardService {
 - [Connection pool sizing](../../production-debugging/01-jvm-memory-performance.md)
 - [Distributed transactions / Saga](../architecture/03-system-design-distributed.md)
 - [Spring Data JPA vs JDBC](07-project-infrastructure-decisions.md#q1)
+
+---
+
+<a id="q7"></a>
+## Q7. Explain Basic Auth vs JWT vs OAuth2 — when to use each?
+
+### 📝 One-Liner
+**Basic Auth** = username:password in every request (simple, internal); **JWT** = stateless token with claims (microservices, SPAs); **OAuth2** = delegated authorization framework for third-party access (Google login, API platforms).
+
+### 🔑 Quick Answer
+**Basic Auth**: Sends `Base64(username:password)` in `Authorization` header on every request. Simple but credentials travel every time — must use HTTPS. No built-in expiry. Best for: internal tools, machine-to-machine with mutual TLS. **JWT (JSON Web Token)**: After login, server returns a signed token containing user claims (id, roles, exp). Client sends `Bearer <token>` on every request. Server validates signature without DB lookup — true stateless auth. Best for: microservices, SPAs, mobile. **OAuth2**: Authorization framework where a user grants limited access to their resources on Provider A to App B without sharing credentials. Uses flows: Authorization Code (web), PKCE (SPA/mobile), Client Credentials (service-to-service). Best for: third-party integrations, social login, API platforms. *(Basic Auth = simple but risky; JWT = stateless + scalable; OAuth2 = third-party delegation)*
+
+### 📖 How It Works
+```
+Basic Auth:
+  Client → Base64("admin:pass123") → Authorization: Basic YWRtaW46cGFzczEyMw==
+  Server → decode → check DB → respond
+  Every request sends credentials ⚠️
+
+JWT:
+  1. POST /auth/login { email, password } → Server validates
+  2. Server → creates JWT: header.payload.signature
+     Payload: { sub: "user123", roles: ["ADMIN"], exp: 1710000000 }
+  3. Client stores token (memory/cookie)
+  4. GET /api/data → Authorization: Bearer eyJhbG...
+  5. Server verifies signature (no DB call) → extracts claims → authorizes
+
+OAuth2 (Authorization Code Flow):
+  1. User clicks "Login with Google"
+  2. Redirect → Google authorization server
+  3. User logs in + consents
+  4. Google redirects back with authorization code
+  5. Backend exchanges code for access_token (server-to-server)
+  6. Backend uses access_token to get user profile from Google
+  7. Backend creates session/JWT for the user
+```
+
+### 🗣️ Interview Script
+"I choose the auth mechanism based on the use case. For internal admin tools or simple machine-to-machine calls within a private network, Basic Auth over TLS is fine — it's simple and every HTTP client supports it. For our microservices architecture and SPA frontend, I use JWT — the user logs in once, gets a signed token with their roles, and subsequent requests attach this token. The backend validates the JWT signature without hitting the database, making it truly stateless and horizontally scalable. For things like 'Login with Google' or giving third-party developers access to our API, I use OAuth2 — specifically the Authorization Code flow with PKCE for security. OAuth2 is fundamentally different — it's about delegated authorization, not authentication. The user never shares their Google password with our app; they authorize Google to share specific data with us."
+
+### 💻 Code Example
+
+```java
+// ✅ Basic Auth — Spring Security config
+@Configuration
+@EnableWebSecurity
+public class BasicAuthConfig {
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        return http
+            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+            .httpBasic(Customizer.withDefaults())  // enables Basic Auth
+            .build();
+    }
+}
+
+// ✅ JWT — Token generation + validation
+@Service
+public class JwtService {
+    private final SecretKey key = Keys.hmacShaKeyFor(
+        Decoders.BASE64.decode(jwtSecret));  // from config, not hardcoded
+
+    public String generateToken(UserDetails user) {
+        return Jwts.builder()
+            .subject(user.getUsername())
+            .claim("roles", user.getAuthorities())
+            .issuedAt(new Date())
+            .expiration(new Date(System.currentTimeMillis() + 3600_000)) // 1hr
+            .signWith(key)
+            .compact();
+    }
+
+    public String extractUsername(String token) {
+        return Jwts.parser().verifyWith(key).build()
+            .parseSignedClaims(token).getPayload().getSubject();
+    }
+}
+
+// ✅ OAuth2 — Spring Security config for Google login
+@Configuration
+public class OAuth2Config {
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/public/**").permitAll()
+                .anyRequest().authenticated())
+            .oauth2Login(oauth -> oauth
+                .userInfoEndpoint(info -> info
+                    .userService(customOAuth2UserService)))
+            .build();
+    }
+}
+// application.yml:
+// spring.security.oauth2.client.registration.google.client-id: xxx
+// spring.security.oauth2.client.registration.google.client-secret: xxx
+```
+
+### 🆚 Comparison Table
+
+| Aspect | Basic Auth | JWT | OAuth2 |
+|--------|-----------|-----|--------|
+| **Credentials** | Every request | Login only | Never shared with app |
+| **Stateless** | No (DB check each time) | Yes (signature check) | Depends on token type |
+| **Expiry** | None built-in | `exp` claim | Access token TTL |
+| **Scalability** | Low (DB lookup) | High (no DB) | Medium |
+| **Third-party** | No | No | Yes (core purpose) |
+| **Revocation** | Change password | Hard (needs blocklist) | Revoke at auth server |
+| **Best for** | Internal tools, M2M | SPAs, microservices | Social login, API platforms |
+
+### 🎯 Tricky Interview Qs
+
+**Q: Is JWT authentication or authorization?**
+JWT is a token format — it can carry both identity (authentication) and roles/permissions (authorization). It's not a protocol like OAuth2.
+
+**Q: How do you revoke a JWT before expiry?**
+JWTs are stateless — you can't directly revoke them. Options: short TTL + refresh tokens, token blocklist (Redis), or change the signing key (revokes all tokens).
+
+**Q: What's the difference between OAuth2 and OpenID Connect?**
+OAuth2 = authorization (grants access to resources). OIDC = authentication layer on top of OAuth2 (adds `id_token` with user identity). "Login with Google" is OIDC.
+
+### ⚡ Remember
+- **Basic Auth** = simple, credentials every request, always use HTTPS
+- **JWT** = stateless, scalable, hard to revoke
+- **OAuth2** = delegated access, never shares user credentials with third-party app
+- Production: JWT for internal auth + OAuth2 for third-party = common pattern

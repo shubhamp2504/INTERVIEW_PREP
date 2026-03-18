@@ -10,7 +10,7 @@
 
 | # | Topic | Questions | Link |
 |---|-------|-----------|------|
-| 1 | OOPs Concepts (4 Pillars) | 0 | [Go →](./oops-concepts.md) |
+| 1 | OOPs Concepts (4 Pillars) + SOLID | 1 | [Go →](./01-oop-principles.md) |
 | 2 | SOLID Principles | 0 | [Go →](./solid-principles.md) |
 | 3 | Creational Patterns | 0 | [Go →](./creational-patterns.md) |
 | 4 | Structural Patterns | 0 | [Go →](./structural-patterns.md) |

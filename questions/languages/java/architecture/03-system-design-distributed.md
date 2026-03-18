@@ -781,3 +781,108 @@ public class InventoryConsumer {
 - [Q1 → Scalable architecture (overall design)](#q1)
 - Q13 → ACID properties (database/01)
 - Q20 → Fault tolerance (architecture/01)
+
+---
+
+<a id="q13"></a>
+## Q13. How do you evaluate whether an architecture is truly microservices or a distributed monolith?
+
+### 📝 One-Liner
+A **true microservice** can be deployed, scaled, and failed independently — if services must be deployed together, share databases, or break when one goes down, you have a **distributed monolith** with extra network hops.
+
+### 🔑 Quick Answer
+**Microservices test**: (1) Can you deploy Service A without redeploying Service B? (2) Does each service own its own database? (3) Can Service A function (even degraded) if Service B is down? (4) Can teams work on services independently without merge conflicts? If the answer to any is "no" — you likely have a distributed monolith. **Common traps**: shared database, synchronous chains (A calls B calls C calls D), tight coupling via shared libraries, coordinated deployments. *(Agar ek service deploy karne ke liye doosri bhi deploy karni padti hai — toh woh microservices nahi hai, distributed monolith hai)*
+
+### 📖 How It Works
+```
+True Microservices:                    Distributed Monolith:
+┌──────────┐  ┌──────────┐           ┌──────────┐  ┌──────────┐
+│ Order    │  │ Payment  │           │ Order    │  │ Payment  │
+│ Service  │  │ Service  │           │ Service  │──│ Service  │──sync
+├──────────┤  ├──────────┤           │          │  │          │  chain
+│ Own DB   │  │ Own DB   │           ├──────────┤  ├──────────┤
+│ orders   │  │ payments │           │  SHARED DATABASE       │
+└──────────┘  └──────────┘           └──────────────────────── ┘
+  async events    async events           tight coupling + shared state
+  independent     independent            deploy together or nothing works
+  can fail alone  can fail alone         cascade failures
+```
+
+### 🗣️ Interview Script
+"When someone tells me their architecture is microservices, I ask four questions: Can each service be deployed independently? Does each own its data store? Can one service degrade gracefully if another is down? Can separate teams work without coordinating releases? If any answer is no, it's likely a distributed monolith — you have the complexity of a distributed system without the benefits of microservices. The most common anti-pattern I've seen is a shared database — three services reading from the same tables. Any schema change requires coordinating all three. Another red flag is synchronous call chains — Order → Payment → Inventory → Shipping all synchronous. If Shipping is slow, the entire order flow times out. True microservices communicate via async events, own their data, and use patterns like circuit breakers and bulkheads for fault isolation. I'm not saying every team needs microservices — a well-designed modular monolith is often better than a poorly-designed distributed system."
+
+### 💻 Code Example
+
+```java
+// ❌ DISTRIBUTED MONOLITH — synchronous chain, shared models
+@RestController
+public class OrderController {
+    // Order → calls Payment → calls Inventory → calls Shipping
+    // If ANY service is down, entire order fails
+    @PostMapping("/orders")
+    public Order createOrder(@RequestBody OrderRequest req) {
+        PaymentResponse payment = paymentClient.charge(req);    // sync HTTP
+        InventoryResponse inv = inventoryClient.reserve(req);    // sync HTTP
+        ShippingResponse ship = shippingClient.schedule(req);    // sync HTTP
+        return orderRepo.save(new Order(payment, inv, ship));    // shared DB?
+    }
+}
+
+// ✅ TRUE MICROSERVICES — async events, own database, fault-tolerant
+@RestController
+public class OrderController {
+    @PostMapping("/orders")
+    public Order createOrder(@RequestBody OrderRequest req) {
+        Order order = orderRepo.save(Order.pending(req));  // own DB
+        // Publish event — other services react asynchronously
+        kafkaTemplate.send("order-events",
+            new OrderCreatedEvent(order.getId(), req.items(), req.customerId()));
+        return order;  // returns immediately with PENDING status
+    }
+}
+
+// Payment service listens independently
+@KafkaListener(topics = "order-events")
+public void onOrderCreated(OrderCreatedEvent event) {
+    paymentService.charge(event);  // own DB, own pace
+    kafkaTemplate.send("payment-events", new PaymentProcessedEvent(...));
+}
+
+// Circuit breaker for any remaining sync calls
+@CircuitBreaker(name = "inventory", fallbackMethod = "fallback")
+public InventoryStatus checkStock(String productId) {
+    return inventoryClient.check(productId);
+}
+public InventoryStatus fallback(String productId, Throwable t) {
+    return InventoryStatus.UNKNOWN;  // degrade gracefully
+}
+```
+
+### 🆚 Microservices vs Distributed Monolith
+
+| Aspect | True Microservices | Distributed Monolith |
+|--------|-------------------|---------------------|
+| **Deployment** | Independent per service | Must deploy together |
+| **Database** | Each owns its DB | Shared database |
+| **Communication** | Async events (Kafka) | Synchronous HTTP chains |
+| **Failure** | Isolated (circuit breaker) | Cascading |
+| **Teams** | Independent (Conway's Law) | Must coordinate releases |
+| **Shared code** | Minimal (API contracts) | Shared libraries/models |
+| **Scaling** | Scale only what's needed | Scale everything or nothing |
+
+### 🎯 Tricky Interview Qs
+
+**Q: Is it always bad to have sync calls between services?**
+No — occasional sync calls with circuit breakers are fine. The problem is long synchronous chains (A→B→C→D) where one slow service blocks everything.
+
+**Q: When should you NOT use microservices?**
+Small team (< 5-7 devs), early-stage product, simple domain. A modular monolith is simpler to develop, deploy, and debug. Extract microservices only when you hit scaling or team boundaries.
+
+**Q: How do you migrate from distributed monolith to true microservices?**
+Strangler Fig pattern: introduce events alongside sync calls, gradually move data ownership, decompose shared DB, replace sync chains with async events one at a time.
+
+### ⚡ Remember
+- **Litmus test**: can I deploy, scale, and fail each service independently?
+- Shared DB = almost always a distributed monolith
+- Sync chains = latency multiplied + cascading failures
+- Modular monolith > distributed monolith (simpler, fewer network issues)

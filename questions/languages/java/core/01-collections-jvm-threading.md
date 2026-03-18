@@ -655,3 +655,61 @@ Yes — using atomic variables (AtomicInteger, AtomicReference) and CAS operatio
 - [Q2 → ConcurrentHashMap details](#q2)
 - [Q3 → JVM Memory (volatile and happens-before)](#q3)
 - What is the Java Memory Model? (happens-before, visibility guarantees)
+
+---
+
+<a id="q6"></a>
+## Q6. What is JVM and why is it important?
+
+### 📝 One-Liner
+The **Java Virtual Machine (JVM)** is the runtime engine that executes Java bytecode — it provides platform independence ("write once, run anywhere"), automatic memory management (garbage collection), and runtime optimizations (JIT compilation).
+
+### 🔑 Quick Answer
+**What**: JVM is a virtual machine that runs `.class` files (bytecode). Java source → `javac` → bytecode → JVM executes. **Why important**: (1) **Platform independence** — same bytecode runs on Windows, Linux, Mac. (2) **Memory management** — automatic garbage collection frees unused objects. (3) **Performance** — JIT compiler converts hot bytecode to native machine code at runtime. (4) **Security** — bytecode verification, sandboxing, ClassLoader isolation. (5) **Language interop** — Kotlin, Scala, Groovy all run on JVM. **JVM ≠ JRE ≠ JDK**: JDK (development kit) ⊃ JRE (runtime) ⊃ JVM (execution engine). *(JVM = Java ka engine — bytecode ko machine code mein convert karta hai, memory manage karta hai, GC chalaata hai)*
+
+### 📖 How It Works
+```
+Java Source (.java)
+       │ javac (compiler)
+       ▼
+Bytecode (.class)
+       │
+       ▼
+┌────────────────────────────────────────┐
+│  JVM                                     │
+│  ┌──────────────┐  ┌────────────────┐  │
+│  │ Class Loader │  │ Bytecode       │  │
+│  │ (loads .class)│  │ Verifier       │  │
+│  └──────────────┘  └────────────────┘  │
+│  ┌─────────────────────────────────┐  │
+│  │ Runtime Data Areas               │  │
+│  │  Heap (objects, GC managed)      │  │
+│  │  Stack (per thread, frames)      │  │
+│  │  Metaspace (class metadata)      │  │
+│  │  PC Register | Native Stack      │  │
+│  └─────────────────────────────────┘  │
+│  ┌─────────────────────────────────┐  │
+│  │ Execution Engine                 │  │
+│  │  Interpreter (slow, line by line)│  │
+│  │  JIT Compiler (fast, hot code)   │  │
+│  │  GC (frees unused objects)       │  │
+│  └─────────────────────────────────┘  │
+└────────────────────────────────────────┘
+```
+
+### 🗣️ Interview Script
+"The JVM is the runtime engine that executes Java bytecode. When I compile a `.java` file, `javac` produces platform-independent bytecode. The JVM then loads this bytecode through ClassLoaders, verifies it for safety, and executes it. The JVM has three key responsibilities: first, memory management — it allocates objects on the Heap and automatically reclaims unused memory through garbage collection. Second, performance optimization — the JIT compiler identifies frequently-executed code (hot spots) and compiles them to native machine code, which is why Java can achieve near-C performance. Third, platform independence — the same bytecode runs on any OS with a JVM implementation. For backend applications, understanding JVM is critical because most production issues — memory leaks, GC pauses, thread deadlocks — require JVM-level debugging with tools like JFR, jstack, and GC logs."
+
+### 🆚 JDK vs JRE vs JVM
+
+| Component | Contains | Purpose |
+|-----------|----------|---------|
+| **JDK** | JRE + javac + debugger + tools | Development |
+| **JRE** | JVM + class libraries (java.lang, java.util, etc.) | Running Java apps |
+| **JVM** | Execution engine + GC + ClassLoader | Executing bytecode |
+
+### ⚡ Remember
+- JVM = **bytecode executor** + **memory manager** + **JIT compiler**
+- Write once, run anywhere = bytecode is platform-independent, JVM is platform-specific
+- [Q3 → JVM Memory Architecture (Heap, Stack, Metaspace) for deep dive](#q3)
+- [Q4 → OOM troubleshooting](#q4)

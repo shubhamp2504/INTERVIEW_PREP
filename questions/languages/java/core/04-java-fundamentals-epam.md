@@ -377,3 +377,209 @@ String csv = List.of("a", "b", "c").stream()
 - String pool and `intern()` mechanics
 - Java 9 Compact Strings (byte[] instead of char[])
 - [Q1 → Immutable class design (String as example)](#q1)
+
+---
+
+<a id="q4"></a>
+## Q4. What is the difference between `==` and `equals()` in Java?
+
+### 📝 One-Liner
+`==` compares **references** (do two variables point to the same object in memory?); `equals()` compares **values** (are the contents logically equal?) — most classes override `equals()` for meaningful comparison.
+
+### 🔑 Quick Answer
+**`==`**: For primitives, compares values (`5 == 5` is true). For objects, compares **reference identity** — same memory address. **`equals()`**: Defined in `Object` class (default = same as `==`), but overridden by String, Integer, collections to compare **logical equality**. `new String("hello") == new String("hello")` is `false` (different objects). `new String("hello").equals(new String("hello"))` is `true` (same content). **Contract**: if you override `equals()`, you must override `hashCode()` too — equal objects must have equal hash codes. *(== memory address check karta hai; equals() content check karta hai)*
+
+### 📖 How It Works
+```
+String a = "hello";       // String pool
+String b = "hello";       // Same pool reference
+String c = new String("hello"); // New heap object
+
+a == b       → true   (same pool reference)
+a == c       → false  (different objects)
+a.equals(c)  → true   (same content)
+
+Integer x = 127;
+Integer y = 127;
+x == y       → true   (Integer cache: -128 to 127)
+
+Integer p = 128;
+Integer q = 128;
+p == q       → false  (outside cache range, different objects)
+p.equals(q)  → true   (same value)
+```
+
+### 🗣️ Interview Script
+"The `==` operator checks reference equality for objects — whether two variables point to the exact same object in memory. The `equals()` method checks logical equality — whether two objects have the same content. For primitives, `==` compares values directly. The classic trap is with Strings: `new String(\"hello\") == new String(\"hello\")` returns false because they're two separate heap objects, but `.equals()` returns true because the characters match. Another trap is Integer caching — Java caches Integer objects for values -128 to 127, so `Integer a = 127; Integer b = 127; a == b` is true, but with 128 it's false. That's why we always use `.equals()` for object comparison. And if I override `equals()` in a custom class, I must also override `hashCode()` to maintain the contract — HashMap and HashSet depend on equal objects having equal hash codes."
+
+### 💻 Code Example
+
+```java
+// ✅ String comparison
+String s1 = "hello";
+String s2 = "hello";
+String s3 = new String("hello");
+
+System.out.println(s1 == s2);       // true  (string pool)
+System.out.println(s1 == s3);       // false (different objects)
+System.out.println(s1.equals(s3));  // true  (same content)
+
+// ✅ Integer cache trap
+Integer a = 100, b = 100;
+System.out.println(a == b);         // true  (cached)
+Integer c = 200, d = 200;
+System.out.println(c == d);         // false (not cached)
+System.out.println(c.equals(d));    // true  (value comparison)
+
+// ✅ Custom class — must override both equals() and hashCode()
+public class Employee {
+    private Long id;
+    private String name;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;                     // same reference
+        if (o == null || getClass() != o.getClass()) return false;
+        Employee emp = (Employee) o;
+        return Objects.equals(id, emp.id);              // business key
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);                        // consistent with equals
+    }
+}
+
+// ⚠️ Without overriding hashCode:
+Set<Employee> set = new HashSet<>();
+set.add(new Employee(1L, "Alice"));
+set.contains(new Employee(1L, "Alice")); // false! Different hashCode → wrong bucket
+```
+
+### ⚠️ Pitfalls / Gotchas
+- **Never use `==` for object comparison** (except intentional identity check)
+- **Integer cache range** is -128 to 127 by default — `==` works within range, fails outside *(128 pe == false aata hai — bahut common bug)*
+- **Forgot `hashCode()`** → `equals()` says equal but HashMap puts them in different buckets
+- **`equals(null)`** should return false, not throw NPE — check `o == null` first
+
+### ⚡ Remember
+- `==` = **reference** (memory address) | `equals()` = **value** (content)
+- Always use `.equals()` for objects | `==` only for primitives or null checks
+- Override `equals()` → MUST override `hashCode()` (HashMap contract)
+- `Objects.equals(a, b)` is null-safe — prefer over `a.equals(b)`
+
+---
+
+<a id="q5"></a>
+## Q5. What are checked and unchecked exceptions in Java?
+
+### 📝 One-Liner
+**Checked exceptions** must be declared/handled at compile time (`IOException`, `SQLException`); **unchecked exceptions** extend `RuntimeException` and can occur anywhere without mandatory handling (`NullPointerException`, `IllegalArgumentException`).
+
+### 🔑 Quick Answer
+**Checked (compile-time)**: The compiler forces you to handle them — either `try-catch` or declare with `throws`. They represent recoverable conditions: file not found, network timeout, SQL error. **Unchecked (runtime)**: Extend `RuntimeException`. No compiler enforcement. They represent programming bugs: null access, array index, invalid argument. **Error**: Extend `Error` (also unchecked). Represent unrecoverable JVM issues: `OutOfMemoryError`, `StackOverflowError`. **Best practice**: Use checked for recoverable business conditions, unchecked for programming errors, never catch `Error`. *(Checked = compiler force karta hai handle karne ke liye; Unchecked = runtime pe aate hain, compiler kuch nahi bolta)*
+
+### 📖 How It Works
+```
+Throwable
+├── Error (unchecked, don't catch)
+│   ├── OutOfMemoryError
+│   ├── StackOverflowError
+│   └── VirtualMachineError
+└── Exception
+    ├── Checked Exceptions (must handle)
+    │   ├── IOException
+    │   ├── SQLException
+    │   ├── FileNotFoundException
+    │   └── ClassNotFoundException
+    └── RuntimeException (unchecked)
+        ├── NullPointerException
+        ├── IllegalArgumentException
+        ├── ArrayIndexOutOfBoundsException
+        ├── ClassCastException
+        └── ArithmeticException
+```
+
+### 🗣️ Interview Script
+"Java has two categories of exceptions. Checked exceptions are verified at compile time — if a method throws an IOException, the caller must either catch it or declare `throws IOException`. They represent conditions that the caller can reasonably recover from, like a file not being found or a network timeout. Unchecked exceptions extend RuntimeException and aren't checked by the compiler. They represent programming bugs — NullPointerException, ArrayIndexOutOfBoundsException, IllegalArgumentException. These should be prevented through proper coding rather than caught. There's also Error, which represents JVM-level problems like OutOfMemoryError — these should almost never be caught because the JVM may be in an unstable state. In modern Java and Spring Boot, the trend is towards unchecked exceptions — Spring wraps all SQLExceptions into DataAccessException (unchecked), and custom business exceptions usually extend RuntimeException rather than Exception."
+
+### 💻 Code Example
+
+```java
+// ✅ Checked exception — compiler forces handling
+public String readFile(String path) throws IOException {  // must declare
+    return Files.readString(Path.of(path));
+}
+
+// Caller MUST handle:
+try {
+    String content = readFile("/data.txt");
+} catch (IOException e) {
+    log.error("File read failed", e);
+    // recover: use default, retry, or rethrow as unchecked
+}
+
+// ✅ Unchecked exception — no compiler enforcement
+public User findById(Long id) {
+    return userRepo.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
+    // ResourceNotFoundException extends RuntimeException
+    // Caller doesn't need try-catch (handled by @ControllerAdvice)
+}
+
+// ✅ Custom exception hierarchy (Spring Boot style)
+// Base class (unchecked)
+public class BusinessException extends RuntimeException {
+    private final String errorCode;
+    public BusinessException(String errorCode, String message) {
+        super(message);
+        this.errorCode = errorCode;
+    }
+}
+
+public class ResourceNotFoundException extends BusinessException {
+    public ResourceNotFoundException(String message) {
+        super("NOT_FOUND", message);
+    }
+}
+
+public class InsufficientBalanceException extends BusinessException {
+    public InsufficientBalanceException(String message) {
+        super("INSUFFICIENT_BALANCE", message);
+    }
+}
+
+// Global handler catches all BusinessExceptions
+@RestControllerAdvice
+public class GlobalHandler {
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handle404(ResourceNotFoundException ex) {
+        return ResponseEntity.status(404).body(new ErrorResponse(ex));
+    }
+}
+```
+
+### 🆚 Checked vs Unchecked
+
+| Aspect | Checked | Unchecked |
+|--------|---------|----------|
+| **Extends** | `Exception` | `RuntimeException` |
+| **Compiler** | Must handle (try/throws) | No enforcement |
+| **Represents** | Recoverable conditions | Programming bugs |
+| **Examples** | IOException, SQLException | NPE, IllegalArgument |
+| **Spring style** | Avoided (wrapped to unchecked) | Preferred |
+| **When to use** | External systems (file, network) | Validation, business rules |
+
+### 🎯 Tricky Interview Qs
+
+**Q: Why does Spring use unchecked exceptions?**
+Spring wraps checked exceptions (like SQLException) into unchecked ones (DataAccessException) because most callers can't meaningfully recover from a SQL error — forcing try-catch everywhere adds boilerplate without value.
+
+**Q: Can you catch an Error?**
+Technically yes, but you shouldn't. After an OutOfMemoryError, the JVM may be in an unstable state. The only exception is if you're doing cleanup before shutdown.
+
+### ⚡ Remember
+- **Checked** = compiler enforced, recoverable → IOException, SQLException
+- **Unchecked** = RuntimeException, programming bugs → NPE, IllegalArgument
+- **Error** = JVM problems, don't catch → OOM, StackOverflow
+- Modern Java/Spring prefers **unchecked** for cleaner code

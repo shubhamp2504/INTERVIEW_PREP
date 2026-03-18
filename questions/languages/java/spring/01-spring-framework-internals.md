@@ -758,3 +758,212 @@ Spring Security uses servlet filters that run BEFORE DispatcherServlet. So @Cont
 - [Q9 → @Component/@Service/@Repository (exception translation in @Repository)](#q9)
 - [Q15 → REST API design (error format in pagination)](#q15)
 - How does Spring Security exception handling work? (AuthenticationEntryPoint)
+
+---
+
+<a id="q11"></a>
+## Q11. What happens if two controller methods are mapped with the same HTTP method and URL?
+
+### 📝 One-Liner
+Spring Boot throws an **`IllegalStateException: Ambiguous mapping`** at startup — the application won't even start because `RequestMappingHandlerMapping` cannot resolve which handler to use.
+
+### 🔑 Quick Answer
+Spring scans all `@RequestMapping` / `@GetMapping` etc. at startup and registers them in `RequestMappingHandlerMapping`. Each endpoint must have a **unique combination** of: URL path + HTTP method + params + headers + consumes + produces. If two methods resolve to the exact same mapping, Spring fails fast at startup with `Ambiguous mapping. Cannot map 'controllerName' method to {GET [/path]}: There is already 'controllerName' bean method mapped.` **Fix**: change the URL, use different HTTP methods, or differentiate by request params / headers. *(Same URL + same method = Spring startup pe exception — application chalegi hi nahi)*
+
+### 📖 How It Works
+```
+Startup Flow:
+  ApplicationContext initializes
+    → RequestMappingHandlerMapping scans all @Controller/@RestController
+    → For each @GetMapping/@PostMapping etc.:
+        → Build RequestMappingInfo (URL + method + params + headers + consumes + produces)
+        → Register in handlerMethods map
+        → IF key already exists → throw IllegalStateException (Ambiguous mapping)
+    → Application FAILS TO START
+
+Uniqueness key = URL path + HTTP method + params + headers + consumes + produces
+  /users + GET                 →  unique ✅
+  /users + GET                 →  DUPLICATE ❌ (ambiguous)
+  /users + POST                →  unique ✅ (different method)
+  /users + GET + params="role"  →  unique ✅ (different params)
+```
+
+### 🗣️ Interview Script
+"If two controller methods have the same HTTP method and URL, Spring throws an `IllegalStateException` with an 'Ambiguous mapping' message at startup — the application won't start at all. This happens during the `RequestMappingHandlerMapping` initialization phase where Spring scans all controllers and registers their endpoints. Each endpoint must be unique — uniqueness is determined by the combination of URL path, HTTP method, request parameters, headers, consumes, and produces attributes. So you can have two GET methods on the same URL if they differ by params — for example `@GetMapping(value = "/users", params = "role")` vs `@GetMapping("/users")`. To fix a genuine duplicate, either rename one URL, change the HTTP method, or merge the logic. This is actually a good design — failing fast at startup prevents ambiguous behavior at runtime."
+
+### 💻 Code Example
+
+```java
+// ❌ BROKEN — Ambiguous mapping at startup
+@RestController
+@RequestMapping("/users")
+public class UserController {
+
+    @GetMapping("/list")
+    public List<User> getUsers() {
+        return userService.getUsers();
+    }
+
+    @GetMapping("/list")  // SAME URL + SAME HTTP METHOD = 💥
+    public List<User> getAllUsers() {
+        return userService.getAllUsers();
+    }
+}
+// IllegalStateException: Ambiguous mapping. Cannot map 'userController' method
+// to {GET [/users/list]}: There is already 'userController' bean method mapped.
+
+// ✅ FIX 1 — Different URLs
+@GetMapping("/list")
+public List<User> getUsers() { ... }
+
+@GetMapping("/list/all")
+public List<User> getAllUsers() { ... }
+
+// ✅ FIX 2 — Different HTTP methods
+@GetMapping("/list")
+public List<User> getUsers() { ... }
+
+@PostMapping("/list")  // POST vs GET
+public List<User> searchUsers(@RequestBody SearchCriteria criteria) { ... }
+
+// ✅ FIX 3 — Different request params
+@GetMapping(value = "/list", params = "active=true")
+public List<User> getActiveUsers() { ... }
+
+@GetMapping(value = "/list", params = "active=false")
+public List<User> getInactiveUsers() { ... }
+
+// ✅ FIX 4 — Different produces (content negotiation)
+@GetMapping(value = "/list", produces = MediaType.APPLICATION_JSON_VALUE)
+public List<User> getUsersJson() { ... }
+
+@GetMapping(value = "/list", produces = MediaType.APPLICATION_XML_VALUE)
+public List<User> getUsersXml() { ... }
+```
+
+### ⚠️ Pitfalls / Gotchas
+- **Two different controllers with same mapping** — still ambiguous; Spring scans all beans *(alag controller mein bhi same mapping rakha toh bhi error aayega)*
+- **Class-level + method-level overlap** — `@RequestMapping("/api")` on class + `@GetMapping("/users")` on method = `/api/users`; check for accidental duplicates across controllers
+- **Profile-based controllers** — two controllers active in same profile with same mapping = crash. Use `@Profile` carefully.
+
+### 🆚 Mapping Uniqueness Factors
+
+| Factor | Example | Can Differentiate? |
+|--------|---------|-------------------|
+| **URL path** | `/users` vs `/users/all` | ✅ Yes |
+| **HTTP method** | GET vs POST | ✅ Yes |
+| **params** | `params="role"` | ✅ Yes |
+| **headers** | `headers="X-Version=2"` | ✅ Yes |
+| **consumes** | `application/json` vs `application/xml` | ✅ Yes |
+| **produces** | `application/json` vs `text/csv` | ✅ Yes |
+| **Method name** | `getUsers()` vs `getAllUsers()` | ❌ No (JVM name doesn't matter) |
+
+### ⚡ Remember
+- Same URL + same method = **startup failure** (not runtime — fails fast)
+- Uniqueness = URL + HTTP method + params + headers + consumes + produces
+- **Fail-fast is a feature** — prevents ambiguous runtime behavior
+
+---
+
+<a id="q12"></a>
+## Q12. What is REST and why is it important for backend design?
+
+### 📝 One-Liner
+REST (Representational State Transfer) is an **architectural style** for APIs over HTTP — stateless, resource-based, using standard HTTP methods (GET, POST, PUT, DELETE) for CRUD operations.
+
+### 🔑 Quick Answer
+**REST principles**: (1) **Stateless** — each request carries all needed info (no server-side session). (2) **Resource-based** — URLs represent resources (`/users/123`), not actions. (3) **Standard HTTP methods** — GET (read), POST (create), PUT (replace), PATCH (partial update), DELETE (remove). (4) **Representations** — resources can be JSON, XML, etc. (5) **Uniform interface** — consistent URL patterns and status codes. (6) **HATEOAS** (optional) — responses include links to related actions. REST matters because it's the universal contract between frontend, mobile, other services — standardized, cacheable, and scalable. *(REST = HTTP methods + resources + stateless — duniya ka sabse common API style)*
+
+### 📖 How It Works
+```
+REST Resource Design:
+  Resource: User
+  Base URL: /api/users
+
+  GET    /api/users          →  List all users (200)
+  GET    /api/users/123      →  Get user 123 (200 or 404)
+  POST   /api/users          →  Create user (201 + Location header)
+  PUT    /api/users/123      →  Replace user 123 (200)
+  PATCH  /api/users/123      →  Partial update (200)
+  DELETE /api/users/123      →  Delete user 123 (204)
+
+Stateless:
+  Request 1: GET /users (+ Authorization: Bearer token)
+  Request 2: GET /users/123 (+ Authorization: Bearer token)
+  Server doesn't remember Request 1 when processing Request 2
+  → Each request is self-contained → scales horizontally
+```
+
+### 🗣️ Interview Script
+"REST is an architectural style for designing APIs over HTTP. The key idea is that everything is a resource — identified by a URL — and you use standard HTTP methods to operate on it. GET reads, POST creates, PUT replaces, PATCH partially updates, DELETE removes. Each request is stateless — the server doesn't store client state between requests, so any server instance can handle any request. This is what makes REST APIs horizontally scalable — you can put 10 instances behind a load balancer and it just works. The response format is typically JSON, with proper HTTP status codes — 200 for success, 201 for created, 400 for bad input, 404 for not found, 500 for server error. REST became the de facto standard because it's simple, cacheable, and uses the same HTTP that browsers already speak."
+
+### 💻 Code Example
+
+```java
+// ✅ Well-designed REST controller with proper status codes
+@RestController
+@RequestMapping("/api/employees")
+public class EmployeeController {
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Employee> getById(@PathVariable Long id) {
+        return employeeService.findById(id)
+            .map(ResponseEntity::ok)                          // 200
+            .orElseThrow(() -> new ResourceNotFoundException( // 404
+                "Employee not found: " + id));
+    }
+
+    @PostMapping
+    public ResponseEntity<Employee> create(
+            @Valid @RequestBody EmployeeRequest request) {
+        Employee created = employeeService.create(request);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+            .path("/{id}").buildAndExpand(created.getId()).toUri();
+        return ResponseEntity.created(location).body(created);  // 201 + Location
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Employee> update(
+            @PathVariable Long id,
+            @Valid @RequestBody EmployeeRequest request) {
+        return ResponseEntity.ok(employeeService.update(id, request));  // 200
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        employeeService.delete(id);
+        return ResponseEntity.noContent().build();  // 204
+    }
+}
+
+// Global exception handler for clean error responses
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(404).body(
+            new ErrorResponse(404, ex.getMessage(), LocalDateTime.now()));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
+        return ResponseEntity.status(500).body(
+            new ErrorResponse(500, "Internal server error", LocalDateTime.now()));
+    }
+}
+```
+
+### 🆚 REST vs Other API Styles
+
+| Style | Protocol | Format | Use When |
+|-------|----------|--------|-----------|
+| **REST** | HTTP | JSON/XML | Standard CRUD APIs, web/mobile backends |
+| **GraphQL** | HTTP | JSON | Complex queries, frontend-driven data needs |
+| **gRPC** | HTTP/2 | Protobuf | Service-to-service, high performance |
+| **SOAP** | HTTP/SMTP | XML | Enterprise/legacy, strict contracts |
+
+### ⚡ Remember
+- **Resources (nouns)** not actions (verbs): `/users` not `/getUsers`
+- **Stateless** = horizontal scaling
+- **HTTP status codes**: 2xx success, 4xx client error, 5xx server error
+- REST + JSON = most common API pattern for 90% of applications

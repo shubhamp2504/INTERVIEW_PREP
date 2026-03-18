@@ -190,3 +190,70 @@ Minor GC: collects only Young Generation (Eden + Survivors). Fast (~10-50ms). Ob
 - Q3 → JVM memory architecture (core/01)
 - Q4 → OOM troubleshooting (core/01)
 - Q6 → Performance bottleneck identification (this batch architecture/03)
+
+---
+
+<a id="q5"></a>
+## Q5. What is Garbage Collection in Java and how does it work?
+
+### 📝 One-Liner
+**Garbage Collection (GC)** is the JVM's automatic memory management system — it identifies and frees objects that are no longer reachable from any live reference, preventing memory leaks without manual `free()`/`delete`.
+
+### 🔑 Quick Answer
+**How**: JVM marks all objects reachable from GC roots (stack variables, static fields, thread references) and sweeps/compacts the rest. **Generational hypothesis**: most objects die young → Heap is divided into Young Generation (Eden + Survivor) and Old Generation. Minor GC cleans Young Gen (fast, frequent), Major/Full GC cleans entire heap (slow, rare). **GC algorithms**: Serial (single-thread, small apps), Parallel (multi-thread throughput), G1 (balanced, default since Java 9), ZGC/Shenandoah (sub-millisecond pauses, Java 15+). **Key metric**: GC pause time — "stop-the-world" pauses where all app threads freeze. *(GC = safai karmchari jo unused objects ko memory se hataata hai — automatically, bina programmer ke)*
+
+### 📖 How It Works
+```
+Heap Memory Layout:
+┌─────────────────────────────────────────────┐
+│  Young Generation (~1/3)   │  Old Generation (~2/3)  │
+│  ┌──────┐┌──┐┌──┐  │  ┌─────────────────┐  │
+│  │ Eden  ││S0││S1│  │  │ Long-lived objects │  │
+│  └──────┘└──┘└──┘  │  └─────────────────┘  │
+└─────────────────────────────────────────────┘
+
+Object Lifecycle:
+  1. new Object() → allocated in Eden
+  2. Eden fills up → Minor GC
+  3. Live objects copied to Survivor (S0 or S1)
+  4. After N minor GCs → promoted to Old Gen
+  5. Old Gen fills up → Major GC (slow!)
+
+GC Process (Mark-Sweep-Compact):
+  Mark:    trace from GC roots, mark all reachable objects
+  Sweep:   free memory of unmarked (unreachable) objects
+  Compact: move surviving objects together (reduce fragmentation)
+
+GC Roots (starting points for reachability):
+  - Stack variables (local variables, method parameters)
+  - Static fields
+  - Active thread references
+  - JNI references
+```
+
+### 🗣️ Interview Script
+"Garbage collection is the JVM's automatic memory management. Instead of manually freeing memory like in C/C++, the JVM automatically identifies objects that are no longer reachable and reclaims their memory. It works on the generational hypothesis — most objects are short-lived. So the heap is divided into Young Generation and Old Generation. New objects go to Eden in Young Gen. When Eden fills up, a minor GC runs — it identifies live objects by tracing from GC roots like stack variables and static fields, copies survivors to a Survivor space, and frees everything else. After surviving several minor GCs, objects get promoted to Old Gen. When Old Gen fills up, a major GC runs, which is slower because it scans the entire heap. The key concern in production is GC pause time — during GC, application threads are paused. G1GC, the default since Java 9, keeps pauses predictable by dividing the heap into regions. For latency-critical apps, ZGC can achieve sub-millisecond pauses."
+
+### 🆚 GC Algorithm Comparison
+
+| Algorithm | Threads | Pause | Best For |
+|-----------|---------|-------|-----------|
+| **Serial** | Single | Long | Small apps, client |
+| **Parallel** | Multi | Medium | Throughput (batch) |
+| **G1** (default) | Multi | Predictable | General purpose |
+| **ZGC** | Multi | < 1ms | Latency-critical |
+| **Shenandoah** | Multi | < 10ms | Low-latency |
+
+### 🎯 Tricky Interview Qs
+
+**Q: Can you force garbage collection?**
+`System.gc()` is a *suggestion* — JVM may ignore it. You cannot force GC. In production, never call `System.gc()` — it triggers a full GC causing long pauses.
+
+**Q: What causes memory leaks in a garbage-collected language?**
+Objects still reachable but no longer needed: unclosed resources, static collections that grow forever, listener/callback registrations not removed, ThreadLocal not cleaned in pools.
+
+### ⚡ Remember
+- **Generational**: Young Gen (fast minor GC) + Old Gen (slow major GC)
+- **GC roots** = stack, static fields, threads → anything reachable from roots is alive
+- **G1GC** = default, good for most apps | **ZGC** = sub-ms pauses
+- [Q4 → Deep dive on GC tuning, flags, and monitoring](03-jvm-performance-tuning.md#q4)
