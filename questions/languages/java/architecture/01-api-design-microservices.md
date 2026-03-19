@@ -982,3 +982,56 @@ Use the Saga pattern: each service performs its local transaction and publishes 
 - [Q18 → REST vs Kafka (async communication for resilience)](#q18)
 - [Q19 → Docker (deploying resilient services)](#q19)
 - [Q17 → Performance bottleneck (timeouts and circuit breakers)](#q17)
+
+---
+
+## Q16. What is Rate Limiting and How Would You Implement It?
+
+### 📝 One-Liner
+Rate limiting controls the number of API requests a client can make in a given time window to protect services.
+
+### 🔑 Quick Answer
+Algorithms: Token Bucket (allows bursts), Sliding Window (precise), Fixed Window (simple). Implement at API Gateway level using Redis for distributed state. Return 429 with Retry-After header. *(har client ki request limit karo — Token Bucket sabse common hai)*
+
+### 📖 How It Works
+1. **Token Bucket**: Tokens refill at constant rate. Each request costs 1 token. Empty bucket = reject.
+2. **Fixed Window**: Count requests in current window (e.g., per minute). Reset at window boundary.
+3. **Sliding Window**: Weighted combination of current + previous window for smoother limiting.
+
+**Where to implement**:
+- **API Gateway** (Kong, Spring Cloud Gateway): centralized, no app code changes
+- **Application Level**: Custom filter/interceptor
+- **Distributed**: Redis `INCR` + `EXPIRE` for shared counter
+
+### 💻 Code
+```java
+// Spring Boot Rate Limiter with Bucket4j
+@Bean
+public FilterRegistrationBean<RateLimitFilter> rateLimitFilter() {
+    Bandwidth limit = Bandwidth.classic(100, Refill.intervally(100, Duration.ofMinutes(1)));
+    Bucket bucket = Bucket.builder().addLimit(limit).build();
+    // 100 requests per minute, bucket allows short bursts
+    return new FilterRegistrationBean<>(new RateLimitFilter(bucket));
+}
+
+// Distributed rate limiting with Redis
+public boolean isAllowed(String clientId) {
+    String key = "rate:" + clientId + ":" + currentMinute();
+    Long count = redis.opsForValue().increment(key);
+    if (count == 1) redis.expire(key, 60, TimeUnit.SECONDS);
+    return count <= MAX_REQUESTS_PER_MINUTE;
+}
+```
+
+### 🆚 vs. Comparison
+| Algorithm | Pros | Cons |
+|-----------|------|------|
+| Token Bucket | Allows bursts, smooth | Slightly complex |
+| Fixed Window | Simple | Edge-of-window burst problem |
+| Sliding Window | Precise | More memory (timestamps) |
+
+### ⚡ Remember
+- 429 Too Many Requests + `Retry-After` header
+- Redis for distributed rate limiting across instances
+- Different limits: per-user, per-IP, per-API-key
+- Bucket4j or Resilience4j RateLimiter for Java

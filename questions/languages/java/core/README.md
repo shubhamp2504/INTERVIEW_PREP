@@ -1,4 +1,4 @@
-# ☕ Core Java — Interview Questions (213 Questions)
+# ☕ Core Java — Interview Questions (221 Questions)
 
 [![Last Updated](https://img.shields.io/badge/Updated-March%202026-green.svg)](#)
 
@@ -14,7 +14,7 @@
 | 4 | Java Fundamentals (Immutability, Comparable, String) | 5 | [Go →](./04-java-fundamentals-epam.md) |
 | 5 | Java 8 Functional (Streams, Lambda, Functional Interfaces) | 5 | [Go →](./05-java8-functional-epam.md) |
 | 6 | Collections Internals (TreeMap, Fail-fast) | 4 | [Go →](./06-collections-internals.md) |
-| 7 | Streams Coding Patterns (findFirst, duplicates, max) | 3 | [Go →](./07-streams-coding-patterns.md) |
+| 7 | Streams Coding Patterns (findFirst, duplicates, max, HashMap) | 6 | [Go →](./07-streams-coding-patterns.md) |
 | 8 | Streams Coding — Basic Operations | 16 | [Go →](./08-streams-coding-basic.md) |
 | 9 | Streams Coding — Grouping & Collectors | 12 | [Go →](./09-streams-coding-collectors.md) |
 | 10 | Java Basics & Fundamentals (Static, Constructors, JIT) | 25 | [Go →](./10-java-basics-fundamentals.md) |
@@ -24,6 +24,8 @@
 | 14 | Misc Java Fundamentals (Wrappers, Enums, Varargs) | 35 | [Go →](./14-misc-java-fundamentals.md) |
 | 15 | Collections Framework (List, Set, Map) | 25 | [Go →](./15-collections-framework.md) |
 | 16 | Serialization | 8 | [Go →](./16-serialization.md) |
+| 17 | Java Version Features (7, 8, 11, 17) | 2 | [Go →](./17-java-versions-features.md) |
+| 18 | Design Patterns, Sorting & Singleton | 3 | [Go →](./18-sorting-singleton-patterns.md) |
 
 ---
 

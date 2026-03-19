@@ -13,6 +13,9 @@
 | 1 | Distributed Systems Fundamentals | 6 | [Go →](./01-distributed-systems-fundamentals.md) |
 | 2 | Coordination, Failover & Event Sourcing | 4 | [Go →](./02-coordination-failover-eventsourcing.md) |
 | 3 | E-Commerce & Payment Systems | 4 | [Go →](./03-ecommerce-payment-systems.md) |
+| 4 | Product Company Designs (Netflix, Uber, CDN, Chat, Cache) | 17 | [Go →](./04-product-company-designs.md) |
+| 5 | PhonePe & Fintech Designs (UPI, Feed, Scheduler, SLOs) | 5 | [Go →](./05-phonepe-fintech-designs.md) |
+| 6 | JPMorgan & Banking Designs (DB, Data Warehouse, Aggregator) | 4 | [Go →](./06-jpmorgan-banking-designs.md) |
 
 ---
 

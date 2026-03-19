@@ -20,16 +20,16 @@
 
 | # | Category | Questions | Link |
 |---|----------|-----------|------|
-| 1 | 🧠 **DSA** | 6 | [Go →](./questions/dsa/) |
-| 2 | ☕ **Java — Core** | 213 | [Go →](./questions/languages/java/core/) |
+| 1 | 🧠 **DSA** | 18 | [Go →](./questions/dsa/) |
+| 2 | ☕ **Java — Core** | 221 | [Go →](./questions/languages/java/core/) |
 | 3 | 🌱 **Java — Spring Framework & Boot** | 40 | [Go →](./questions/languages/java/spring/) |
 | 4 | 🌿 **Java — Spring Batch** | 125 | [Go →](./questions/languages/java/spring-batch/) |
 | 5 | 🧵 **Java — Multithreading & Concurrency** | 112 | [Go →](./questions/languages/java/multithreading/) |
-| 6 | 🏗️ **Java — Architecture & System Design** | 15 | [Go →](./questions/languages/java/architecture/) |
-| 7 | 🛠️ **Java — Production Debugging** | 20 | [Go →](./questions/languages/java/production-debugging/) |
-| 8 | 🌐 **Web Development** | 14 | [Go →](./questions/web-dev/) |
+| 6 | 🏗️ **Java — Architecture & System Design** | 16 | [Go →](./questions/languages/java/architecture/) |
+| 7 | 🛠️ **Java — Production Debugging** | 24 | [Go →](./questions/languages/java/production-debugging/) |
+| 8 | 🌐 **Web Development** | 15 | [Go →](./questions/web-dev/) |
 | 9 | 🗄️ **Database** | 13 | [Go →](./questions/database/) |
-| 10 | 🏠 **System Design** | 14 | [Go →](./questions/system-design/) |
+| 10 | 🏠 **System Design** | 40 | [Go →](./questions/system-design/) |
 | 11 | ☁️ **Cloud & DevOps** | 7 | [Go →](./questions/cloud-devops/) |
 | 12 | 🏗️ **Architecture** | 2 | [Go →](./questions/architecture/) |
 | 13 | 🧩 **OOPs & Design Patterns** | 3 | [Go →](./questions/oops-patterns/) |
@@ -37,10 +37,10 @@
 | 15 | 🧪 **Testing** | 0 | [Go →](./questions/testing/) |
 | 16 | 📱 **Mobile Development** | 0 | [Go →](./questions/mobile/) |
 | 17 | 🤖 **AI/ML** | 0 | [Go →](./questions/ai-ml/) |
-| 18 | 🎯 **HR & Behavioral** | 0 | [Go →](./questions/hr-behavioral/) |
+| 18 | 🎯 **HR & Behavioral** | 1 | [Go →](./questions/hr-behavioral/) |
 | 19 | 📝 **Aptitude & Puzzles** | 0 | [Go →](./questions/aptitude/) |
-| 20 | 💼 **Company Specific** | 0 | [Go →](./questions/company-specific/) |
-| | | **584 total** | |
+| 20 | 💼 **Company Specific** | 11 | [Go →](./questions/company-specific/) |
+| | | **648 total** | |
 
 ---
 
@@ -87,22 +87,23 @@ Each question has tags like: `#arrays` `#dp` `#amazon` `#medium` `#must-know`
 | Category | Total |
 |----------|-------|
 | Java — Spring Batch | 125 |
-| Java — Multithreading & Concurrency | 96 |
-| Java — Core (Collections, Streams, JVM, Fundamentals) | 55 |
+| Java — Multithreading & Concurrency | 112 |
+| Java — Core (Collections, Streams, JVM, Fundamentals) | 221 |
 | Java — Spring Framework & Boot | 40 |
-| Java — Production Debugging | 20 |
-| Java — Architecture & System Design | 15 |
-| Web Development (Networking, Angular) | 14 |
-| System Design (Distributed, E-Commerce) | 14 |
+| Java — Production Debugging | 24 |
+| Java — Architecture & System Design | 16 |
+| System Design (Distributed, Fintech, Product Companies) | 40 |
+| DSA (Arrays, Strings, DP, Graphs) | 18 |
+| Web Development (Networking, Angular, REST/SOAP) | 15 |
 | Database (JPA, Hibernate, SQL) | 13 |
+| Company Specific (Atlassian) | 11 |
 | Cloud & DevOps (Observability, Infrastructure) | 7 |
-| DSA (Arrays & Strings) | 6 |
-| Architecture (Service Communication) | 2 |
 | OOPs & Design Patterns | 3 |
+| Architecture (Service Communication) | 2 |
+| HR & Behavioral | 1 |
 | Security | 0 |
 | Testing | 0 |
-| HR & Behavioral | 0 |
-| **Grand Total** | **584** |
+| **Grand Total** | **648** |
 
 ---
 
@@ -122,6 +123,7 @@ Each question has tags like: `#arrays` `#dp` `#amazon` `#medium` `#must-know`
 | 2026-03-17 | 12 | 🌐 10 Angular scenario-based questions (5–9 YOE) |
 | 2026-03-18 | 13 | 10 Qs: OOP, REST, auth, SQL, exceptions, JVM, GC, ambiguous mapping |
 | 2026-03-18 | 14 | ☕ 176 Core Java Qs from 240-PDF (basics, exceptions, inner classes, misc, collections, serialization, OOP, threads) |
+| 2026-03-19 | 15 | 🏗️ 64 Qs: DSA coding (12), System Design (26), Atlassian rounds (11), backend scenarios (4), Java patterns (8), REST/SOAP, HR, rate limiting |
 
 ---
 

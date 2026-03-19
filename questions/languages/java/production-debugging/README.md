@@ -12,6 +12,7 @@
 | 2 | Concurrency & Threading Issues | 6 | [Go →](./02-concurrency-threading.md) |
 | 3 | API, State & Design Issues | 5 | [Go →](./03-api-state-design.md) |
 | 4 | Services, Ops & Infrastructure | 4 | [Go →](./04-services-ops-infra.md) |
+| 5 | Backend Scenario Questions (Staging vs Prod, DB Slow, Kafka Dupes) | 4 | [Go →](./05-backend-scenarios.md) |
 
 ---
 

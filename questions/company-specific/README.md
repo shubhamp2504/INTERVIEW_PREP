@@ -8,16 +8,9 @@
 
 ## 📂 Companies
 
-| # | Company | Questions |
-|---|---------|----------|
-| 1 | Google | 0 |
-| 2 | Amazon | 0 |
-| 3 | Microsoft | 0 |
-| 4 | Meta / Facebook | 0 |
-| 5 | Apple | 0 |
-| 6 | Netflix | 0 |
-| 7 | Service Companies | 0 |
-| 8 | Startups | 0 |
+| # | Company | Questions | Link |
+|---|---------|-----------|------|
+| 1 | Atlassian (Senior SWE, 45 LPA) | 11 | [Go →](./01-atlassian-interview.md) |
 
 > _Questions will be added as files are created._
 

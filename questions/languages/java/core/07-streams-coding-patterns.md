@@ -246,3 +246,146 @@ Optional<Double> secondHighest = employees.stream()
 - [Q1 in core/05 → Stream API overview](05-java8-functional-epam.md#q1)
 - [Q2 in core/05 → map() vs flatMap()](05-java8-functional-epam.md#q2)
 - Collectors: `toMap`, `partitioningBy`, `joining`
+
+---
+
+## Q4. Find a Value from HashMap Using Java 8 Streams
+
+### 📝 One-Liner
+Search for and retrieve a value from a HashMap using Stream API.
+
+### 🔑 Quick Answer
+Use `map.entrySet().stream().filter(...)` to find entries by key or value, then `map()` to extract what you need. *(entrySet pe stream lagao, filter karo, nikalo)*
+
+### 📖 How It Works
+- `map.entrySet().stream()` gives Stream of `Map.Entry<K,V>`
+- Filter by key: `.filter(e -> e.getKey().equals(target))`
+- Filter by value condition: `.filter(e -> e.getValue() > threshold)`
+- Extract: `.map(Map.Entry::getValue).findFirst()` *(filter ke baad value nikalo)*
+
+### 🗣️ How to Say in Interview
+"I'd stream the entrySet, apply a filter predicate on keys or values, then use map to extract the result. findFirst returns an Optional for null safety."
+
+### 💻 Code
+```java
+Map<String, Integer> map = Map.of("Alice", 90, "Bob", 85, "Charlie", 92);
+
+// Find value by key
+Optional<Integer> score = map.entrySet().stream()
+    .filter(e -> e.getKey().equals("Bob"))
+    .map(Map.Entry::getValue)
+    .findFirst();
+
+// Find key by value condition
+Optional<String> topScorer = map.entrySet().stream()
+    .filter(e -> e.getValue() > 90)
+    .map(Map.Entry::getKey)
+    .findFirst();
+
+// Find all entries matching a condition
+List<String> highScorers = map.entrySet().stream()
+    .filter(e -> e.getValue() >= 90)
+    .map(Map.Entry::getKey)
+    .collect(Collectors.toList());
+```
+
+### ⚠️ Pitfalls / Gotchas
+- `map.get(key)` is O(1) — don't use streams when direct lookup works *(direct get() O(1) hai, stream O(n) hai)*
+- Streams over map are for conditional/complex searches, not simple key lookups
+
+### ⚡ Remember
+- `entrySet().stream()` → filter → map → findFirst
+- Always returns `Optional` — handle with `orElse()` or `ifPresent()`
+- For simple key lookup, `map.getOrDefault(key, default)` is better
+
+---
+
+## Q5. Reduce a Number to a Single Digit (Digital Root)
+
+### 📝 One-Liner
+Repeatedly sum all digits of a number until a single digit remains (e.g., 1234 → 10 → 1).
+
+### 🔑 Quick Answer
+Loop: sum digits until number < 10. Or use the math formula: `1 + (n - 1) % 9`. *(digits jodo baar baar jab tak ek digit na rahe)*
+
+### 📖 How It Works
+- **Iterative**: Convert to string/array, sum digits, repeat until single digit
+- **Math formula**: Digital root = `1 + (n - 1) % 9` for n > 0 *(ye modular arithmetic ka formula hai)*
+- Both give O(1) for the math approach, O(log n × iterations) for iterative
+
+### 🗣️ How to Say in Interview
+"The brute force approach is to repeatedly sum digits until a single digit remains. The optimal approach uses the digital root formula: 1 + (n-1) % 9, which gives O(1) time."
+
+### 💻 Code
+```java
+// Iterative approach
+public static int reduceToSingleDigit(int n) {
+    while (n >= 10) {
+        int sum = 0;
+        while (n > 0) {
+            sum += n % 10;
+            n /= 10;
+        }
+        n = sum;
+    }
+    return n;
+}
+
+// Java 8 Streams approach
+public static int reduceStream(int n) {
+    while (n >= 10) {
+        n = String.valueOf(n).chars()
+            .map(c -> c - '0')
+            .sum();
+    }
+    return n;
+}
+
+// O(1) Math formula (Digital Root)
+public static int digitalRoot(int n) {
+    if (n == 0) return 0;
+    return 1 + (n - 1) % 9;
+}
+```
+
+### ⚡ Remember
+- Digital root formula: `1 + (n-1) % 9` — O(1)
+- 1234 → 1+2+3+4 = 10 → 1+0 = 1
+- Edge case: 0 → 0
+
+---
+
+## Q6. Remove Odd Numbers, Multiply & Sum Using Streams
+
+### 📝 One-Liner
+Given an array, filter out odds, multiply each by a constant, and return the sum — all using Java Streams.
+
+### 🔑 Quick Answer
+Chain `filter` (even only) → `map` (multiply) → `reduce/sum`. *(filter → map → sum, ek line mein)*
+
+### 📖 How It Works
+- `Arrays.stream(arr)` → create IntStream
+- `.filter(n -> n % 2 == 0)` → keep even numbers only
+- `.map(n -> n * constant)` → multiply each
+- `.sum()` → final result *(chain karo — filter, transform, aggregate)*
+
+### 🗣️ How to Say in Interview
+"I'd use a stream pipeline: filter to keep even numbers, map to multiply each by the constant, and sum to aggregate. It's a clean, functional one-liner."
+
+### 💻 Code
+```java
+int[] arr = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+int multiplier = 3;
+
+int result = Arrays.stream(arr)
+    .filter(n -> n % 2 == 0)    // keep evens: 2, 4, 6, 8, 10
+    .map(n -> n * multiplier)    // multiply: 6, 12, 18, 24, 30
+    .sum();                      // total: 90
+
+System.out.println(result); // 90
+```
+
+### ⚡ Remember
+- `filter` → `map` → terminal operation = core stream pattern
+- `IntStream.sum()` is a built-in terminal op
+- Could also use `.reduce(0, Integer::sum)` instead of `.sum()`

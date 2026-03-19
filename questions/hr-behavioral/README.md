@@ -8,14 +8,9 @@
 
 ## 📂 Topics
 
-| # | Topic | Questions |
-|---|-------|-----------|
-| 1 | Tell Me About Yourself | 0 |
-| 2 | Strengths & Weaknesses | 0 |
-| 3 | Behavioral (STAR Method) | 0 |
-| 4 | Situational Questions | 0 |
-| 5 | Salary Negotiation | 0 |
-| 6 | Questions to Ask Interviewer | 0 |
+| # | Topic | Questions | Link |
+|---|-------|-----------|------|
+| 1 | Project & Behavioral | 1 | [Go →](./01-project-behavioral.md) |
 
 > _Questions will be added as files are created._
 
