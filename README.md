@@ -22,7 +22,7 @@
 |---|----------|-----------|------|
 | 1 | 🧠 **DSA** | 18 | [Go →](./questions/dsa/) |
 | 2 | ☕ **Java — Core** | 221 | [Go →](./questions/languages/java/core/) |
-| 3 | 🌱 **Java — Spring Framework & Boot** | 40 | [Go →](./questions/languages/java/spring/) |
+| 3 | 🌱 **Java — Spring Framework & Boot** | 52 | [Go →](./questions/languages/java/spring/) |
 | 4 | 🌿 **Java — Spring Batch** | 125 | [Go →](./questions/languages/java/spring-batch/) |
 | 5 | 🧵 **Java — Multithreading & Concurrency** | 112 | [Go →](./questions/languages/java/multithreading/) |
 | 6 | 🏗️ **Java — Architecture & System Design** | 16 | [Go →](./questions/languages/java/architecture/) |
@@ -39,8 +39,8 @@
 | 17 | 🤖 **AI/ML** | 0 | [Go →](./questions/ai-ml/) |
 | 18 | 🎯 **HR & Behavioral** | 1 | [Go →](./questions/hr-behavioral/) |
 | 19 | 📝 **Aptitude & Puzzles** | 0 | [Go →](./questions/aptitude/) |
-| 20 | 💼 **Company Specific** | 11 | [Go →](./questions/company-specific/) |
-| | | **648 total** | |
+| 20 | 💼 **Company Specific** | 24 | [Go →](./questions/company-specific/) |
+| | | **673 total** | |
 
 ---
 
@@ -89,21 +89,21 @@ Each question has tags like: `#arrays` `#dp` `#amazon` `#medium` `#must-know`
 | Java — Spring Batch | 125 |
 | Java — Multithreading & Concurrency | 112 |
 | Java — Core (Collections, Streams, JVM, Fundamentals) | 221 |
-| Java — Spring Framework & Boot | 40 |
+| Java — Spring Framework & Boot | 52 |
 | Java — Production Debugging | 24 |
 | Java — Architecture & System Design | 16 |
 | System Design (Distributed, Fintech, Product Companies) | 40 |
 | DSA (Arrays, Strings, DP, Graphs) | 18 |
 | Web Development (Networking, Angular, REST/SOAP) | 15 |
 | Database (JPA, Hibernate, SQL) | 13 |
-| Company Specific (Atlassian) | 11 |
+| Company Specific (Atlassian, Bloomberg) | 24 |
 | Cloud & DevOps (Observability, Infrastructure) | 7 |
 | OOPs & Design Patterns | 3 |
 | Architecture (Service Communication) | 2 |
 | HR & Behavioral | 1 |
 | Security | 0 |
 | Testing | 0 |
-| **Grand Total** | **648** |
+| **Grand Total** | **673** |
 
 ---
 
@@ -124,6 +124,7 @@ Each question has tags like: `#arrays` `#dp` `#amazon` `#medium` `#must-know`
 | 2026-03-18 | 13 | 10 Qs: OOP, REST, auth, SQL, exceptions, JVM, GC, ambiguous mapping |
 | 2026-03-18 | 14 | ☕ 176 Core Java Qs from 240-PDF (basics, exceptions, inner classes, misc, collections, serialization, OOP, threads) |
 | 2026-03-19 | 15 | 🏗️ 64 Qs: DSA coding (12), System Design (26), Atlassian rounds (11), backend scenarios (4), Java patterns (8), REST/SOAP, HR, rate limiting |
+| 2026-03-20 | 16 | 🌱 25 Qs: Spring Boot advanced internals (12) + Bloomberg Senior SWE 5-round interview (13) |
 
 ---
 

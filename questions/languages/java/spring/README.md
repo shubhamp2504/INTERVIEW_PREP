@@ -17,6 +17,7 @@
 | 7 | Project Infrastructure Decisions | 4 | [Go →](./07-project-infrastructure-decisions.md) |
 | 8 | Spring Boot Fundamentals | 5 | [Go →](./08-springboot-fundamentals.md) |
 | 9 | Advanced Config & Security (Performance, Logging, Security, Filters) | 7 | [Go →](./09-advanced-config-security.md) |
+| 10 | Spring Boot Internals Advanced (Startup, Properties, Fat JAR, Cloud-Native) | 12 | [Go →](./10-springboot-internals-advanced.md) |
 
 ---
 
