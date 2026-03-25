@@ -16,6 +16,7 @@
 | 4 | Product Company Designs (Netflix, Uber, CDN, Chat, Cache) | 17 | [Go →](./04-product-company-designs.md) |
 | 5 | PhonePe & Fintech Designs (UPI, Feed, Scheduler, SLOs) | 5 | [Go →](./05-phonepe-fintech-designs.md) |
 | 6 | JPMorgan & Banking Designs (DB, Data Warehouse, Aggregator) | 4 | [Go →](./06-jpmorgan-banking-designs.md) |
+| 7 | System Design Roadmap 2026 — 50 Topics (Reference) | — | [Go →](./07-design-roadmap-2026.md) |
 
 ---
 

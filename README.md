@@ -4,10 +4,13 @@
 
 ### _Your Complete, Systematic Interview & Career Knowledge Base_
 
+#### by [@shubhamp2504](https://github.com/shubhamp2504)
+
 [![Made with ❤️](https://img.shields.io/badge/Made%20with-❤️-red.svg)](#)
 [![Markdown](https://img.shields.io/badge/Format-Markdown-blue.svg)](#)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#)
 [![Last Updated](https://img.shields.io/badge/Last%20Updated-March%202026-orange.svg)](#)
+[![GitHub](https://img.shields.io/badge/GitHub-shubhamp2504-black?logo=github)](https://github.com/shubhamp2504)
 
 ---
 
@@ -28,7 +31,7 @@
 | 6 | 🏗️ **Java — Architecture & System Design** | 16 | [Go →](./questions/languages/java/architecture/) |
 | 7 | 🛠️ **Java — Production Debugging** | 24 | [Go →](./questions/languages/java/production-debugging/) |
 | 8 | 🌐 **Web Development** | 15 | [Go →](./questions/web-dev/) |
-| 9 | 🗄️ **Database** | 13 | [Go →](./questions/database/) |
+| 9 | 🗄️ **Database** | 18 | [Go →](./questions/database/) |
 | 10 | 🏠 **System Design** | 40 | [Go →](./questions/system-design/) |
 | 11 | ☁️ **Cloud & DevOps** | 7 | [Go →](./questions/cloud-devops/) |
 | 12 | 🏗️ **Architecture** | 2 | [Go →](./questions/architecture/) |
@@ -39,8 +42,8 @@
 | 17 | 🤖 **AI/ML** | 0 | [Go →](./questions/ai-ml/) |
 | 18 | 🎯 **HR & Behavioral** | 1 | [Go →](./questions/hr-behavioral/) |
 | 19 | 📝 **Aptitude & Puzzles** | 0 | [Go →](./questions/aptitude/) |
-| 20 | 💼 **Company Specific** | 24 | [Go →](./questions/company-specific/) |
-| | | **673 total** | |
+| 20 | 💼 **Company Specific** | 116 | [Go →](./questions/company-specific/) |
+| | | **770 total** | |
 
 ---
 
@@ -95,15 +98,15 @@ Each question has tags like: `#arrays` `#dp` `#amazon` `#medium` `#must-know`
 | System Design (Distributed, Fintech, Product Companies) | 40 |
 | DSA (Arrays, Strings, DP, Graphs) | 18 |
 | Web Development (Networking, Angular, REST/SOAP) | 15 |
-| Database (JPA, Hibernate, SQL) | 13 |
-| Company Specific (Atlassian, Bloomberg) | 24 |
+| Database (JPA, Hibernate, SQL) | 18 |
+| Company Specific (Atlassian, Bloomberg, HCLTech, Goldman Sachs, Accenture) | 116 |
 | Cloud & DevOps (Observability, Infrastructure) | 7 |
 | OOPs & Design Patterns | 3 |
 | Architecture (Service Communication) | 2 |
 | HR & Behavioral | 1 |
 | Security | 0 |
 | Testing | 0 |
-| **Grand Total** | **673** |
+| **Grand Total** | **770** |
 
 ---
 
@@ -125,9 +128,19 @@ Each question has tags like: `#arrays` `#dp` `#amazon` `#medium` `#must-know`
 | 2026-03-18 | 14 | ☕ 176 Core Java Qs from 240-PDF (basics, exceptions, inner classes, misc, collections, serialization, OOP, threads) |
 | 2026-03-19 | 15 | 🏗️ 64 Qs: DSA coding (12), System Design (26), Atlassian rounds (11), backend scenarios (4), Java patterns (8), REST/SOAP, HR, rate limiting |
 | 2026-03-20 | 16 | 🌱 25 Qs: Spring Boot advanced internals (12) + Bloomberg Senior SWE 5-round interview (13) |
+| 2026-03-24 | 17 | 💼 52 Qs: HCLTech Java Spring Boot interview (28), Goldman Sachs Java Backend 38 LPA interview (19), Hibernate production mistakes (5) + System Design 50-topic roadmap |
+| 2026-03-25 | 18 | 💼 45 Qs: Accenture Java Spring Boot multi-round interview (REST impl, Spring core, Java threading, microservices, security, Kafka, DevOps, scenario-based) |
 
 ---
 
+## 👤 About the Author
+
+| | |
+|---|---|
+| **Name** | Shubham Sunil Pathak |
+| **Role** | Java Backend Developer |
+| **GitHub** | [@shubhamp2504](https://github.com/shubhamp2504) |
+---
 
 ### ⭐ Star this repo if it helps you!
 
