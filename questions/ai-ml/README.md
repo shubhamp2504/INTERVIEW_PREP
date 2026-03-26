@@ -8,15 +8,11 @@
 
 ## 📂 Topics
 
-| # | Topic | Questions |
-|---|-------|-----------|
-| 1 | ML Fundamentals | 0 |
-| 2 | Deep Learning & Neural Networks | 0 |
-| 3 | NLP | 0 |
-| 4 | Computer Vision | 0 |
-| 5 | Statistics & Probability | 0 |
+| # | Topic | Questions | Link |
+|---|-------|-----------|------|
+| 1 | AI/ML & Generative AI — Interview Fundamentals | 22 | [Go →](./01-ai-ml-fundamentals.md) |
 
-> _Questions will be added as files are created._
+> _More topics will be added as files are created._
 
 ---
 

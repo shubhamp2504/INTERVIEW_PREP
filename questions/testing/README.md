@@ -8,15 +8,11 @@
 
 ## 📂 Topics
 
-| # | Topic | Questions |
-|---|-------|-----------|
-| 1 | Unit Testing | 0 |
-| 2 | Integration Testing | 0 |
-| 3 | E2E Testing | 0 |
-| 4 | TDD & BDD | 0 |
-| 5 | Testing Tools (JUnit, Mockito, Jest) | 0 |
+| # | Topic | Questions | Link |
+|---|-------|-----------|------|
+| 1 | Automation Testing — Selenium, API, CI/CD & Framework Design | 18 | [Go →](./01-automation-testing-selenium.md) |
 
-> _Questions will be added as files are created._
+> _More topics will be added as files are created._
 
 ---
 

@@ -24,26 +24,26 @@
 | # | Category | Questions | Link |
 |---|----------|-----------|------|
 | 1 | 🧠 **DSA** | 18 | [Go →](./questions/dsa/) |
-| 2 | ☕ **Java — Core** | 221 | [Go →](./questions/languages/java/core/) |
+| 2 | ☕ **Java — Core** | 236 | [Go →](./questions/languages/java/core/) |
 | 3 | 🌱 **Java — Spring Framework & Boot** | 52 | [Go →](./questions/languages/java/spring/) |
 | 4 | 🌿 **Java — Spring Batch** | 125 | [Go →](./questions/languages/java/spring-batch/) |
 | 5 | 🧵 **Java — Multithreading & Concurrency** | 112 | [Go →](./questions/languages/java/multithreading/) |
 | 6 | 🏗️ **Java — Architecture & System Design** | 16 | [Go →](./questions/languages/java/architecture/) |
 | 7 | 🛠️ **Java — Production Debugging** | 24 | [Go →](./questions/languages/java/production-debugging/) |
-| 8 | 🌐 **Web Development** | 15 | [Go →](./questions/web-dev/) |
+| 8 | 🌐 **Web Development** | 55 | [Go →](./questions/web-dev/) |
 | 9 | 🗄️ **Database** | 18 | [Go →](./questions/database/) |
 | 10 | 🏠 **System Design** | 40 | [Go →](./questions/system-design/) |
 | 11 | ☁️ **Cloud & DevOps** | 7 | [Go →](./questions/cloud-devops/) |
 | 12 | 🏗️ **Architecture** | 2 | [Go →](./questions/architecture/) |
 | 13 | 🧩 **OOPs & Design Patterns** | 3 | [Go →](./questions/oops-patterns/) |
 | 14 | 🔐 **Security** | 0 | [Go →](./questions/security/) |
-| 15 | 🧪 **Testing** | 0 | [Go →](./questions/testing/) |
+| 15 | 🧪 **Testing** | 18 | [Go →](./questions/testing/) |
 | 16 | 📱 **Mobile Development** | 0 | [Go →](./questions/mobile/) |
-| 17 | 🤖 **AI/ML** | 0 | [Go →](./questions/ai-ml/) |
+| 17 | 🤖 **AI/ML** | 22 | [Go →](./questions/ai-ml/) |
 | 18 | 🎯 **HR & Behavioral** | 1 | [Go →](./questions/hr-behavioral/) |
 | 19 | 📝 **Aptitude & Puzzles** | 0 | [Go →](./questions/aptitude/) |
-| 20 | 💼 **Company Specific** | 116 | [Go →](./questions/company-specific/) |
-| | | **770 total** | |
+| 20 | 💼 **Company Specific** | 281 | [Go →](./questions/company-specific/) |
+| | | **920 total** | |
 
 ---
 
@@ -91,22 +91,23 @@ Each question has tags like: `#arrays` `#dp` `#amazon` `#medium` `#must-know`
 |----------|-------|
 | Java — Spring Batch | 125 |
 | Java — Multithreading & Concurrency | 112 |
-| Java — Core (Collections, Streams, JVM, Fundamentals) | 221 |
+| Java — Core (Collections, Streams, JVM, Fundamentals) | 236 |
 | Java — Spring Framework & Boot | 52 |
 | Java — Production Debugging | 24 |
 | Java — Architecture & System Design | 16 |
 | System Design (Distributed, Fintech, Product Companies) | 40 |
 | DSA (Arrays, Strings, DP, Graphs) | 18 |
-| Web Development (Networking, Angular, REST/SOAP) | 15 |
+| Web Development (Networking, Angular, REST/SOAP, React, JS) | 55 |
 | Database (JPA, Hibernate, SQL) | 18 |
-| Company Specific (Atlassian, Bloomberg, HCLTech, Goldman Sachs, Accenture) | 116 |
+| Company Specific (Atlassian, Bloomberg, HCLTech, Goldman Sachs, Accenture, EY, AmEx, Amazon, Bajaj Allianz, CGI, Infosys, Deloitte, Capgemini) | 281 |
 | Cloud & DevOps (Observability, Infrastructure) | 7 |
 | OOPs & Design Patterns | 3 |
 | Architecture (Service Communication) | 2 |
 | HR & Behavioral | 1 |
 | Security | 0 |
-| Testing | 0 |
-| **Grand Total** | **770** |
+| Testing | 18 |
+| AI/ML & Generative AI | 22 |
+| **Grand Total** | **920** |
 
 ---
 
@@ -130,6 +131,8 @@ Each question has tags like: `#arrays` `#dp` `#amazon` `#medium` `#must-know`
 | 2026-03-20 | 16 | 🌱 25 Qs: Spring Boot advanced internals (12) + Bloomberg Senior SWE 5-round interview (13) |
 | 2026-03-24 | 17 | 💼 52 Qs: HCLTech Java Spring Boot interview (28), Goldman Sachs Java Backend 38 LPA interview (19), Hibernate production mistakes (5) + System Design 50-topic roadmap |
 | 2026-03-25 | 18 | 💼 45 Qs: Accenture Java Spring Boot multi-round interview (REST impl, Spring core, Java threading, microservices, security, Kafka, DevOps, scenario-based) |
+| 2026-03-25 | 19 | 💼 19 Qs: EY Round 2 interview (9 — Spring Boot CRUD, AWS Lambda, VPC infra, Security Groups, IAM, Docker/K8s, Jenkins) + Angular Components & Services fundamentals (10) |
+| 2026-03-26 | 20 | 💼🌐🧪🤖 131 Qs: 9 company interviews (AmEx 23, Amazon SDE-1 6, EY React 12, Bajaj Allianz 14, CGI Frontend 23, Infosys React 5, Deloitte 14, Capgemini QA 15, Accenture Multi-Role 44) + Exception Handling Advanced 15 + React/JS Fundamentals 20 + React Scenarios 10 + Automation Testing 18 + AI/ML Fundamentals 22 |
 
 ---
 

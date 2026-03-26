@@ -10,7 +10,7 @@
 
 | # | Topic | Questions | Link |
 |---|-------|-----------|------|
-| 1 | ☕ **Core Java** | 221 | [Go →](./core/) |
+| 1 | ☕ **Core Java** | 236 | [Go →](./core/) |
 | 2 | 🍃 **Spring Batch** | 125 | [Go →](./spring-batch/) |
 | 3 | 🧵 **Multithreading & Concurrency** | 112 | [Go →](./multithreading/) |
 | 4 | 🌱 **Spring Framework & Boot** | 52 | [Go →](./spring/) |
