@@ -48,7 +48,7 @@ saveAndFlush() — immediate SQL:
 
 **When does JPA flush automatically?** (1) Before transaction commit. (2) Before a JPQL/HQL query that touches the same entity type (to ensure consistency). (3) When you explicitly call `flush()`. **Flush ≠ Commit**: flush sends SQL to the DB but the transaction can still be rolled back. Commit makes it permanent. **Batching**: `save()` allows Hibernate to batch multiple INSERTs into one JDBC batch call (if `spring.jpa.properties.hibernate.jdbc.batch_size=50` is set) — `saveAndFlush()` on each entity breaks batching.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "save() and saveAndFlush() both persist the entity, but the timing of SQL execution differs. save() adds the entity to the persistence context — the actual INSERT is deferred until flush time, which is usually right before the transaction commits. This deferral lets Hibernate batch multiple inserts together for better performance. saveAndFlush() forces the SQL to be sent to the database immediately, though it's still within the same transaction boundary — it can still be rolled back. I use saveAndFlush() in specific scenarios: when I need the database-generated ID right away for a subsequent operation, when I want to catch a unique constraint violation at a specific point in my code rather than at commit time, or when I'm mixing JPA with native SQL queries within the same transaction and need the data to be visible. In my projects, I use save() by default and configure Hibernate batch inserts for bulk operations."
 
 ### 💻 Code Example

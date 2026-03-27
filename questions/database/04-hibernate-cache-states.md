@@ -54,7 +54,7 @@ Lookup order:
 
 **L1 Cache = Persistence Context**: same as the managed entities in the JPA persistence context. Dirty checking happens here — Hibernate compares snapshot at flush time. **L2 Cache stores dehydrated data** (not full objects) — entity field values, not the entity object itself. When read from L2, Hibernate creates a new entity instance and populates it. **Cache regions**: each entity class has its own cache region. Configure TTL, max entries, eviction per region. **Query Cache**: stores query → result-ID mappings. When the query runs again with same params → returns cached entity IDs → fetches entities from L2 (not DB). Useful for read-heavy, rarely-changing data.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Hibernate has two cache levels. The first-level cache is the persistence context within each EntityManager session — it's always active and can't be disabled. When I load an entity, it's stored in the L1 cache, and any subsequent load within the same transaction returns the cached instance without a database hit. This cache is cleared when the session closes. The second-level cache is shared across sessions at the SessionFactory level. When one session loads an entity, subsequent sessions can find it in the L2 cache without hitting the database. I configure it with providers like Ehcache or Hazelcast, enabling it selectively on entities annotated with @Cacheable. It's great for read-heavy, relatively static data like product catalogs or configuration lookups. I also use the query cache for frequently executed queries with the same parameters."
 
 ### 💻 Code Example
@@ -201,7 +201,7 @@ JPA Entity Lifecycle:
 
 **Dirty checking**: for managed entities, Hibernate takes a snapshot at load time. At flush time (before commit or before JPQL query), it compares current state with snapshot — changed fields generate UPDATE SQL automatically. **Detach scenarios**: session closes (end of `@Transactional`), explicit `entityManager.detach(entity)`, `entityManager.clear()` (detaches all). **merge()**: copies detached entity's state into a NEW managed instance → returns the managed copy. The original detached object remains detached.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "JPA entities go through four states. Transient is a plain Java object — just instantiated, not associated with any persistence context or database row. When I call persist or the entity is loaded via findById, it becomes Managed — the persistence context tracks it, takes a snapshot of its state, and at flush time compares the current state to detect changes via dirty checking. Any modifications to managed entities are automatically persisted without calling save explicitly. When the session closes — typically at the end of a @Transactional method — the entity becomes Detached. It still has its ID and data, but changes aren't tracked anymore. If I need to re-attach it, I use merge, which returns a new managed instance with the detached entity's state copied over. Removed is the state after calling remove — the entity is marked for deletion and the DELETE SQL fires at flush."
 
 ### 💻 Code Example

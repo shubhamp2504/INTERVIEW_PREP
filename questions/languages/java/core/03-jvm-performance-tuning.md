@@ -1,6 +1,6 @@
 # ☕ Java Core — JVM Performance Tuning (Q4)
 
-> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Interview Script → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
+> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Answering Approach → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
 
 ---
 
@@ -231,7 +231,7 @@ GC Roots (starting points for reachability):
   - JNI references
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Garbage collection is the JVM's automatic memory management. Instead of manually freeing memory like in C/C++, the JVM automatically identifies objects that are no longer reachable and reclaims their memory. It works on the generational hypothesis — most objects are short-lived. So the heap is divided into Young Generation and Old Generation. New objects go to Eden in Young Gen. When Eden fills up, a minor GC runs — it identifies live objects by tracing from GC roots like stack variables and static fields, copies survivors to a Survivor space, and frees everything else. After surviving several minor GCs, objects get promoted to Old Gen. When Old Gen fills up, a major GC runs, which is slower because it scans the entire heap. The key concern in production is GC pause time — during GC, application threads are paused. G1GC, the default since Java 9, keeps pauses predictable by dividing the heap into regions. For latency-critical apps, ZGC can achieve sub-millisecond pauses."
 
 ### 🆚 GC Algorithm Comparison

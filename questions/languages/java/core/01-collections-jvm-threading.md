@@ -1,6 +1,6 @@
 # ☕ Java Core — Collections, JVM & Thread Safety (Q1–Q5)
 
-> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Interview Script → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
+> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Answering Approach → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
 
 ---
 
@@ -697,7 +697,7 @@ Bytecode (.class)
 └────────────────────────────────────────┘
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "The JVM is the runtime engine that executes Java bytecode. When I compile a `.java` file, `javac` produces platform-independent bytecode. The JVM then loads this bytecode through ClassLoaders, verifies it for safety, and executes it. The JVM has three key responsibilities: first, memory management — it allocates objects on the Heap and automatically reclaims unused memory through garbage collection. Second, performance optimization — the JIT compiler identifies frequently-executed code (hot spots) and compiles them to native machine code, which is why Java can achieve near-C performance. Third, platform independence — the same bytecode runs on any OS with a JVM implementation. For backend applications, understanding JVM is critical because most production issues — memory leaks, GC pauses, thread deadlocks — require JVM-level debugging with tools like JFR, jstack, and GC logs."
 
 ### 🆚 JDK vs JRE vs JVM

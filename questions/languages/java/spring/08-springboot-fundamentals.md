@@ -34,7 +34,7 @@ Spring Boot:
 
 **Key concept**: Spring Boot doesn't replace Spring — it sits **on top** of Spring Framework, preconfiguring everything with sensible defaults. You can override any default. It follows the **convention over configuration** philosophy — if 90% of projects configure things the same way, make that the default.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Spring Boot is an opinionated framework built on top of the Spring ecosystem that dramatically reduces boilerplate configuration. In a traditional Spring project, you'd write hundreds of lines of XML or Java config for DataSource, DispatcherServlet, transaction management, and so on. Spring Boot eliminates this by looking at your classpath and auto-configuring beans based on what libraries you've included. If I add spring-boot-starter-web, I automatically get an embedded Tomcat server, Jackson for JSON, and Spring MVC — all configured and ready. I just write a main method with @SpringBootApplication, define my controllers, and the app runs standalone as a JAR. It follows convention over configuration — sensible defaults that I can override when needed."
 
 ### 💻 Code Example
@@ -144,7 +144,7 @@ Feature Map:
 └──────────────────┴───────────────────────────┘
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Spring Boot has several key features. First, auto-configuration — it detects libraries on the classpath and configures beans automatically using @Conditional annotations. If I have HikariCP and PostgreSQL driver, it auto-creates a DataSource without me writing config. Second, starter dependencies — curated dependency bundles like spring-boot-starter-web that bring Tomcat, Jackson, and Spring MVC with compatible versions. Third, an embedded server — the app runs as a standalone JAR with Tomcat embedded, no WAR deployment needed. Fourth, Actuator — production-ready endpoints for health checks, metrics, and environment info. Fifth, DevTools for development productivity — auto-restart on code changes and LiveReload. And sixth, externalized configuration with application.yml, profiles, and environment variables so the same code runs across dev, staging, and production."
 
 ### 💻 Code Example
@@ -227,7 +227,7 @@ management:
 | **Flexibility** | Maximum (you decide everything) | High (override any default) |
 | **When to use** | Legacy apps, extreme customization | New projects, microservices, rapid dev |
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Spring Framework is the core ecosystem — it gives you DI, AOP, MVC, Data access, Security, and more. But in a traditional Spring project, you manually configure every piece: DataSource beans, DispatcherServlet registration, transaction managers, view resolvers — often hundreds of lines of XML or Java config before writing a single business endpoint. Spring Boot sits on top of Spring Framework and adds auto-configuration, starter dependencies, and an embedded server. With Spring Boot, I add spring-boot-starter-web to my POM, write @SpringBootApplication, and I have a running REST API with zero configuration. The core Spring APIs are the same — @Autowired, @Transactional, @Service all work identically. Spring Boot just removes the boilerplate so I can focus on business logic. I think of Spring as the engine and Spring Boot as the fully assembled car."
 
 ### 💻 Code Example
@@ -335,7 +335,7 @@ logging:
     com.myapp: DEBUG
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Both files configure a Spring Boot application and are functionally equivalent — Spring loads them into the same property source. The difference is format: application.properties uses flat key=value pairs, while application.yml uses YAML's hierarchical indentation-based structure. I prefer YAML in my projects because most Spring Boot configs are deeply nested — spring.datasource.hikari.maximum-pool-size is much more readable as a YAML tree than a long dotted key. YAML also supports multi-document profiles with the triple-dash separator, and lists are cleaner. The downside of YAML is indentation sensitivity — one wrong space breaks the config silently. Properties files are simpler and slightly better supported by IDE auto-completion. Ultimately it's a team preference, and both produce identical runtime behavior."
 
 ### 💻 Code Example
@@ -441,7 +441,7 @@ Trigger: .class file changed on disk
   → vs full cold start (~10-15 seconds)
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Spring Boot DevTools is a developer productivity module that speeds up the feedback loop. The main feature is automatic restart — when I save a Java file, the app restarts in about 2 seconds. It achieves this speed with a dual-classloader trick: library JARs are loaded by a base classloader that's never restarted, and only my application classes are reloaded via a restart classloader. This is much faster than a cold start. It also includes LiveReload for browser auto-refresh, disables template caching for instant changes, and enables dev-friendly defaults like the H2 console. It's completely safe for development because it's automatically excluded from the production JAR — the dependency is marked as optional and the Spring Boot Maven plugin strips it during packaging."
 
 ### 💻 Code Example

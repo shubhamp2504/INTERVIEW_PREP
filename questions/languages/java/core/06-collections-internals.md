@@ -33,7 +33,7 @@ LinkedList (scattered memory):
 
 **ArrayList resizing**: default capacity = 10. When full, grows by 50% (`newCapacity = oldCapacity + (oldCapacity >> 1)`). Copies entire array → expensive. **Pre-size** with `new ArrayList<>(expectedSize)` to avoid resizing. **LinkedList overhead**: each node stores element + prev pointer + next pointer → ~3x memory overhead per element. **Cache performance**: ArrayList array is contiguous in memory → CPU cache prefetching works well. LinkedList nodes are scattered → frequent cache misses → slower in practice even for sequential access.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "ArrayList is backed by a contiguous array, so random access by index is O(1). But insertion or removal in the middle is O(n) because elements must be shifted. LinkedList uses doubly-linked nodes, so adding or removing at the head or tail is O(1) with pointer updates, but random access requires traversal from one end, making it O(n). Despite LinkedList's theoretical advantage for insertions, in real-world applications I almost always use ArrayList. The reason is CPU cache locality — contiguous memory in ArrayList means the CPU can prefetch data efficiently, while LinkedList nodes are scattered in heap memory causing cache misses. The only time I'd consider LinkedList is as a Queue or Deque where all operations are at the ends."
 
 ### 💻 Code Example
@@ -155,7 +155,7 @@ Collections (utility class):
 └──────────────────────────────────┘
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Collection with a capital C and no 's' is the root interface of the Java Collections Framework — it defines the core operations like add, remove, contains, and iterator that all collections implement. List, Set, and Queue extend it. Note that Map does NOT extend Collection — it's a separate hierarchy. Collections with an 's' is a utility class full of static helper methods. I use it for things like creating unmodifiable views of lists, wrapping collections for thread safety with synchronizedMap, sorting, and creating empty or singleton collections. With Java 9+, I now prefer List.of() and Map.of() over Collections.unmodifiableList() and Collections.emptyList() for immutable collections."
 
 ### 💻 Code Example
@@ -251,7 +251,7 @@ AtomicInteger.incrementAndGet() loop:
 
 **No lock needed** — threads spin-retry on failure instead of blocking. Under low contention, CAS is much faster than `synchronized` (no OS-level context switch). Under **high contention**, many threads retrying wastes CPU → `LongAdder` solves this by distributing counters across cells (each thread updates its own cell, sum at read time). **ConcurrentHashMap** uses CAS for inserting into empty buckets and `synchronized` on bucket head for collisions — hybrid approach.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "CAS is a lock-free concurrency primitive that performs an atomic compare-and-swap at the CPU instruction level. It checks if a memory location holds an expected value, and only then updates it — the entire operation is atomic. If another thread changed the value in between, the CAS fails and the thread retries. This is the foundation of all Atomic classes in Java — AtomicInteger, AtomicLong, AtomicReference — and it's how ConcurrentHashMap achieves lock-free reads and bucket insertions. The main advantage is no thread blocking — no deadlocks, no context switches, excellent performance under low contention. The gotcha is the ABA problem: a value changes from A to B and back to A — CAS thinks nothing changed. For pointer-based operations where this matters, I use AtomicStampedReference which adds a version stamp."
 
 ### 💻 Code Example
@@ -385,7 +385,7 @@ FAIL-SAFE (ConcurrentHashMap, CopyOnWriteArrayList):
   └──────────────────────────────────────────┘
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Fail-fast and fail-safe describe how iterators behave when the underlying collection is modified during iteration. Fail-fast iterators — used by ArrayList, HashMap, HashSet — maintain an internal modCount. When the collection is structurally modified, modCount increments. The iterator checks modCount on every next() call, and if it doesn't match the expectedModCount captured when the iterator was created, it throws ConcurrentModificationException. This is a best-effort detection mechanism, not a guarantee. Fail-safe iterators — used by concurrent collections like ConcurrentHashMap and CopyOnWriteArrayList — never throw CME. CopyOnWriteArrayList creates a snapshot of the array when the iterator is created, so subsequent mutations don't affect it. ConcurrentHashMap uses a weakly-consistent iterator that may reflect some modifications made after creation. In my code, when I need to iterate and modify concurrently, I use ConcurrentHashMap or CopyOnWriteArrayList depending on read/write ratio."
 
 ### 💻 Code Example

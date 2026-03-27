@@ -51,7 +51,7 @@ Auto-Configuration Flow:
 
 **Key conditionals**: `@ConditionalOnClass` — library present on classpath. `@ConditionalOnMissingBean` — user hasn't already defined this bean (user wins). `@ConditionalOnProperty` — property is set/matches value. `@ConditionalOnWebApplication` — running as web app. **Ordering**: `@AutoConfigureBefore/After` controls the order of auto-configurations. **Debug**: set `debug=true` in `application.properties` → prints **CONDITIONS EVALUATION REPORT** showing which auto-configs matched/didn't match and why.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "When Spring Boot starts, @EnableAutoConfiguration triggers loading of auto-configuration classes from META-INF registration files. Each class is guarded by @Conditional annotations — for example, DataSourceAutoConfiguration only activates if a JDBC driver is on the classpath and the user hasn't already defined a DataSource bean. The @ConditionalOnMissingBean pattern is the key — it means user-defined beans always take priority over auto-configured ones. This is why you can override any default by simply defining your own @Bean. When I need to debug what's being auto-configured, I set debug=true in application.properties, which prints a conditions evaluation report showing exactly which configurations activated and which were skipped and why."
 
 ### 💻 Code Example
@@ -193,7 +193,7 @@ Actuator Architecture:
 
 **Health indicators** auto-register — add a DataSource bean → `DataSourceHealthIndicator` activates. Add Redis → `RedisHealthIndicator` activates. Write custom health checks for business logic (e.g., check if payment gateway is reachable). **Metrics**: backed by Micrometer — automatic metrics for HTTP requests, JVM memory, thread pools, plus custom metrics via `MeterRegistry`. **Kubernetes**: `/health/liveness` and `/health/readiness` probes use Actuator health groups.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Actuator provides production-ready operational endpoints out of the box. The health endpoint is what I use for Kubernetes liveness and readiness probes — it auto-detects and checks database connectivity, disk space, and any dependencies. Metrics are backed by Micrometer, so I get JVM metrics, HTTP request statistics, and custom business metrics that I expose to Prometheus for Grafana dashboards. The loggers endpoint is incredibly useful in production — I can change log levels at runtime via a POST request without restarting the service. I always secure Actuator endpoints with Spring Security — in production, only health is publicly accessible, and the rest require authentication or are restricted to the internal management port."
 
 ### 💻 Code Example
@@ -392,7 +392,7 @@ curl -X POST http://localhost:8081/actuator/loggers/com.myapp.service \
 
 **Relaxed binding**: `pool-size` (kebab) → `poolSize` (camel) → `POOL_SIZE` (env var). All map to the same field. **Type conversion**: Strings auto-convert to `Duration`, `DataSize`, `List`, `Map`, enums. **Validation**: Add `@Validated` on the class + `@NotBlank`, `@Min`, `@Max` on fields → fails fast on startup if config is invalid. **Immutable binding** (Spring Boot 2.2+): use `@ConstructorBinding` with a record or final fields.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "For individual one-off properties or when I need SpEL expressions, I use @Value. But for any structured configuration — database settings, API client configs, feature flags — I always use @ConfigurationProperties. It binds an entire prefix to a type-safe Java object, so I get compile-time type checking, IDE auto-completion, and relaxed binding where kebab-case properties map to camelCase fields automatically. I also add @Validated with Bean Validation annotations so the application fails fast on startup if required configuration is missing or invalid — much better than discovering a null value at runtime. In Spring Boot 2.2+, I use records or constructor binding for immutable configuration objects."
 
 ### 💻 Code Example
@@ -560,7 +560,7 @@ pom.xml: spring-boot-starter-web
 
 **Starter = Dependencies + Auto-Configuration**. The starter itself is usually just a `pom.xml` with no source code — it's purely a dependency aggregator. The auto-configuration logic lives in the `spring-boot-autoconfigure` module and activates via `@ConditionalOnClass` when the starter's libraries are on the classpath. **Custom starters**: create for shared company infrastructure — e.g., a starter that configures logging format, metrics, security, and health checks uniformly across all microservices.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "A Spring Boot Starter is really two things packaged together: a curated set of dependencies and the auto-configuration to wire them up. When I add spring-boot-starter-data-jpa, it pulls in Hibernate, Spring Data JPA, HikariCP connection pool, and the JDBC driver — then auto-configuration creates a DataSource, EntityManagerFactory, and transaction manager based on my application.properties. I just provide the database URL and start coding repositories. For our company, I've created custom starters that standardize logging, metrics, and security configuration across all microservices — each team just adds our starter dependency and gets consistent observability and security out of the box."
 
 ### 💻 Code Example

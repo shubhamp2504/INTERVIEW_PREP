@@ -33,7 +33,7 @@ framework/
 └── pom.xml             ← Maven dependencies
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "My framework follows POM with TestNG and Maven. Each page has a class with private locators and public action methods. A BasePage class provides reusable methods like click, type, and wait wrappers. Test data comes from Excel using Apache POI, with DataProviders feeding parameterized tests. We use config.properties for environment switching (dev/QA/staging). Extent Reports generate HTML reports with screenshots on failure via a TestNG listener. Jenkins triggers nightly regression runs on a Selenium Grid, with results published to a Slack channel."
 
 ### ⚡ Remember

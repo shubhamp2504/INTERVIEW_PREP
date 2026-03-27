@@ -2,7 +2,7 @@
 
 > Walk-in interview for Java Spring Boot Developer role. Rounds: Online Assessment, Face-to-Face Technical, Managerial. Coding was on online compiler (no IDE — output mandatory).
 
-> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Interview Script → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
+> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Answering Approach → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
 
 ---
 
@@ -40,7 +40,7 @@ Java 8 Major Features:
 └── Nashorn JS Engine       → JavaScript runtime (removed in Java 15)
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Java 8 was a paradigm shift. The biggest additions were Lambda expressions for concise anonymous functions, the Stream API for declarative data processing pipelines, and Optional to combat null pointer issues. Functional interfaces like Predicate, Function, Consumer, and Supplier provide standard contracts for lambdas. Default methods in interfaces solved backward compatibility — existing implementations don't break when new methods are added. The java.time package finally gave us an immutable, thread-safe date/time API replacing the problematic java.util.Date."
 
 ### 💻 Code

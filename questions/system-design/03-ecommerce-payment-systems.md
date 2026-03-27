@@ -51,7 +51,7 @@ Client → API Gateway → Payment Service
       └──────────┘    └──────────┘
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I'd design the payment gateway with idempotency as the foundation. Every payment request includes a client-generated idempotency key — before processing, I check Redis for this key. If it exists, I return the cached result without re-charging. The payment follows a state machine: INITIATED → PROCESSING → SUCCESS or FAILED. I persist every state transition to a payment_events table for auditability. For PSP communication, I wrap calls in a circuit breaker — if Stripe is down, the circuit opens and I fail fast or route to a fallback PSP like Razorpay. Retries use exponential backoff with jitter to avoid thundering herd. For async payment confirmations, I use webhooks from the PSP and reconcile against my state. Failed payments that exhaust retries go to a dead letter queue for manual review. The key design principle is that any operation can be safely retried without double-charging the customer."
 
 ### 💻 Key Code Patterns
@@ -152,7 +152,7 @@ Shopping cart needs to be **highly available**, **low-latency** (reads), handle 
               └────────────────┘
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "For a shopping cart serving millions of users, I'd use a two-tier storage approach. Active carts are stored in Redis for sub-millisecond reads — keyed by userId or sessionId for guest users. Redis gives me TTL-based expiry for abandoned carts, typically 7 days. For logged-in users, I also persist the cart to PostgreSQL for cross-device sync and recovery after Redis failures. When a guest logs in, I merge their session cart with their persisted user cart — taking the higher quantity for duplicate items. The cart service itself is stateless and horizontally scalable. On every add-to-cart, I do a lightweight inventory reservation check via an async call to the inventory service. For pricing and promotions, I compute totals server-side to prevent client manipulation. At millions of users, I'd shard Redis by userId hash and use read replicas."
 
 ### 💻 Key Code Patterns
@@ -255,7 +255,7 @@ Cart → [1] Validate Cart (prices + stock)
   [6] Confirm Inventory + Send Email/SMS
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "The checkout system has two parallel concerns: the transaction flow and fraud detection. For the flow, after the user clicks checkout, I first re-validate the cart — check that prices haven't changed and stock is available. Then I reserve inventory with a distributed lock that has a 10-minute TTL in case the checkout is abandoned. Before processing payment, I run a fraud detection step. This combines a rules engine — checking velocity of orders from the same user, card BIN checks, address mismatch — with an ML model that scores the transaction on a 0-100 scale. Scores below 30 are auto-approved, 30-70 go to manual review queue, above 70 are auto-declined. Only after the fraud check passes do I process the payment through the payment gateway. The entire checkout is idempotent so the user can safely retry if anything times out."
 
 ### 💻 Key Code Patterns
@@ -403,7 +403,7 @@ Producers (millions TPS)
 └──────────────────────────┘
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "For a scalable transaction processing system, I'd use an event-driven architecture with Kafka as the backbone. Transactions are published to a Kafka topic partitioned by account ID — this ensures all transactions for the same account are processed in order within one partition, while different accounts process in parallel across partitions. A consumer group with N consumers handles N partitions, and I can scale by adding more partitions and consumers. Each consumer validates the transaction, enriches it with account data, applies business rules like fraud checks and limits, then persists the result and emits downstream events via the Transactional Outbox pattern — this ensures the database write and event publication are atomic. Every consumer is idempotent using the transaction ID as a deduplication key. For multi-step transactions spanning multiple services, I use the Saga pattern with compensating transactions. The system can handle millions of TPS by scaling Kafka partitions and consumer instances horizontally."
 
 ### 💻 Key Code Patterns

@@ -2,7 +2,7 @@
 
 > Second round focused on practical knowledge: writing a full Spring Boot CRUD app on pen & paper, AWS serverless deployment, cloud infrastructure design, and DevOps practices.
 
-> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Interview Script → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
+> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Answering Approach → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
 
 ---
 
@@ -30,7 +30,7 @@ HTTP Request → DispatcherServlet → HandlerMapping
   ← Response ← ResponseEntity ← DTO ←
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I'd start by defining the `@Entity` class — say an `Employee` with `@Id`, `@GeneratedValue`, and `@Column` annotations on each field. Then I create a `@Repository` interface extending `JpaRepository<Employee, Long>` — Spring Data auto-generates all CRUD methods. Next, a `@Service` class injects the repository via constructor injection and implements business logic — `save()`, `findById()`, `findAll()`, `deleteById()`. Finally, a `@RestController` with `@RequestMapping(\"/api/employees\")` exposes endpoints — `@GetMapping`, `@PostMapping`, `@PutMapping`, `@DeleteMapping` — each delegating to the service. Spring Boot auto-configures DataSource from `application.properties`, and `@SpringBootApplication` on the main class triggers component scanning and auto-configuration."
 
 ### 💻 Code
@@ -209,7 +209,7 @@ HTTP Annotations:
   @Valid                    → Triggers Bean Validation
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "In a typical Spring Boot CRUD app, I use annotations at every layer. The `@Entity` with `@Table` maps the class to a database table — each field uses `@Column` for column mapping, `@Id` with `@GeneratedValue` for the primary key. The repository interface extends `JpaRepository` — the `@Repository` annotation is optional here but adds exception translation. The service class uses `@Service` — it's a specialization of `@Component` that signals business logic. The controller uses `@RestController` which combines `@Controller` and `@ResponseBody` — so every method return value is automatically serialized to JSON. HTTP methods are mapped with `@GetMapping`, `@PostMapping`, etc., under a base `@RequestMapping` path. Parameters come via `@PathVariable` for URL segments and `@RequestBody` for JSON payloads. At the top, `@SpringBootApplication` on the main class is a 3-in-1 meta-annotation: `@Configuration`, `@EnableAutoConfiguration`, and `@ComponentScan`."
 
 ### 💻 Code
@@ -322,7 +322,7 @@ Cold Start Mitigation:
   Provisioned      → keeps N instances warm → $$ but no cold starts
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "To deploy a Spring Boot app on AWS Lambda, I'd use the `aws-serverless-java-container` library by AWS Labs. I add the dependency, create a `StreamLambdaHandler` that initializes the Spring application context and delegates incoming API Gateway events to Spring's DispatcherServlet. The API Gateway acts as the HTTP frontend — it receives client requests and invokes the Lambda function. Inside Lambda, the adapter converts the API Gateway event to an `HttpServletRequest`, so all my `@RestController` endpoints work without modification. The main challenge is cold starts — Spring Boot initialization can take 5-10 seconds. To mitigate this, I'd use Lambda SnapStart which takes a snapshot of the initialized JVM, or compile to GraalVM native image for sub-100ms starts. For production, I'd keep the Lambda behind a VPC if it needs to access RDS or ElastiCache in private subnets."
 
 ### 💻 Code
@@ -441,7 +441,7 @@ Client → Route53 (DNS)  │                                     │
                         └─────────────────────────────────────┘
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I design the infrastructure within a VPC spanning at least 2 Availability Zones for high availability. The VPC has three subnet tiers: public, private, and data. In the public subnet, I place the Application Load Balancer and a NAT Gateway. The ALB receives HTTPS traffic — Route53 resolves the domain name to the ALB's DNS. The ALB terminates SSL using an ACM certificate and forwards traffic to target groups in the private subnet where the application runs — this could be ECS Fargate tasks, EC2 instances behind an ASG, or EKS pods. The application never has a public IP — it's only accessible through the ALB. For outbound internet access like calling external APIs, the app routes through the NAT Gateway in the public subnet. The data tier has RDS with Multi-AZ failover and ElastiCache — these are in isolated subnets with no internet access at all. Security Groups enforce least privilege: ALB accepts 443 from the internet, app accepts traffic only from the ALB's security group, and the database accepts connections only from the app's security group."
 
 ### 🎯 Tricky Follow-ups
@@ -490,7 +490,7 @@ Security layers:
   Layer 6: No public IP   → App instance unreachable from internet
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "The key insight is that the application in a private subnet has no public IP — it's invisible to the internet. The only public-facing component is the Application Load Balancer sitting in the public subnet. When a client makes a request, Route53 resolves the domain to the ALB's public IP. The request enters the VPC through the Internet Gateway and reaches the ALB. The ALB has a listener on port 443 that terminates SSL using an ACM certificate. Based on routing rules — path-based or host-based — the ALB forwards the request to a target group. The target group contains the application instances registered by their private IPs. The ALB communicates with the app on port 8080 using the private IP — this traffic stays within the VPC, never leaving AWS's network. Security Groups enforce this: the ALB's SG allows inbound 443 from anywhere, but the app's SG only allows inbound traffic from the ALB's security group ID — not from any IP range. This means even if someone discovers the app's private IP, they cannot reach it without going through the ALB."
 
 ### 🆚 vs.
@@ -548,7 +548,7 @@ Stateful behavior:
   No outbound rule needed for return traffic!
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Security Groups are stateful virtual firewalls that operate at the instance level — or more precisely, at the Elastic Network Interface level. Each Security Group has inbound and outbound rules. The key thing is they only have allow rules — there are no deny rules. By default, all inbound traffic is denied and all outbound is allowed. The stateful nature means if I allow inbound traffic on port 8080, the response traffic going back to the client is automatically allowed without an explicit outbound rule. A powerful feature is SG-to-SG referencing — instead of allowing traffic from an IP range, I reference another Security Group ID. For example, my app SG allows inbound on port 8080 only from the ALB's Security Group — this means only traffic originating from the ALB can reach my app, regardless of what IP the ALB has."
 
 ### 🆚 vs.
@@ -612,7 +612,7 @@ Example Policy:
 }
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "IAM is the central security service in AWS — it controls authentication and authorization for every API call. Instead of giving root account access to developers, I create IAM Users grouped into IAM Groups with appropriate policies attached. For applications running on AWS services, I use IAM Roles — for example, an EC2 instance assumes a role that grants it read access to an S3 bucket. The app gets temporary credentials automatically, no hardcoded access keys. Policies are JSON documents that specify Effect (Allow/Deny), Action (like `s3:GetObject`), and Resource (ARN of the target). The evaluation logic is: explicit Deny always wins, then explicit Allow, and if nothing matches, it's implicit Deny. For production, I follow least privilege — start with zero permissions and add only what's needed. I also enable MFA for all human users and use AWS Organizations SCPs for account-level guardrails."
 
 ### 🎯 Tricky Follow-ups
@@ -671,7 +671,7 @@ Docker vs K8s:
     Secret      → Sensitive data (base64, not encrypted!)
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "In a Dockerfile for a Spring Boot app, I use a multi-stage build. The first stage uses a Maven image to compile the project and produce the JAR. The second stage uses a minimal JRE Alpine image — `eclipse-temurin:17-jre-alpine` — and copies only the JAR from the build stage. I set `WORKDIR` to `/app`, `EXPOSE 8080` to document the port, create a non-root user with `RUN adduser` for security, switch to that user with `USER`, and define the `ENTRYPOINT` with JVM flags like `-XX:MaxRAMPercentage=75.0` for container-aware memory. This gives me a small, secure image — typically under 200MB. For orchestration, I deploy this to Kubernetes — define a Deployment with 3 replicas, a Service for internal DNS, an Ingress for external access, and HPA for auto-scaling based on CPU."
 
 ### 💻 Code
@@ -783,7 +783,7 @@ Jenkinsfile (Pipeline as Code):
 └────────────────────────────────────────────┘
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Yes, I've written declarative Jenkins pipelines using a `Jenkinsfile` stored in the project repository — this gives us pipeline as code, fully version-controlled. A typical pipeline starts with a `Checkout` stage that pulls the latest code from Git. Then a `Build` stage runs `mvn clean package` to compile and produce the JAR. Next, `Unit Test` runs with JUnit — if tests fail, the pipeline stops. Then I have a `SonarQube` stage for code quality and security scanning. If quality gates pass, I build a Docker image and push it to Amazon ECR. Deployment stages go through Dev first — automated — then Staging with integration tests, and finally Prod with a manual approval gate using `input` step. The `post` block sends Slack notifications on success or failure. I use `credentials()` to bind secrets, `environment` block for stage-specific variables, and shared libraries for reusable pipeline code across projects."
 
 ### 💻 Code

@@ -35,7 +35,7 @@ Performance Tuning Layers:
 └───────────────────────────────────────────┘
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Performance tuning in Spring Boot is a multi-layer effort. At the database layer, I tune HikariCP pool size, use DTO projections instead of loading full entities, add proper indexes, and fix N+1 queries with JOIN FETCH or @EntityGraph. At the application layer, I use @Cacheable with Caffeine or Redis for repeated reads, @Async for non-blocking operations like email sending, and pagination for large datasets. At the framework level, I enable response compression, configure Tomcat thread pool, and use lazy initialization to speed up startup. At the JVM level, I size the heap appropriately, choose G1GC or ZGC, and enable GC logging for production diagnostics. In my current project, the biggest wins came from fixing N+1 queries — one endpoint went from 200ms to 15ms — and adding Redis caching for frequently accessed reference data."
 
 ### 💻 Code Example
@@ -151,7 +151,7 @@ Set level=WARN → only WARN and ERROR logged
 Set level=DEBUG → DEBUG, INFO, WARN, ERROR logged
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Spring Boot uses SLF4J as the logging API with Logback as the default implementation — both are included in the base starter. For basic configuration, I use application.yml to set log levels per package — DEBUG for my app, WARN for third-party libraries. For production, I use a logback-spring.xml file with Spring profile-specific configuration. In development, I use a colored console appender. In production, I use structured JSON logging so logs can be parsed by ELK or Splunk, with an async appender to prevent logging from blocking request threads. I also use MDC — Mapped Diagnostic Context — to attach a correlation ID to every log line, which is essential for tracing requests across microservices. One thing I always ensure: never log at DEBUG level in production, and always use async appenders for high-throughput services."
 
 ### 💻 Code Example
@@ -309,7 +309,7 @@ Client: GET /api/users (with JWT token)
 └─────────────────────────┘
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Spring Security is an authentication and authorization framework that works through a chain of servlet filters. When a request arrives, it passes through about 15 security filters before reaching the DispatcherServlet. For authentication, I typically implement JWT-based auth: a custom JwtAuthenticationFilter extracts the token from the Authorization header, validates it, and sets the SecurityContext with the authenticated principal. For authorization, I use @PreAuthorize annotations on controller or service methods — like hasRole('ADMIN') or hasAuthority('WRITE_ORDERS'). The configuration is done via SecurityFilterChain bean where I define which URLs are public, which require authentication, and where my custom filters sit in the chain. I always disable CSRF for stateless REST APIs, enable CORS for frontend domains, and hash passwords with BCrypt."
 
 ### 💻 Code Example
@@ -472,7 +472,7 @@ Client Request
 └─────────────────────┘
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "These three operate at different layers. Servlet Filters are the lowest level — they intercept HTTP requests before they even reach Spring's DispatcherServlet. I use them for cross-cutting HTTP concerns like CORS, request logging, compression, and security. They work on raw HttpServletRequest and Response. Interceptors operate inside Spring MVC — they run after DispatcherServlet has resolved which controller method will handle the request. They're great for controller-specific concerns like request timing, audit logging, or checking custom annotations on the handler method. AOP is not tied to the web layer at all — it works on any Spring bean method using pointcut expressions. I use it for concerns that span multiple layers, like @Transactional on services, method-level logging, or retry logic. In my project, I use a Filter for request correlation IDs, an Interceptor for API request timing, and AOP for audit logging across services."
 
 ### 💻 Code Example
@@ -643,7 +643,7 @@ Implementations:
   SpringApplication.run() → AnnotationConfigServletWebServerApplicationContext
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "BeanFactory is the root IoC container interface in Spring — it provides basic bean creation and dependency injection with lazy initialization. ApplicationContext extends BeanFactory and is what we actually use in every Spring Boot application. It adds eager bean initialization — all singletons are created at startup, so you catch configuration errors immediately rather than at runtime. It also provides an event system with ApplicationEvent and @EventListener, internationalization via MessageSource, environment abstraction with profiles and property sources, and automatic AOP proxy creation. When I call SpringApplication.run(), it returns an ApplicationContext — specifically an AnnotationConfigServletWebServerApplicationContext for web apps. In practice, I never interact with BeanFactory directly."
 
 ### 💻 Code Example
@@ -747,7 +747,7 @@ com.myapp/
 │   └── ReportingDataSourceConfig.java
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "To configure multiple data sources, I disable Spring Boot's auto-configuration for DataSource and define each one manually. For each database, I create three beans: a DataSource, a LocalContainerEntityManagerFactoryBean, and a PlatformTransactionManager. The key is entity isolation — each EntityManagerFactory scans different entity packages so there's no confusion about which entity belongs to which database. I mark the primary data source with @Primary so it's used by default when no qualifier is specified. Repositories are also separated by package — Spring Data JPA's @EnableJpaRepositories annotation has basePackages and entityManagerFactoryRef attributes that bind each repository to the correct data source. In my project, we used this for a primary PostgreSQL database and a legacy Oracle database for customer data that couldn't be migrated yet."
 
 ### 💻 Code Example
@@ -926,7 +926,7 @@ OAuth2 (Authorization Code Flow):
   7. Backend creates session/JWT for the user
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I choose the auth mechanism based on the use case. For internal admin tools or simple machine-to-machine calls within a private network, Basic Auth over TLS is fine — it's simple and every HTTP client supports it. For our microservices architecture and SPA frontend, I use JWT — the user logs in once, gets a signed token with their roles, and subsequent requests attach this token. The backend validates the JWT signature without hitting the database, making it truly stateless and horizontally scalable. For things like 'Login with Google' or giving third-party developers access to our API, I use OAuth2 — specifically the Authorization Code flow with PKCE for security. OAuth2 is fundamentally different — it's about delegated authorization, not authentication. The user never shares their Google password with our app; they authorize Google to share specific data with us."
 
 ### 💻 Code Example

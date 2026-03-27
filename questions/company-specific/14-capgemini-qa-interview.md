@@ -9,7 +9,7 @@
 <a id="q1"></a>
 ## Q1. Introduction and project explanation — Automation framework walkthrough
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I work on a POM-based Selenium automation framework using Java, TestNG, and Maven. The framework follows Page Object Model where each page has a corresponding class with locators and actions. We use a Data-Driven approach with Excel/JSON for test data, Extent Reports for reporting, and Jenkins for CI/CD execution. The framework covers web UI tests, API tests (RestAssured), and database validation. We run ~500 test cases across 3 environments with parallel execution using TestNG XML."
 
 ### ⚡ Remember
@@ -152,7 +152,7 @@ options.stream()
 <a id="q7"></a>
 ## Q7. Approach when 15 out of 100 test cases fail
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "First, I'd categorize the failures: (1) Is there a common pattern? — Same page, same API, same data? If 10 failures are on the login page, it might be an environment issue, not 10 separate bugs. (2) Check infrastructure — is the test environment stable? (3) Separate genuine bugs from automation issues (stale locators, timing). (4) Prioritize by business impact — critical flow failures first. (5) Log defects for genuine bugs. (6) Fix automation issues immediately. (7) Rerun after fixes to confirm stability. (8) Report to team with categorized analysis."
 
 ### ⚡ Remember

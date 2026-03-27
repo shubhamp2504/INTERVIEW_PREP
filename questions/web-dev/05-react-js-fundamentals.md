@@ -52,7 +52,7 @@ function debounce(fn, delay) {
 }
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "A closure gives a function access to its outer scope's variables even after the outer function returns. The classic example is a counter with a private count variable. Closures are fundamental to patterns like debounce/throttle, module pattern for data privacy, and callback-based async code. The common gotcha is the var-in-loop problem — since var is function-scoped, all closures share the same variable. Using let fixes this because let creates a new binding per iteration."
 
 ### ⚠️ Pitfalls
@@ -90,7 +90,7 @@ console.log('5 — sync');
 // Sync first, then ALL microtasks, then macrotask
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "JavaScript runs on a single thread with an event loop. Synchronous code runs first on the call stack. When async operations complete, their callbacks go to task queues. The event loop checks: first the call stack (must be empty), then drains ALL microtasks (Promises), then picks ONE macrotask (setTimeout). This cycle repeats. That's why a Promise.then always runs before a setTimeout — even if the timeout is 0."
 
 ### ⚡ Remember
@@ -177,7 +177,7 @@ Virtual DOM is a lightweight **in-memory JavaScript representation** of the real
 ### 🔑 Quick Answer
 **Process**: (1) State/props change triggers re-render. (2) React creates new Virtual DOM tree. (3) **Diffing algorithm** compares new vs old VDOM (O(n) with heuristics). (4) Calculates minimal change set. (5) **Batches** and applies DOM updates. This is fast because: JS object operations are cheap, real DOM operations are expensive, and batching reduces reflows/repaints.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "React maintains a virtual representation of the DOM in memory. When state changes, React creates a new VDOM tree and runs a diffing algorithm comparing it with the previous tree. The key heuristics are: elements of different types produce different trees, and the developer can hint stability with keys. React then calculates the minimum set of mutations needed and batches them into a single DOM update, avoiding expensive per-change reflows."
 
 ### ⚡ Remember

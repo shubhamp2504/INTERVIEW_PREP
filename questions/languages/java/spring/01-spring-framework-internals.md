@@ -1,6 +1,6 @@
 # 🌱 Spring Framework Internals (Q6–Q10)
 
-> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Interview Script → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
+> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Answering Approach → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
 
 ---
 
@@ -788,7 +788,7 @@ Uniqueness key = URL path + HTTP method + params + headers + consumes + produces
   /users + GET + params="role"  →  unique ✅ (different params)
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "If two controller methods have the same HTTP method and URL, Spring throws an `IllegalStateException` with an 'Ambiguous mapping' message at startup — the application won't start at all. This happens during the `RequestMappingHandlerMapping` initialization phase where Spring scans all controllers and registers their endpoints. Each endpoint must be unique — uniqueness is determined by the combination of URL path, HTTP method, request parameters, headers, consumes, and produces attributes. So you can have two GET methods on the same URL if they differ by params — for example `@GetMapping(value = "/users", params = "role")` vs `@GetMapping("/users")`. To fix a genuine duplicate, either rename one URL, change the HTTP method, or merge the logic. This is actually a good design — failing fast at startup prevents ambiguous behavior at runtime."
 
 ### 💻 Code Example
@@ -894,7 +894,7 @@ Stateless:
   → Each request is self-contained → scales horizontally
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "REST is an architectural style for designing APIs over HTTP. The key idea is that everything is a resource — identified by a URL — and you use standard HTTP methods to operate on it. GET reads, POST creates, PUT replaces, PATCH partially updates, DELETE removes. Each request is stateless — the server doesn't store client state between requests, so any server instance can handle any request. This is what makes REST APIs horizontally scalable — you can put 10 instances behind a load balancer and it just works. The response format is typically JSON, with proper HTTP status codes — 200 for success, 201 for created, 400 for bad input, 404 for not found, 500 for server error. REST became the de facto standard because it's simple, cacheable, and uses the same HTTP that browsers already speak."
 
 ### 💻 Code Example

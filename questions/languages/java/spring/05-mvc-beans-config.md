@@ -50,7 +50,7 @@ Client: GET /api/users/123
 
 **HandlerMapping implementations**: `RequestMappingHandlerMapping` (annotation-based — most common), `SimpleUrlHandlerMapping` (URL → bean mapping), `BeanNameUrlHandlerMapping` (bean name matches URL). **HandlerAdapter**: bridges DispatcherServlet and the actual handler. For `@Controller` methods, `RequestMappingHandlerAdapter` resolves method arguments (`@PathVariable`, `@RequestParam`, `@RequestBody`), invokes the method, and processes the return value. **Interceptors** (`HandlerInterceptor`) hook into the flow — `preHandle` (before controller), `postHandle` (after controller), `afterCompletion` (after response).
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "DispatcherServlet is the front controller in Spring MVC — all HTTP requests go through it. When a request arrives, it first consults HandlerMapping to determine which controller method should handle the URL. RequestMappingHandlerMapping reads @GetMapping, @PostMapping annotations at startup to build a URL-to-method map. Once the handler is found, HandlerAdapter invokes the method after resolving all parameters — path variables, request body, query params. For REST APIs with @RestController, the return object is passed through HttpMessageConverters — Jackson converts it to JSON. The response goes back through the servlet. I can add cross-cutting logic using HandlerInterceptors for things like logging, authentication timing, or request correlation IDs."
 
 ### 💻 Code Example
@@ -146,7 +146,7 @@ Result:          { "name": "Alice", "email": "new@x.com", "phone": "123" }
                   ↑ name and phone unchanged!
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "PUT replaces the entire resource — the client sends the complete representation, and any field not included is set to null or default. PATCH applies a partial update — only the fields included in the request body are modified, other fields remain unchanged. Both are idempotent. I use PUT when the client has the full object — like a form where all fields are editable. I use PATCH for targeted updates — like changing just a user's status or email. In Spring Boot, implementing PATCH requires handling null carefully — I can't just use @RequestBody with the entity because I can't distinguish between 'field omitted' and 'field set to null'. I typically use a Map or a DTO with Optional fields for PATCH requests."
 
 ### 💻 Code Example
@@ -250,7 +250,7 @@ Request scope:
   Request 2 → RequestContext #2  (separate instance)
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "The default bean scope in Spring is singleton — one instance per ApplicationContext, created eagerly at startup and shared across the entire application. This is why Spring beans should be stateless — all request threads share the same instance. Prototype scope creates a new instance every time the bean is requested, but Spring doesn't manage the lifecycle after creation — no @PreDestroy. For web applications, request scope gives one instance per HTTP request, and session scope per user session. The classic pitfall is injecting a prototype bean into a singleton — you only get one instance because the singleton is created once with one prototype injected. The fix is ObjectFactory or @Lookup annotation to get fresh instances on each call."
 
 ### 💻 Code Example
@@ -376,7 +376,7 @@ public abstract class OrderService {
 
 **When to use @Bean**: (1) Third-party classes you can't annotate (RestTemplate, ObjectMapper, DataSource). (2) Need customization during creation (set timeouts, add interceptors). (3) Conditional bean creation with `@ConditionalOnProperty`. (4) Multiple beans of same type with `@Qualifier`. **When to use @Component**: your own classes where the default constructor or auto-wired constructor suffices.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "@Component is a class-level annotation that tells Spring to auto-detect and register the class as a bean through component scanning. I use it for my own classes — services, repositories, controllers. @Bean is a method-level annotation in a @Configuration class where I manually instantiate and configure the bean. I use it for third-party classes that I can't annotate — like configuring a RestTemplate with specific timeouts and interceptors, or an ObjectMapper with custom serialization settings. The key distinction is ownership: if I own the class, I use @Component; if I don't or need custom creation logic, I use @Bean. Both register a bean in the Spring container and support dependency injection."
 
 ### 💻 Code Example

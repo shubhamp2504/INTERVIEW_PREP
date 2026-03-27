@@ -43,13 +43,13 @@ Every question follows this **10-section interview-optimized** structure:
 - **Romanized Hindi** in English letters *(matlab ye ek tarah ka lock hai)*
 - Only for **hard/confusing concepts** — not obvious things
 - **5-10 words max** per bracket, in italics
-- **NOT in 🗣️ Interview Script** — that section is English speaking practice
+- **NOT in 🗣️ Answering Approach** — that section is English speaking practice
 
 ### Prep Phase Guide:
 | When | Read These |
 |------|-----------|
 | **Last 1 hour** | 📝 One-Liner + ⚡ Remember |
-| **Day before** | 🗣️ Interview Script + 🎯 Tricky Qs |
+| **Day before** | 🗣️ Answering Approach + 🎯 Tricky Qs |
 | **Week before** | 📖 How It Works + 💻 Code + ⚠️ Pitfalls |
 | **During interview** | 🔑 Quick Answer → expand naturally |
 

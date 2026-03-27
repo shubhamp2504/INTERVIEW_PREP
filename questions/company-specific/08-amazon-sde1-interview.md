@@ -2,7 +2,7 @@
 
 > Complete interview process for Software Development Engineer 1 role. 2 onsite rounds (DSA + LLD) and 2 virtual rounds (Leadership Principles + Bar Raiser). Focus on problem-solving, design thinking, and Amazon's Leadership Principles.
 
-> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Interview Script → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
+> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Answering Approach → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
 
 ---
 
@@ -177,7 +177,7 @@ public enum ChannelType { EMAIL, SMS, PUSH, IN_APP }
 public record UserPreference(String userId, Set<ChannelType> enabledChannels) {}
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I'd model this with the Strategy pattern — a `NotificationChannel` interface with implementations for Email, SMS, and Push. A `NotificationService` looks up the user's channel preferences and sends through each enabled channel. For scalability, I'd make the send operation async by publishing to a Kafka topic per channel type. Each channel has a consumer group that processes messages and handles retries with exponential backoff. Templates are stored separately and rendered with user-specific data. I'd use a `NotificationLog` table for audit trails and delivery status tracking. For the class design, I follow SOLID — each channel is a separate class (SRP), new channels are added without modifying existing code (OCP), and the service depends on the interface not concrete classes (DIP)."
 
 ### ⚡ Remember
@@ -198,7 +198,7 @@ Amazon LP round evaluates **ownership, bias for action, customer obsession, and 
 ### 🔑 Quick Answer
 **LP preparation**: Use STAR format (Situation, Task, Action, Result) for each LP. **Most tested LPs**: (1) Customer Obsession — going beyond requirements for user. (2) Ownership — taking responsibility beyond your scope. (3) Bias for Action — making decisions with incomplete data. (4) Dive Deep — debugging a complex production issue. (5) Disagree and Commit — pushing back on a decision, then committing. **Implementation**: Expect a class design problem where interviewer evaluates encapsulation, inheritance, interfaces, and clean API design.
 
-### 🗣️ Interview Script (Example STAR)
+### 🗣️ Answering Approach (Example STAR)
 "**Ownership example**: In my previous project, we had a recurring data inconsistency between our payment service and the notification service. It wasn't my team's responsibility, but I noticed it was causing customer complaints. I took ownership — *Situation*. I analyzed the event flow and found that occasional Kafka message loss during broker restarts was the root cause — *Task*. I proposed and implemented idempotent consumers with a deduplication table, and added a reconciliation job that runs every hour — *Action*. This reduced data inconsistency incidents from 15/month to zero, and the pattern was adopted across 3 other services — *Result*."
 
 ### ⚡ Remember
@@ -219,7 +219,7 @@ The Bar Raiser is an **independent evaluator** from a different team who ensures
 ### 🔑 Quick Answer
 **What to expect**: (1) Deep-dive into 1-2 projects with follow-up questions that go 3-4 levels deep. (2) Scenario-based LP questions testing judgment under pressure. (3) Focus on **Learn and Be Curious**, **Earn Trust**, **Think Big**, **Insist on Highest Standards**. (4) May ask about failures and what you learned. **Key**: Be honest, show growth, demonstrate impact with metrics.
 
-### 🗣️ Interview Script (Handling "Tell me about a failure")
+### 🗣️ Answering Approach (Handling "Tell me about a failure")
 "In one project, I designed a caching layer that initially used TTL-based invalidation. Under load testing, we found that stale data was being served for up to 30 seconds after updates — unacceptable for our financial data use case. I had underestimated the cache invalidation complexity. I redesigned using event-driven cache invalidation with Kafka — whenever the source data changed, an event triggered cache eviction. This reduced stale data window from 30 seconds to under 100 milliseconds. The lesson I learned was to always validate cache consistency under realistic load conditions before shipping, not just functional tests."
 
 ### ⚡ Remember

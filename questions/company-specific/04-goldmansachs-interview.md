@@ -2,7 +2,7 @@
 
 > Direct application for Java Backend Developer role. 5 rounds: OA, DSA + Java, Spring Boot + LLD, Security + DB Optimization, HR. Pattern: Goldman doesn't test topics — they test thinking depth.
 
-> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Interview Script → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
+> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Answering Approach → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
 
 ---
 
@@ -1012,7 +1012,7 @@ public void blacklist(String jti, long remainingTTL) {
 ### 📝 One-Liner
 Focus on engineering culture, scale of problems, impact on global financial systems, and career growth in a tech-first environment.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Goldman Sachs stands out for its engineering-first approach to finance. The scale of problems — processing millions of transactions in real-time, building low-latency trading platforms, and ensuring security at a global level — is what excites me as an engineer. I'm drawn to the culture of intellectual rigor and the opportunity to work with some of the brightest minds in technology. The firm's investment in internal platforms and open-source contributions (like Legend, Alloy) shows a genuine commitment to engineering excellence. For my career, GS offers the unique combination of cutting-edge tech challenges with real-world financial impact."
 
 ### ⚡ Remember
@@ -1026,7 +1026,7 @@ Focus on engineering culture, scale of problems, impact on global financial syst
 <a id="q17"></a>
 ## Q17. How do you handle pressure and tight deadlines?
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I break the problem into prioritized tasks — identify what must be done versus what's nice-to-have. In a recent project, we had a critical payment integration deadline. I created a task breakdown, communicated with stakeholders about realistic timelines, and focused the team on the critical path. We shipped the core functionality on time and delivered enhancements in the next sprint. I've learned that transparent communication about progress and blockers is more effective than working silently under pressure. I also invest in automation — CI/CD, automated testing — which gives us confidence to ship fast without compromising quality."
 
 ### ⚡ Remember
@@ -1040,7 +1040,7 @@ Focus on engineering culture, scale of problems, impact on global financial syst
 <a id="q18"></a>
 ## Q18. Describe your experience working with global/distributed teams
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I've worked with teams across multiple time zones — coordinating with team members in the US and Europe. Key practices: async communication via documented decisions (Confluence/wiki), overlapping hours for critical sync meetings, and clear ownership of tasks. I learned to write detailed handoff notes so the team in the other timezone could continue without being blocked. Tools like Slack channels organized by project, shared Jira boards, and recorded design reviews helped maintain context. The biggest lesson was that over-communication is better than under-communication in distributed teams."
 
 ### ⚡ Remember
@@ -1054,7 +1054,7 @@ Focus on engineering culture, scale of problems, impact on global financial syst
 <a id="q19"></a>
 ## Q19. What are your career growth plans?
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "In the short term, I want to deepen my expertise in distributed systems and low-latency architecture — areas where Goldman Sachs operates at world-class scale. Within 2-3 years, I see myself taking technical leadership of complex projects, mentoring junior developers, and contributing to architectural decisions. Long-term, I aspire to become a principal engineer or architect who can bridge the gap between business requirements and technical solutions. I believe GS provides the right environment — challenging problems, smart peers, and a culture that values engineering depth."
 
 ### ⚡ Remember

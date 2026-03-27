@@ -1,6 +1,6 @@
 # 🗄️ JPA, SQL & Transactions (Q11–Q14)
 
-> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Interview Script → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
+> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Answering Approach → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
 
 ---
 
@@ -581,7 +581,7 @@ Execution Order (SQL logical processing):
   7. LIMIT/OFFSET   → paginate
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I'd write a query that joins products, order_items, and orders — filtering orders where order_date is within the last 30 days. I use SUM(quantity) grouped by product name. For the date filter, I prefer `order_date >= CURRENT_DATE - INTERVAL '30' DAY` over BETWEEN because BETWEEN with timestamps can accidentally include or exclude boundary records. I'd add an index on `orders.order_date` since this is a range scan on a potentially large table. If the interviewer asks about products with zero sales, I'd switch to a LEFT JOIN from products to order_items so those products appear with a 0 total. In a Spring Boot app, this would be a `@Query` annotation on the repository with a DTO projection for performance."
 
 ### 💻 Code Example

@@ -40,7 +40,7 @@ Immutable Class Contract:
 
 **Key rules**: (1) Class is `final` — if a subclass overrides a getter to return a mutable reference, immutability breaks. (2) Fields are `private final` — no direct access, no reassignment. (3) No setters — state set only in constructor. (4) Defensive copies on the way IN (constructor) and OUT (getters) for any mutable field. If your immutable class holds a `Date` or `List`, always copy it. Java 16+ `record` classes are close to immutable but NOT automatically — mutable fields in records still need defensive copies.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "An immutable class is one where the state can never change after construction. I follow five rules: make the class final to prevent subclassing, all fields private final, no setters, initialize everything in the constructor, and — the one most people forget — defensive copies for any mutable fields. If my class holds a List, I use List.copyOf in the constructor and return Collections.unmodifiableList from the getter. String is the classic example — its immutability enables the String pool, safe HashMap keys, and thread safety without locks. In my projects I use immutability for DTOs, value objects, and configuration classes — they're simpler to reason about and inherently thread-safe."
 
 ### 💻 Code Example
@@ -175,7 +175,7 @@ Comparator (custom order — external):
 
 **Contract**: `compareTo` must return negative (this < other), zero (equal), or positive (this > other). Must be consistent with `equals()` — if `a.compareTo(b) == 0` then ideally `a.equals(b) == true` (TreeSet/TreeMap rely on this). **Transitivity**: if a > b and b > c, then a > c. **Integer overflow trap**: `return this.id - o.id` can overflow if values are large — safer: `Integer.compare(this.id, o.id)`.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Comparable defines the natural ordering of a class — the class itself implements compareTo to define one default sort order. I use it when there's an obvious way to sort — like employees by ID or dates chronologically. Comparator is external — it lets me define multiple different orderings without modifying the original class. With Java 8's Comparator.comparing and thenComparing, I chain multi-field sorts fluently. I prefer Comparator for flexibility — sorting by name, then by salary, then by hire date — all without touching the entity class. One important gotcha: never use subtraction for compareTo with integers — it can overflow. Always use Integer.compare or Comparator.comparingInt."
 
 ### 💻 Code Example
@@ -297,7 +297,7 @@ StringBuffer (mutable, synchronized):
 
 **String pool**: literal Strings like `"hello"` are interned in the pool (one copy shared). `new String("hello")` creates a separate heap object. **StringBuilder internals**: backed by a `char[]` (Java 8-) or `byte[]` (Java 9+ compact strings). Default capacity = 16. When full, grows by `(oldCapacity * 2) + 2`. Pre-size with `new StringBuilder(expectedSize)` to avoid resizing. **Java compiler optimization**: simple concatenations like `"a" + "b" + "c"` at compile time → compiler optimizes. But **loop concatenation** `s += x` in a loop creates a new StringBuilder per iteration → O(n²).
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "String is immutable — every modification creates a new object, which is fine for small operations but terrible in loops where you're concatenating thousands of times — that's O(n²) because each concatenation copies the entire string. StringBuilder is mutable — it maintains an internal character buffer that grows as needed, so appending is amortized O(1). StringBuffer has the same API but every method is synchronized, which adds overhead. In practice, I use StringBuilder exclusively — I've never needed StringBuffer because if I need thread-safe string building, I'd use a StringBuilder within a synchronized block or ThreadLocal rather than paying synchronization cost on every single append call. One optimization tip: if I know the approximate final size, I pass it to the StringBuilder constructor to avoid buffer resizing."
 
 ### 💻 Code Example
@@ -409,7 +409,7 @@ p == q       → false  (outside cache range, different objects)
 p.equals(q)  → true   (same value)
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "The `==` operator checks reference equality for objects — whether two variables point to the exact same object in memory. The `equals()` method checks logical equality — whether two objects have the same content. For primitives, `==` compares values directly. The classic trap is with Strings: `new String(\"hello\") == new String(\"hello\")` returns false because they're two separate heap objects, but `.equals()` returns true because the characters match. Another trap is Integer caching — Java caches Integer objects for values -128 to 127, so `Integer a = 127; Integer b = 127; a == b` is true, but with 128 it's false. That's why we always use `.equals()` for object comparison. And if I override `equals()` in a custom class, I must also override `hashCode()` to maintain the contract — HashMap and HashSet depend on equal objects having equal hash codes."
 
 ### 💻 Code Example
@@ -500,7 +500,7 @@ Throwable
         └── ArithmeticException
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Java has two categories of exceptions. Checked exceptions are verified at compile time — if a method throws an IOException, the caller must either catch it or declare `throws IOException`. They represent conditions that the caller can reasonably recover from, like a file not being found or a network timeout. Unchecked exceptions extend RuntimeException and aren't checked by the compiler. They represent programming bugs — NullPointerException, ArrayIndexOutOfBoundsException, IllegalArgumentException. These should be prevented through proper coding rather than caught. There's also Error, which represents JVM-level problems like OutOfMemoryError — these should almost never be caught because the JVM may be in an unstable state. In modern Java and Spring Boot, the trend is towards unchecked exceptions — Spring wraps all SQLExceptions into DataAccessException (unchecked), and custom business exceptions usually extend RuntimeException rather than Exception."
 
 ### 💻 Code Example

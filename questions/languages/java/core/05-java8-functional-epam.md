@@ -29,7 +29,7 @@ Stream Pipeline:
 
 **Lazy evaluation**: when you write `.filter().map().sorted()`, NOTHING happens. Only when the terminal operation (`.collect()`, `.forEach()`) is called does the pipeline execute — and it processes elements **one at a time** through the entire chain (not filter ALL, then map ALL). This is called **loop fusion**. **Short-circuiting**: operations like `findFirst()`, `limit()`, `anyMatch()` stop processing early. **Streams are single-use** — after a terminal operation, the stream is consumed and cannot be reused.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "The Stream API is a declarative way to process data pipelines on collections. Instead of writing imperative for-loops with mutable accumulators, I express transformations as a chain of filter, map, and collect operations. The key insight is lazy evaluation — intermediate operations like filter and map don't execute immediately. They build up a pipeline that only runs when a terminal operation like collect or forEach is called. This enables optimizations like loop fusion, where each element flows through the entire pipeline before the next element is processed, and short-circuiting, where findFirst stops after the first match. For CPU-intensive operations on large datasets, I can switch to parallelStream for automatic fork-join parallelism. In my projects, Streams make data transformation code much more readable and less error-prone than manual loops."
 
 ### 💻 Code Example
@@ -138,7 +138,7 @@ Result: [A, B, C, D]  ← Stream<Item> (flattened!)
 
 **map** wraps results — if the function returns a collection, you get a Stream of collections. **flatMap** unwraps — it expects the function to return a Stream, then concatenates all those streams. Think of it as `map` + `flatten` in one step. This is the **monad bind** operation in functional programming.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "map transforms each element one-to-one — like mapping a User to their email. flatMap is for one-to-many transformations where you want a flattened result. If each order has a list of items and I use map to get items, I'd get a Stream of Lists. With flatMap, I return a stream for each order's items, and they all merge into a single flat stream of items. I use flatMap frequently — flattening nested collections, processing lines of files where each line splits into words, and with Optional to chain methods that each return Optional without getting nested Optional of Optional."
 
 ### 💻 Code Example
@@ -258,7 +258,7 @@ Usage:
 
 **Why @FunctionalInterface?** Compiler validation — if someone adds a second abstract method, compilation fails. It's like `@Override` — documentation + safety. **Lambda desugaring**: the compiler converts lambdas to `invokedynamic` bytecode instructions (not anonymous classes) → more efficient, no extra .class file. **Method references** are shorthand: `String::length` is equivalent to `s -> s.length()`.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "A functional interface has exactly one abstract method — the Single Abstract Method contract. This is what enables lambdas in Java. When I write a lambda expression, the compiler matches it to a functional interface that has a compatible method signature. I always annotate with @FunctionalInterface so the compiler enforces the contract — if a team member accidentally adds a second abstract method, it won't compile. Java 8 ships with key functional interfaces in java.util.function — Function for transformation, Predicate for filtering, Consumer for side effects, and Supplier for lazy creation. Under the hood, lambdas use invokedynamic for efficient linking rather than generating anonymous inner classes."
 
 ### 💻 Code Example
@@ -372,7 +372,7 @@ All three are in `java.util.function`. **Predicate** → `test(T) → boolean` �
 
 **Composition chains**: These interfaces are composable — build complex logic from simple pieces. `Predicate.and()` / `or()` / `negate()` for boolean logic. `Function.andThen()` (apply this, then that) / `compose()` (apply that first, then this). `Consumer.andThen()` for sequential side effects. This is the power of functional programming in Java — small, reusable building blocks.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Predicate, Function, and Consumer are the three fundamental functional interfaces that cover most use cases. Predicate takes an input and returns boolean — I use it with stream filter, collection removeIf, and @ConditionalOnProperty-style conditions. Function takes an input and transforms it into a different type — it powers stream map, Map.computeIfAbsent, and DTO conversions. Consumer takes an input and returns nothing — used for side effects like logging, sending events, or forEach. What makes them powerful is composition: I can chain Predicates with and/or, Functions with andThen, and Consumers with andThen to build complex behavior from simple, testable pieces."
 
 ### 💻 Code Example
@@ -496,7 +496,7 @@ Optional Flow:
 
 **orElse vs orElseGet**: `orElse(computeDefault())` — the default is ALWAYS computed even if value is present. `orElseGet(() -> computeDefault())` — lazy, only computed when absent. If default computation is expensive, always use `orElseGet`. **Optional chaining**: `map` for transformations that return non-Optional, `flatMap` when the function itself returns Optional (avoids `Optional<Optional<T>>`). Java 9 added `ifPresentOrElse()`, `or()`, `stream()`.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Optional is Java's way of explicitly representing the absence of a value — instead of returning null from a method and hoping the caller checks for it, I return Optional, which forces the caller to decide how to handle the empty case. I use it exclusively for return types — never for fields, parameters, or collections. For consuming the value, I chain map and flatMap instead of isPresentget patterns. orElseThrow for cases where absence is an error — like findById returning empty. One subtle but important distinction: orElse eagerly evaluates its argument, so if the fallback is expensive, I use orElseGet with a Supplier for lazy evaluation. I never call .get() without a check — it defeats the purpose of Optional."
 
 ### 💻 Code Example

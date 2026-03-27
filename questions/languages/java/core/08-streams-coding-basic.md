@@ -58,7 +58,7 @@ Character result = input.chars()
 // Output: 'w'   (s repeated, w is first non-repeated)
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I use groupingBy with a LinkedHashMap to count character frequencies while preserving insertion order. Then I filter for count == 1 and take the first entry. LinkedHashMap is critical here — a regular HashMap won't preserve the original order of characters." *(LinkedHashMap zaroori hai — insertion order preserve karta hai, warna pehla non-repeated character galat mil sakta hai)*
 
 ---

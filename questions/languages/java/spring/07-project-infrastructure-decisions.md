@@ -37,7 +37,7 @@ BEHIND THE SCENES:
 
 **When JPA is the right choice**: CRUD-heavy business apps, domain-driven design, entities with relationships, standard web apps. **When raw JDBC/JdbcTemplate is better**: (1) Complex reporting queries with joins across 10 tables. (2) Bulk inserts/updates (JPA is slow for batch ops without tuning). (3) Stored procedure calls. (4) Read-heavy analytics where you want full SQL control. **My approach**: JPA for 80% of ops (CRUD, simple queries), `@Query(nativeQuery = true)` or `JdbcTemplate` for the remaining 20% where full SQL control matters.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I chose Spring Data JPA because 80% of the database operations in this project are straightforward CRUD — create user, find by email, update status, list with pagination. JPA handles all of this with just interface method declarations — no boilerplate Connection/ResultSet code. It also gives me entity mapping, first-level cache, and declarative transactions with @Transactional. But I'm pragmatic about it — for complex reporting queries, bulk operations, or performance-critical paths, I drop down to @Query with native SQL or even use JdbcTemplate alongside JPA in the same project. JPA isn't a religion — it's a productivity tool for the common case, and I use raw SQL when the query is too complex for JPQL or when I need fine-grained performance control."
 
 ### 💻 Code Example
@@ -183,7 +183,7 @@ Activation Methods:
 
 **What changes per environment**: (1) **Database** — H2 (dev) vs PostgreSQL (prod). (2) **Logging** — DEBUG (dev) vs WARN/ERROR (prod, structured JSON). (3) **Security** — relaxed (dev) vs strict (prod). (4) **External URLs** — mock services (dev) vs real endpoints (prod). (5) **Connection pool sizes** — small (dev) vs tuned (prod). (6) **Feature flags** — experimental features enabled in dev, disabled in prod. **@Profile annotation**: conditionally register beans — e.g., `@Profile("dev")` on a `DataInitializer` bean that seeds test data, never runs in prod.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I use Spring profiles to separate configuration per environment — dev, staging, and prod. The core idea is that the code is identical across environments; only the configuration changes. My application-dev.yml has an H2 database, debug logging, and relaxed security for local development. The application-prod.yml points to the real PostgreSQL RDS, uses structured JSON logging, and has strict security headers. In deployment, we set SPRING_PROFILES_ACTIVE=prod as an environment variable — the right config is loaded automatically. I also use the @Profile annotation for beans that should only exist in certain environments — like a DataInitializer that seeds test users in dev, or a MockPaymentGateway that avoids real charges during testing. This prevents any 'it works on my machine' config mistakes from reaching production."
 
 ### 💻 Code Example
@@ -371,7 +371,7 @@ Total: 3 × (1 + 5) = 18ms, same 5 connections reused
 
 **Why HikariCP specifically**: (1) Fastest Java connection pool (~2x faster than Tomcat pool, C3P0). (2) Default in Spring Boot since 2.0. (3) Minimal configuration, sensible defaults. (4) Bytecode-level optimizations (ConcurrentBag, FastList). (5) Connection validation and leak detection built-in. **Pool sizing**: default `maximumPoolSize=10`. Formula: `connections = ((core_count * 2) + effective_spindle_count)` — for SSD-backed Postgres, ~10-20 connections per app instance is usually optimal.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I use a connection pool — specifically HikariCP which is Spring Boot's default — because opening a new database connection per request is expensive. Each connection requires a TCP handshake, TLS negotiation, and database authentication, which takes 20 to 50 milliseconds. Under load, you'd also exhaust the database's max connection limit. With a pool, connections are created once at startup and reused across requests. Borrowing from the pool takes less than a millisecond. HikariCP is the fastest Java pool — it uses bytecode-level optimizations like ConcurrentBag for thread-safe connection lending. In production, I configure the pool size based on the formula: 2 times CPU cores plus number of disk spindles — for our Postgres on SSD, that's about 10 to 15 connections per instance. I also set connection-timeout to 30 seconds and enable leak-detection-threshold to catch unreturned connections."
 
 ### 💻 Code Example
@@ -552,7 +552,7 @@ Benefit: Extract `order/` into a microservice → minimal changes
 
 **Hybrid approach (my preference)**: Feature packages for domain code + `common/` for cross-cutting concerns (security config, exception handling, shared utilities). Inside each feature package, I follow the standard Controller → Service → Repository layering. **Module boundaries**: feature packages communicate through **service interfaces**, never by importing each other's repositories directly. This enforces clean dependency direction: `order.OrderService` calls `user.UserService.findById()`, never `user.UserRepository` directly.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I structure the project using package-by-feature. Each domain feature — user, order, payment — has its own package containing the controller, service, repository, entity, and DTO. This is better than package-by-layer for three reasons. First, discoverability — when I need to work on orders, everything is in the order package. Second, modularity — feature packages have clear boundaries. OrderService talks to UserService through its public API, never directly to UserRepository. This prevents spaghetti coupling. Third, microservice readiness — if we need to extract orders into a separate service, the order package is already self-contained — just move it and add an API client for the user calls. For cross-cutting concerns like security config, exception handling, and utilities, I have a common package. Inside each feature package, I still follow controller-service-repository layering for consistency."
 
 ### 💻 Code Example

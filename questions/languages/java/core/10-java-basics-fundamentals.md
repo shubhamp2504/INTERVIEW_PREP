@@ -29,7 +29,7 @@ Class Loading Timeline:
 
 Static blocks execute **once per classloader**, not per instance. If you have three `new MyClass()` calls, the static block runs only on the first load. Multiple static blocks run top-to-bottom. Static blocks can only access static members — no `this` reference available.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Static blocks execute exactly once when the class is loaded by the ClassLoader — even before any constructor runs. I use them for complex static field initialization, like populating a lookup Map or loading native libraries. They run in order of declaration and can only access static members since there's no instance context yet."
 
 ### 💻 Code Example
@@ -109,7 +109,7 @@ Constructor Chaining:
 
 **Rules**: (1) `this()` must be first statement. (2) Cannot have both `this()` and `super()` in same constructor. (3) No recursive constructor calls (compile error). (4) If neither `this()` nor `super()` is present, compiler inserts `super()` implicitly.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I use this() for constructor chaining within the same class — it must be the first statement. This avoids code duplication when multiple constructors share common initialization logic. The most specific constructor does the actual work, and simpler constructors delegate to it with default values."
 
 ### 💻 Code Example
@@ -187,7 +187,7 @@ Method Resolution at Runtime:
 
 The JVM uses the **actual object type** (not reference type) to determine which method to call. This is dynamic dispatch / late binding. `@Override` annotation is optional but recommended — it catches typos at compile time.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Method overriding lets a subclass provide a specific implementation of a method defined in its parent. The key is same name, same parameters, and same or covariant return type. At runtime, JVM uses the actual object type to decide which version to call — that's dynamic polymorphism. I always use @Override annotation to catch mistakes at compile time."
 
 ### 💻 Code Example
@@ -251,7 +251,7 @@ super usage:
 
 If a constructor doesn't explicitly call `super()` or `this()`, the compiler inserts `super()` (no-arg) automatically. If the parent has no no-arg constructor, you **must** explicitly call `super(args)`.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "super refers to the immediate parent class. I use it in two ways: super() in constructors to invoke the parent constructor — which must be the first statement — and super.method() to call the parent's version of an overridden method. It's essential when the subclass needs to extend parent behavior rather than replace it entirely."
 
 ### 💻 Code Example
@@ -369,7 +369,7 @@ When to use which:
 
 From Java 8, interfaces can have `default` and `static` methods. From Java 9, `private` methods in interfaces. This narrowed the gap but abstract classes still hold state (instance fields) and constructors.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "The fundamental difference is that abstract classes can hold state — instance fields, constructors, any access modifier — while interfaces define contracts. Abstract classes support single inheritance; interfaces support multiple. Since Java 8, interfaces can have default and static methods, but they still can't have instance state. I use abstract classes when I need shared state or template method pattern, and interfaces when I want to define a capability that unrelated classes can implement."
 
 ### 💻 Code Example
@@ -426,7 +426,7 @@ Java Platform Independence:
 
 The bytecode is the key — it's an intermediate format that any JVM can understand. The JVM itself is platform-dependent (different JVM for each OS), but the bytecode is platform-independent.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Java achieves platform independence through bytecode. The compiler produces .class files containing bytecode — a platform-neutral intermediate format — not native machine code. This bytecode runs on any platform that has a JVM. The JVM is platform-dependent, but the bytecode isn't. So I compile once on Windows, and the same .class file runs on Linux or macOS without recompilation."
 
 ### ⚡ Remember

@@ -1,6 +1,6 @@
 # 🏗️ OOP Principles — 4 Pillars + SOLID (Q1)
 
-> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Interview Script → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
+> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Answering Approach → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
 
 ---
 
@@ -58,7 +58,7 @@ SOLID in Action:
   DIP: Controller depends on Service interface, not ServiceImpl
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "OOP has four pillars. Encapsulation bundles data and methods together and controls access through visibility modifiers — I keep fields private and expose behavior through methods, so internal representation can change without breaking callers. Inheritance enables code reuse through IS-A relationships — a Dog extends Animal and inherits common behavior. Polymorphism means the same method call can behave differently — at compile time through overloading (different parameter types) and at runtime through overriding (subclass provides its own implementation). Abstraction hides complexity behind interfaces or abstract classes — my service depends on a PaymentGateway interface, not on Stripe or PayPal directly.
 
 For SOLID: Single Responsibility means each class has one job — UserService manages users, not users AND emails. Open/Closed means I can add new functionality by extending, not modifying existing code — this is where the Strategy pattern shines. Liskov Substitution says if I replace a parent with its subclass, the program should still work correctly — the classic violation is Square extending Rectangle. Interface Segregation means I shouldn't force classes to implement methods they don't use — split fat interfaces into focused ones. Dependency Inversion means high-level modules depend on abstractions, not concrete implementations — this is the foundation of Spring's DI."

@@ -2,7 +2,7 @@
 
 > **Audience**: All levels | Interview essentials for Angular roles
 > **Focus**: Component structure, services, DI, lifecycle, communication, testing
-> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Interview Script → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
+> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Answering Approach → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
 
 ---
 
@@ -41,7 +41,7 @@ Component Tree:
       └── FooterComponent
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "An Angular component is the basic building block of the UI. It's a TypeScript class decorated with `@Component` that binds together three things — an HTML template for the view, a class for the logic, and CSS for styling. Each component has a selector that turns it into a custom HTML tag. For example, I create a `UserCardComponent` with selector `app-user-card` — then I can use `<app-user-card>` anywhere in my templates. Angular apps are essentially a tree of components — the root `AppComponent` contains child components like Header, Sidebar, and Main, which themselves contain further children. This composition pattern makes the app modular, testable, and reusable."
 
 ### 💻 Code
@@ -115,7 +115,7 @@ Without Services:                With Services:
 └──────────────┘                                  └─────────┘
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "A service in Angular is a class decorated with `@Injectable` that holds business logic and API communication. The key principle is separation of concerns — components should only handle the view and user interaction, while services handle everything else. For example, a `UserService` would contain methods like `getUsers()`, `createUser()`, `deleteUser()` — all using `HttpClient`. Multiple components can inject the same service and share data. If the service is `providedIn: 'root'`, Angular creates a single instance for the whole app — this singleton pattern is perfect for shared state like authentication or a shopping cart."
 
 ### 💻 Code
@@ -195,7 +195,7 @@ Testing:
   ✅ GOOD: Component test just mocks UserService → simple, fast
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Calling APIs directly in components violates the Single Responsibility Principle. The component's job is to manage the UI — displaying data, handling user interactions, template rendering. When I put HTTP calls in a component, I'm mixing concerns. If three components need the same user data, I'd have three copies of the same `http.get()` call with the same URL, headers, and error handling. If the API changes — say the URL moves from v1 to v2 — I have to update every component. With a service, I write the API call once, inject the service everywhere, and all components share the same implementation. Testing also becomes much simpler — in component tests, I just provide a mock service instead of setting up HttpClientTestingModule."
 
 ### 🆚 vs.
@@ -249,7 +249,7 @@ Four patterns: (1) **@Input()** — parent binds data to child's input property.
    this.child.refresh();  // call child's method
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "There are four main patterns. For parent-to-child, I use `@Input()` — the parent component binds a value in its template, and the child receives it as an input property. For child-to-parent, I use `@Output()` with `EventEmitter` — the child emits an event when something happens, like a button click, and the parent listens with event binding syntax using parentheses. For sibling or completely unrelated components, I use a shared service with a `BehaviorSubject` — one component pushes data into the subject, and any subscribing component receives updates reactively. The fourth option is `@ViewChild` where the parent gets a direct reference to the child component instance — but I prefer the reactive approach with services for loose coupling."
 
 ### 💻 Code
@@ -351,7 +351,7 @@ Injector Hierarchy:
           Each level can provide/override services
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Dependency Injection in Angular is a core pattern where the framework manages object creation and lifecycle. Instead of a component creating its own dependencies with `new UserService()`, it simply declares what it needs in its constructor — `constructor(private userService: UserService)`. Angular's injector resolves this dependency, creates an instance if one doesn't exist, and passes it in. The service is registered with `@Injectable({ providedIn: 'root' })` which tells Angular to create a single app-wide instance. This gives us loose coupling — the component doesn't know how the service is created — and easy testing — I can provide a mock service in tests. Angular has a hierarchical injector system: root injector, module injector, and element injector — each level can provide or override services for different scopes."
 
 ### 💻 Code
@@ -430,7 +430,7 @@ Component:                         Service:
      Uses services ──────────────────→
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "The key difference is responsibility. A component is responsible for the UI — it has an HTML template, CSS styles, and a TypeScript class that handles user interactions and data binding. It's decorated with `@Component` and has lifecycle hooks like `ngOnInit` and `ngOnDestroy` that are tied to the DOM. A service is responsible for business logic — it's decorated with `@Injectable`, has no template, and contains API calls, data transformation, and shared state. The separation follows the Single Responsibility Principle: the component asks 'what to display and how to interact', while the service answers 'where to get data and how to process it'. A component consumes services via dependency injection."
 
 ### 🆚 vs.
@@ -485,7 +485,7 @@ Why it works:
   Every component resolves from this injector → same instance
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "When I set `providedIn: 'root'`, Angular registers the service in the application's root injector. This means there's exactly one instance created when the service is first injected anywhere in the app. Every component, directive, or other service that requests it via constructor injection gets the same instance — it's a singleton. This is ideal for services like authentication, shopping cart, or application settings where you need shared state across the entire app. An added benefit is tree-shaking — if no component actually injects the service, Angular's build process removes it from the final bundle, reducing app size."
 
 ### 💻 Code
@@ -555,7 +555,7 @@ Injector hierarchy:
       └── CounterComponent #3 ← providers: [CounterService] → instance #3
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "If I need each component to have its own service instance, I add the service to the component's `providers` array instead of using `providedIn: 'root'`. For example, if I have a counter component and I want each counter on the page to maintain its own count independently, I provide `CounterService` at the component level. Every time Angular creates a new counter component, it also creates a fresh `CounterService` instance. The lifecycle of that service is tied to the component — when the component is destroyed, the service instance is garbage collected. This is useful for form state, local filters, or any component that needs isolated data context."
 
 ### 💻 Code
@@ -639,7 +639,7 @@ Component Lifecycle (execution order):
   ngOnDestroy()          ← Component removed — CLEANUP HERE!
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Angular components have a lifecycle managed by the framework. After the constructor runs for DI, `ngOnChanges` fires first — it runs whenever an `@Input` property changes, including the initial binding. Then `ngOnInit` runs once — this is where I do initialization logic like API calls, because by this point all `@Input` values are available. `ngAfterViewInit` fires after the component's view and child views are fully initialized — I use this for DOM manipulations or accessing `@ViewChild` references. During the component's life, change detection cycles trigger `ngDoCheck`, `ngAfterContentChecked`, and `ngAfterViewChecked` repeatedly. Finally, `ngOnDestroy` fires when the component is about to be removed from the DOM — this is critical for cleanup: unsubscribing from Observables, clearing intervals, detaching event listeners to prevent memory leaks."
 
 ### 💻 Code
@@ -747,7 +747,7 @@ Integration Test:
   Tests wiring works
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Services are a testing enabler. When I separate API calls into a service, I can test the component and service independently. For component tests, I create a mock service using `jasmine.createSpyObj` or a simple stub object. I configure TestBed to provide the mock instead of the real service — now the component test has zero dependency on HTTP, databases, or external APIs. The test runs instantly and deterministically. I test things like 'does the component render the user list?', 'does clicking delete emit the right event?' — pure UI logic. Separately, I test the service with `HttpClientTestingModule` where I verify it calls the right URLs, sends correct payloads, and transforms responses properly. This separation follows the testing pyramid — many fast unit tests, fewer integration tests."
 
 ### 💻 Code

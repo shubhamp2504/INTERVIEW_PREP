@@ -32,7 +32,7 @@ Parallel stream (difference appears):
 
 **Encounter order**: defined by the source — `List` has encounter order (index-based), `HashSet` does NOT. For unordered sources, `findFirst()` and `findAny()` behave similarly. **Performance**: in parallel streams, `findFirst()` forces the framework to coordinate across threads to respect ordering → overhead. `findAny()` has no such constraint → each thread can independently return a result.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Both findFirst and findAny are short-circuiting terminal operations that return an Optional. In sequential streams, there's no practical difference — both return the first element. The distinction matters in parallel streams. findFirst guarantees the first element in encounter order, which requires thread coordination and reduces parallelism. findAny returns whichever element any thread discovers first, with no ordering guarantee, allowing maximum parallel performance. I use findFirst when I need a deterministic result — like the first matching record chronologically. I use findAny when any match is acceptable — like checking if any user has a specific role — especially in parallel processing."
 
 ### 💻 Code Example

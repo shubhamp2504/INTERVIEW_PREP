@@ -42,7 +42,7 @@ Feign Client Flow:
 
 **Why not raw Feign in production?** The defaults are development-friendly but production-dangerous: no timeouts (infinite wait), no connection pooling (new connection per request), basic error handling. Must configure: (1) Apache HttpClient 5 backend for connection pooling, (2) explicit connect/read timeouts, (3) Resilience4j circuit breaker + retry, (4) custom ErrorDecoder for meaningful error propagation.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Feign Client is a declarative HTTP client from Spring Cloud where I define an interface annotated with @FeignClient and standard Spring MVC annotations — Spring generates the proxy implementation at runtime. It integrates with service discovery, so I reference the service name instead of hardcoding URLs. It's very clean and readable compared to manual RestTemplate calls. However, out of the box, Feign has production concerns. It's synchronous and blocking — each call holds a thread until the response arrives, which can exhaust the thread pool under load. The default HTTP client has no connection pooling, so I always swap in Apache HttpClient. I must explicitly set connect and read timeouts — the defaults are infinite. And I wrap Feign calls with Resilience4j for circuit breaking and retry. For reactive microservices, I prefer WebClient since Feign doesn't support non-blocking I/O."
 
 ### 💻 Code Example
@@ -201,7 +201,7 @@ Thread 2: ←── response callback ──── process response ────
 
 **Thread efficiency**: with RestTemplate, 100 concurrent downstream calls need 100 threads (all blocked waiting). With WebClient, 100 calls can be handled by ~4 threads (event loop). **Backpressure**: WebClient with reactive streams supports backpressure — downstream can signal how much data it can handle. **Spring Boot 3.2+ RestClient**: new synchronous HTTP client with fluent API (modern replacement for RestTemplate in non-reactive apps). Use `WebClient` for reactive, `RestClient` for synchronous.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "RestTemplate is the traditional synchronous HTTP client — it blocks the calling thread until the downstream service responds. This means 200 concurrent API calls need 200 threads, all idle during I/O. WebClient from Spring WebFlux is non-blocking — the calling thread is released back to the pool while waiting for the response, and a callback processes the response when it arrives. This is significantly more efficient under high concurrency. With RestTemplate, thread pool exhaustion is a real risk when a downstream service is slow. WebClient avoids this entirely. Even in non-reactive applications, I now use WebClient or the newer RestClient from Spring Boot 3.2 as a RestTemplate replacement, since RestTemplate is in maintenance mode. For reactive microservices, WebClient is essential — it returns Mono and Flux types that integrate with the reactive pipeline."
 
 ### 💻 Code Example

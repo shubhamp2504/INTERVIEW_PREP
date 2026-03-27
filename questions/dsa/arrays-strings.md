@@ -20,7 +20,7 @@ Given a string `s`, return the **minimum number of character deletions** to make
 **Time**: O(n) for counting + O(26²) worst case for resolving conflicts = O(n)  
 **Space**: O(1) — at most 26 frequencies
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I first count the frequency of each character. Then I iterate through the frequencies and greedily resolve conflicts — if a frequency is already used, I keep decrementing it until I find one that's free or reach zero. Each decrement represents one deletion. I use a HashSet to track which frequencies are already taken. The key insight is greedy works because reducing a frequency always costs exactly 1 deletion per step, and we want to minimize total deletions."
 
 ### 💻 Code
@@ -151,7 +151,7 @@ Given string `s`, find the length of the **longest substring** without repeating
 **Time**: O(n)  
 **Space**: O(min(n, 26)) = O(1) for lowercase letters
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I use a sliding window with two pointers. I expand the right pointer and store each character's last-seen index in a HashMap. When I encounter a character that's already in the current window, I move the left pointer to one past its previous occurrence. At each step, I update the max length as right - left + 1. This gives O(n) time because each character is processed at most twice."
 
 ### 💻 Code
@@ -223,7 +223,7 @@ You have a row of trees, each with a fruit type `fruits[i]`. You have **2 basket
 **Time**: O(n)  
 **Space**: O(1) — at most 3 keys in map
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "This is the 'longest subarray with at most K distinct elements' pattern where K=2. I expand the right pointer, adding each fruit type to a frequency map. When the map has more than 2 distinct types, I shrink from the left — decrementing counts and removing types that hit zero — until I'm back to 2 types. The answer is the maximum window size seen."
 
 ### 💻 Code
@@ -292,7 +292,7 @@ Given a function `knows(a, b)` → true if `a` knows `b`, find the celebrity or 
 **Time**: O(n) — (n-1) comparisons to find candidate + 2(n-1) to verify  
 **Space**: O(n) for stack
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I use a stack-based elimination approach. First, I push all n people onto a stack. Then I repeatedly pop two people and compare — if A knows B, A can't be the celebrity so I push B back; if A doesn't know B, B can't be the celebrity so I push A back. After n-1 comparisons, one candidate remains. But this only gives a candidate — I must verify with a full pass to confirm everyone knows them and they know nobody. Total: O(n) time with 3(n-1) knows() calls at most."
 
 ### 💻 Code

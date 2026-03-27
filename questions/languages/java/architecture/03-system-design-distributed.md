@@ -1,6 +1,6 @@
 # 🏗️ System Design & Distributed Architecture (Q1, Q5, Q9, Q12)
 
-> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Interview Script → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
+> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Answering Approach → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
 
 ---
 
@@ -808,7 +808,7 @@ True Microservices:                    Distributed Monolith:
   can fail alone  can fail alone         cascade failures
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "When someone tells me their architecture is microservices, I ask four questions: Can each service be deployed independently? Does each own its data store? Can one service degrade gracefully if another is down? Can separate teams work without coordinating releases? If any answer is no, it's likely a distributed monolith — you have the complexity of a distributed system without the benefits of microservices. The most common anti-pattern I've seen is a shared database — three services reading from the same tables. Any schema change requires coordinating all three. Another red flag is synchronous call chains — Order → Payment → Inventory → Shipping all synchronous. If Shipping is slow, the entire order flow times out. True microservices communicate via async events, own their data, and use patterns like circuit breakers and bulkheads for fault isolation. I'm not saying every team needs microservices — a well-designed modular monolith is often better than a poorly-designed distributed system."
 
 ### 💻 Code Example

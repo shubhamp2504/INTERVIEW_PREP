@@ -2,7 +2,7 @@
 
 > **Audience**: 5–9 years experience | Senior frontend / full-stack roles  
 > **Focus**: Designing scalable solutions for real-world Angular scenarios  
-> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Interview Script → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
+> 📝 One-Liner → 🔑 Quick Answer → 📖 How It Works → 🗣️ Answering Approach → 💻 Code → ⚠️ Pitfalls → 🆚 vs. → 🎯 Tricky Qs → ⚡ Remember → 🔗 Follow-ups
 
 ---
 
@@ -33,7 +33,7 @@ Login → AuthService stores user role → Menu component filters config:
 Even if MANAGER types /users manually → RoleGuard blocks → redirect to /unauthorized
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I define a centralized menu configuration — each item has a title, route path, and a roles array listing which roles can access it. A single route like Dashboard can be accessible by ADMIN, USER, and MANAGER — all three roles. On the UI side, I inject AuthService into my sidebar/nav component and filter the menu array at render time — only items whose roles array includes the current user's role are shown. For the actual route protection, I implement a `CanActivate` guard that reads the required roles from the route's `data` property and checks against the logged-in user's role. This gives me two layers of security — UI-level filtering for clean UX and guard-level enforcement to prevent URL tampering. I keep the menu config in a separate constant file or even fetch it from the backend for more dynamic setups."
 
 ### 💻 Code Example
@@ -174,7 +174,7 @@ Stepper (parent) controls navigation:
   submit()    → formService.form.value has all data
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "For a multi-step form, I create a shared FormService that builds one top-level `FormGroup` containing nested `FormGroup`s — one per step. Each step component injects this service and binds only to its own sub-group using `formService.form.get('personal')`. This way, when Step 1 fills in the name and email, navigating to Step 2 doesn't lose the data because it all lives in the same form instance inside the service. The stepper parent component controls navigation — before allowing 'Next', it checks if the current step's sub-group is valid. On final submit, I read `formService.form.value` which gives me the complete object across all steps. I prefer the service approach over passing forms via `@Input` because it scales better — if tomorrow we add a step or rearrange them, we just update the service. For very complex wizards, I might even lazy-load step components, and they all still point to the same service."
 
 ### 💻 Code Example
@@ -343,7 +343,7 @@ HTTP Interceptor:
   401 response → try refresh token → if fails → logout
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "My approach is three layers. First, I implement an `AuthInterceptor` that attaches the JWT token as a Bearer header on every HTTP request — and handles 401 responses by attempting a token refresh. Second, for route-level protection, I use a `RoleGuard` that implements `CanActivate`. It reads the required roles from `route.data['roles']` and checks against the current user's roles from `AuthService`. If the user doesn't have the required role, the guard redirects to an unauthorized page. Third, for element-level access — hiding buttons, sections, or links based on roles — I create a structural directive `*appHasRole`. It works like `*ngIf` but checks roles. The directive injects `AuthService`, takes an array of allowed roles as input, and uses `ViewContainerRef` to create or clear the template. This is important because just using `[hidden]` or CSS would leave the element in the DOM — a developer could inspect and interact with it. The structural directive removes it entirely. But I always emphasize — all this is UX polish. Real authorization must happen on the backend."
 
 ### 💻 Code Example
@@ -480,7 +480,7 @@ User Switch (impersonation):
     → "Exit impersonation" button visible to return to original
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "For role switching, I design the AuthService with a `BehaviorSubject` for the active role. When the user logs in, I decode the JWT to get their available roles array and set the first one as active. The UI shows a role-switcher dropdown — when they select a different role, I call `switchRole()` which pushes the new value into the BehaviorSubject. Because the menu component, the `*appHasRole` directive, and all other consumers subscribe to this observable, they reactively update without any page reload. For user switching — like an admin impersonating another user — that's a backend operation. I send a request to an impersonation endpoint, which returns a new scoped token for that user. I store both the original admin token and the impersonation token so the admin can 'exit impersonation' and return to their session. This is important for audit trails — the backend should log that admin X is acting as user Y."
 
 ### 💻 Code Example
@@ -596,7 +596,7 @@ Why Renderer2?
   - Renderer2 → framework-safe, works with Angular Universal, sanitized
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I create an attribute directive called `appTooltip` that handles both simple text and complex template-based tooltips. The input type is `string | TemplateRef<any>` — at runtime I check `instanceof TemplateRef` to decide the rendering strategy. On `mouseenter`, if it's a string, I use `Renderer2.createElement('div')` to create a tooltip div, set its text, calculate position using `getBoundingClientRect()` of the host element from `ElementRef`, and append it to the document body using `Renderer2.appendChild`. If it's a `TemplateRef`, I use `ViewContainerRef.createEmbeddedView()` to instantiate the template and position its root element similarly. On `mouseleave`, I clean up — either `removeChild` for string or `viewContainer.clear()` for template. I use `Renderer2` throughout because directly manipulating the DOM with `innerHTML` or `document.createElement` is not safe — it's an XSS vector and breaks server-side rendering with Angular Universal."
 
 ### 💻 Code Example
@@ -754,7 +754,7 @@ Navigation:
   router.navigate([{ outlets: { primary: 'dashboard', sidebar: 'notifications' } }])
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Named router outlets let me render components in different sections of the page independently. For example, in a dashboard with a main content area and a side panel, I place `<router-outlet>` for the main content and `<router-outlet name='sidebar'>` for the side panel. I define routes targeting the sidebar outlet using `{ path: 'notifications', component: NotificationsComponent, outlet: 'sidebar' }`. When a user clicks a notification icon, I navigate to `{ outlets: { sidebar: 'notifications' } }` — only the sidebar panel updates while the main content stays. The URL becomes `/dashboard(sidebar:notifications)`, which is bookmarkable. This is great for multi-pane UIs — like Gmail's email list + preview pane, or a dashboard with detail panels. For simpler cases where I just need dynamic rendering in a fixed area, I might use `*ngComponentOutlet` or a `ViewContainerRef` approach instead of named outlets."
 
 ### 💻 Code Example
@@ -859,7 +859,7 @@ With Facade:
     └── combineLatest() / forkJoin() → single observable
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "A facade service is a design pattern where I create an intermediate service layer between components and the complex backend services or state management. Instead of a component injecting UserService, OrderService, NotificationService, and AnalyticsService — then orchestrating `combineLatest` and error handling — I create a `DashboardFacade` that does all this internally and exposes one clean `getDashboardData$()` observable. The component becomes purely a UI renderer — it subscribes to one observable and binds data. This has three big advantages: first, components stay simple and testable — I mock one facade instead of five services. Second, if I refactor from REST to GraphQL or switch to NgRx, only the facade changes — components don't know. Third, it centralizes business logic orchestration — things like 'load user, then load their orders, then track analytics' don't get scattered across multiple components."
 
 ### 💻 Code Example
@@ -986,7 +986,7 @@ Smart (Container)                    Dumb (Presentational)
   - State management                 - Nothing about "where"
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I follow the smart/dumb component pattern strictly for any non-trivial UI. Smart components — I also call them container components — are responsible for data. They inject services, subscribe to observables, handle errors, and manage routing. They don't have complex templates. Dumb components — presentational components — receive everything through `@Input` and communicate back through `@Output` events. They never inject services. This separation gives me three benefits: first, dumb components are highly reusable — a `UserCardComponent` works in a list page, a dashboard, a search result — anywhere. Second, testing is dramatically easier — dumb components just need mock inputs and verify outputs, no service mocking. Third, I set `changeDetection: OnPush` on all dumb components, which improves performance because Angular only re-renders them when their inputs change by reference. The smart component handles the subscribe/unsubscribe lifecycle, and the dumb components are pure functions of their inputs."
 
 ### 💻 Code Example
@@ -1127,7 +1127,7 @@ Multi-Slot:
     </div>
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Content projection with `ng-content` is how I build truly reusable wrapper components. Take a card component for example — I don't want to hardcode its content. Instead, I define slots using `ng-content`. For a simple card, one slot is enough — whatever the parent puts between `<app-card>` tags appears inside. For a more flexible card with header, body, and footer sections, I use multi-slot projection — `<ng-content select='[header]'>`, a default `<ng-content>`, and `<ng-content select='[footer]'>`. The parent marks its content with attributes like `header` or `footer`, and Angular projects them into the right slot. The `select` attribute supports CSS selectors — element names, classes, attributes, even complex selectors like `select='app-card-header'`. One key thing — `ng-content` doesn't create a new scope or component instance; it's literally moving the parent's DOM into the child's template at compile time. For cases where I need to conditionally render projected content — like only showing the footer if content was actually provided — I use `@ContentChild` to check if content exists."
 
 ### 💻 Code Example
@@ -1281,7 +1281,7 @@ Flow:
     → form.valid updates
 ```
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "`ControlValueAccessor` is the interface that makes a custom component compatible with Angular forms. It's the bridge between the form API and the component's internal state. When I build a reusable phone input or a rating stars component, I implement four methods: `writeValue` which Angular calls when the form sets a value programmatically — here I update my internal model. `registerOnChange` gives me a callback function that I call whenever the user changes the value in my component — this propagates the new value back to the `FormControl`. `registerOnTouched` is similar but for the blur event — I call it when the user interacts and leaves the component. And `setDisabledState` lets me toggle disabled styling. I register the component as a `NG_VALUE_ACCESSOR` multi-provider using `forwardRef` because the class isn't defined yet at provider registration time. After this, `<app-phone-input formControlName='phone'>` works exactly like a native input — validators, value access, touched state — everything just works."
 
 ### 💻 Code Example

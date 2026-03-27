@@ -29,7 +29,7 @@ Under the hood:
 
 **When you'd still use `@Controller`**: (1) Server-side rendered pages (Thymeleaf, JSP). (2) Hybrid apps where some endpoints return views AND some return JSON — use `@Controller` class-level + selective `@ResponseBody` on JSON methods. (3) Redirect/forward scenarios (`"redirect:/login"`). **Why `@RestController` for APIs**: (1) Every method auto-serializes — no noisy `@ResponseBody` everywhere. (2) Makes intent crystal clear — this class serves REST endpoints. (3) Content negotiation still works — Jackson for JSON, JAXB for XML based on `Accept` header.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I chose @RestController because this project is a pure REST API — every endpoint returns JSON, never a view template. @RestController combines @Controller and @ResponseBody, so every method's return value is automatically serialized to JSON by Jackson. If I used @Controller, I'd have to add @ResponseBody on every single method, which is just noise. The only time I'd use @Controller is if I had a server-side rendered UI with Thymeleaf or needed hybrid endpoints that return both views and JSON. Since this is a microservice with only REST endpoints, @RestController is the natural and clean choice."
 
 ### 💻 Code Example
@@ -156,7 +156,7 @@ WITH DTOs (good):
 
 **DTO mapping approaches**: (1) **Manual mapping** — constructor or static factory in DTO (`UserDTO.from(User entity)`). (2) **MapStruct** — compile-time code generation, zero reflection. (3) **ModelMapper** — reflection-based auto-mapping (slower). (4) **Spring Data Projections** — interface/class projections in repository queries (DTO at query level → no entity created). **In my project**: I use MapStruct for complex mappings and manual constructors for simple DTOs. For read-heavy endpoints, I use Spring Data projections to build DTOs directly from queries — no entity materialization.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I never return entities from REST endpoints — I always use DTOs. There are four main reasons. First, security: entities might have sensitive fields like password hash or internal audit flags that shouldn't be in an API response. DTOs expose only what the client needs. Second, decoupling: if I return the entity directly, my API contract is tied to my database schema. Any column rename or new field breaks the API. DTOs give me a buffer. Third, performance: the entity might have 20 fields and lazy associations; the API only needs 5 fields. DTOs prevent over-fetching and avoid LazyInitializationException. Fourth, versioning: I can create UserV1DTO and UserV2DTO while the entity stays the same. For mapping, I use MapStruct which generates code at compile time — zero runtime overhead."
 
 ### 💻 Code Example
@@ -309,7 +309,7 @@ MethodArgumentNotValidException thrown
 
 **Validation layers**: (1) **Controller layer** (`@Valid`) — format, presence, size. (2) **Service layer** — business rules (e.g., "email must be unique"). (3) **Database layer** — constraints as last safety net. **Nested validation**: `@Valid` on a nested object triggers recursive validation. **Groups**: `@Validated(OnCreate.class)` for different validation sets per operation. **Custom validators**: implement `ConstraintValidator<A, T>` for complex rules.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I use @Valid on all request DTOs at the controller level because it's the first line of defense — I want to reject bad input immediately, before it reaches the service layer or database. The annotations on the DTO serve double duty: they validate AND document the contract. For example, @NotBlank on name means 'required, non-empty' — anyone reading the DTO immediately understands the constraint. When validation fails, Spring throws MethodArgumentNotValidException, which my global @ControllerAdvice catches and converts to a structured 400 response with field-level error messages. Without this, bad data would either hit the database and throw a cryptic constraint violation, or I'd need manual if-else checks in every controller method. Bean Validation makes it declarative, reusable, and standard."
 
 ### 💻 Code Example
@@ -479,7 +479,7 @@ Client → Request → Enqueue work → 202 Accepted (instant)
 
 **Async patterns in Spring Boot**: (1) **`@Async` + `CompletableFuture`** — simplest, thread pool managed by Spring. (2) **Message queue (Kafka/RabbitMQ)** — durable, survives restarts, distributed. (3) **`WebClient` reactive calls** — non-blocking HTTP calls to external services. (4) **`DeferredResult` / `Callable`** — servlet-level async (frees Tomcat thread but still blocks a worker). **My project uses**: `@Async` for lightweight background tasks (email, notifications). Kafka for heavy processing (report generation, data sync). WebClient for non-blocking inter-service HTTP calls.
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "I made this endpoint async because it triggers a long-running operation — like sending a confirmation email or generating a PDF report — and the client doesn't need the result in the same response. If I kept it synchronous, the Tomcat thread would be blocked for seconds, and with only 200 default threads, we'd quickly run out under load. Instead, the endpoint validates the request, enqueues the work, and returns 202 Accepted immediately with a job ID. The client can poll a status endpoint if needed. For lightweight background tasks I use @Async with a custom thread pool. For heavier, durable work like report generation, I publish to Kafka so the work survives even if the server restarts. The key decision factor is: does the client need the result right now? If no, go async."
 
 ### 💻 Code Example

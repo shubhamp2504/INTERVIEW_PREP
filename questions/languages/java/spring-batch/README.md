@@ -17,7 +17,7 @@ Each question follows a **10-section pattern** (not all sections appear for ever
 | 📝 | **One-Liner** | 1-sentence summary for last-minute revision |
 | 🔑 | **Quick Answer** | 30-second spoken answer + *(Hindi layman brackets)* |
 | 📖 | **How It Works** | Deep explanation + diagrams + *(Hindi for hard concepts)* |
-| 🗣️ | **How to Say in Interview** | English-only interview script + "In my project..." |
+| 🗣️ | **How to Say in Interview** | English-only Answering Approach + "In my project..." |
 | 💻 | **Code** | Working example + Hindi comments where tricky |
 | ⚠️ | **Pitfalls / Gotchas** | Common mistakes + *(Hindi warnings)* |
 | 🆚 | **vs. Comparison** | Only when relevant (~50% of questions) |
@@ -29,7 +29,7 @@ Each question follows a **10-section pattern** (not all sections appear for ever
 - Romanized Hindi in **English letters** (NOT Devanagari)
 - In *italics*, 5-10 words max
 - Only for **hard/confusing concepts** (not for simple things)
-- **NOT** in the Interview Script section (that's English-only)
+- **NOT** in the Answering Approach section (that's English-only)
 
 ---
 
@@ -95,7 +95,7 @@ Each question follows a **10-section pattern** (not all sections appear for ever
 | 🏁 **Last 1 Hour** | Scan all **📝 One-Liner** sections | Quick revision of all 125 Qs |
 | 📅 **Day Before** | Read all **🔑 Quick Answer** + **⚡ Remember** | 30-sec answers ready |
 | 📆 **Week Before** | Study **📖 How It Works** + **💻 Code** | Deep understanding |
-| 🗣️ **During Interview** | Use **🗣️ Interview Script** sections | Polished delivery |
+| 🗣️ **During Interview** | Use **🗣️ Answering Approach** sections | Polished delivery |
 
 ---
 

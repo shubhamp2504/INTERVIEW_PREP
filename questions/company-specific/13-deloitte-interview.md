@@ -48,7 +48,7 @@ Benefits: Independent scaling, technology flexibility, security isolation
 <a id="q3"></a>
 ## Q3. Have you been involved in any architecture-level decisions?
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "Yes — I was involved in the decision to migrate from WebLogic to a containerized deployment on Kubernetes. The main drivers were cost (WebLogic licensing), agility (faster deployments), and scalability. I evaluated the migration path — containerizing the JEE application, replacing WebLogic-specific features with Spring Boot equivalents, and setting up K8s manifests. I also participated in deciding the caching strategy when we introduced Redis as a session store to make our application stateless for horizontal scaling."
 
 ### ⚡ Remember
@@ -147,7 +147,7 @@ Thread Lifecycle:
 <a id="q10"></a>
 ## Q10. If a new technology is introduced in your project, how would you approach learning and adopting it?
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "My approach is structured: First, I'd understand the WHY — what problem does this technology solve that our current stack doesn't? Then I'd start with official documentation and a proof-of-concept in a sandbox. I'd identify risks and limitations early. For team adoption, I'd create a knowledge-sharing session, document setup guides, and pair-program with team members. I'd advocate for a phased rollout — start with a non-critical service, learn from that, then expand. I also subscribe to community channels and attend webinars to stay ahead of common pitfalls."
 
 ### ⚡ Remember
@@ -179,7 +179,7 @@ Thread Lifecycle:
 <a id="q12"></a>
 ## Q12. How did you handle on-prem to cloud migration?
 
-### 🗣️ Interview Script
+### 🗣️ Answering Approach
 "We followed a phased approach: First, **assess** — inventory all applications, dependencies, and infrastructure. Then **strategize** — we used the 6R framework (Rehost, Replatform, Refactor, Repurchase, Retire, Retain). For our middleware, we chose Replatform — moving from on-prem WebLogic to AWS ECS with Docker containers. We containerized the applications, set up CI/CD pipelines for automated deployment, configured VPC with private subnets for security parity, and ran parallel systems during transition. We migrated the database using AWS DMS with minimal downtime. Post-migration, we set up CloudWatch monitoring equivalent to our on-prem Dynatrace dashboards."
 
 ### ⚡ Remember
