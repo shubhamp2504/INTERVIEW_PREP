@@ -42,7 +42,7 @@ Solution → happens-before relationships:
   → FORCE visibility across threads ✅
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"The Java Memory Model defines visibility guarantees between threads. Without synchronization, a write by one thread isn't guaranteed visible to another — because each CPU core has its own cache, and the compiler can reorder instructions. JMM uses happens-before relationships: if action A happens-before action B, A's effects are guaranteed visible to B. synchronized blocks, volatile variables, and Thread.start/join create these happens-before edges."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -121,7 +121,7 @@ public class Worker implements Runnable {
 **Q: Does volatile guarantee atomicity?**
 > Only for single read/write of the variable itself. NOT for compound operations.
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"volatile ensures visibility — every write goes to main memory, every read comes from main memory, bypassing CPU cache. It also prevents instruction reordering. The classic use case is a shutdown flag. But volatile does NOT guarantee atomicity — count++ is still a race condition because it's three operations. For atomic compound operations, I use AtomicInteger or synchronized."*
 
 ### ⚡ Remember
@@ -168,7 +168,7 @@ synchronized:
   *(Synchronized = poora block lock — ek baar mein ek thread)*
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"volatile provides visibility without locking — lightweight sync for single reads/writes. synchronized provides visibility AND mutual exclusion — it ensures only one thread executes the block at a time, making compound operations atomic. I use volatile for simple state flags, and synchronized or locks when I need read-modify-write atomicity."*
 
 ### ⚡ Remember
@@ -222,7 +222,7 @@ How volatile creates happens-before:
 **Q: Does volatile only make its own variable visible?**
 > No! A volatile write makes **ALL prior writes** visible to any thread that subsequently reads that volatile variable. This is called "piggybacking on volatile". *(Sirf volatile variable nahi — usse pehle ke SAB writes visible)*
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Happens-before is the JMM's formal visibility guarantee. If A happens-before B, everything A wrote is visible when B runs. Monitor unlock happens-before the next lock — so all writes inside a synchronized block become visible to the next thread entering that block. Volatile write happens-before the next volatile read — and all writes BEFORE the volatile write become visible, not just the volatile variable. This piggybacking on volatile is a powerful pattern."*
 
 ### ⚡ Remember
@@ -286,7 +286,7 @@ public static Singleton getInstance() {
 private static volatile Singleton instance;  // prevents reordering ✅
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Instruction reordering is an optimization by JIT and CPU — they rearrange instructions as long as single-threaded semantics are unchanged. The classic bug is Double-Checked Locking without volatile: the JVM may assign the reference before completing the constructor, so another thread sees a non-null but half-constructed object. volatile inserts memory barriers that prevent this reordering."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -360,7 +360,7 @@ private static volatile boolean running = true;           // Fix 1
 - This bug is **hard to reproduce** — may work in debug mode but fail in production *(debug mein sahi, production mein galat — JIT optimize karta hai)*
 - Affects ALL primitive and reference types, not just boolean
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"The visibility problem is when one thread writes to a variable but another thread never sees the change — because modern CPUs have per-core caches. A write sits in CPU core 1's cache and never flushes to main memory. JIT makes it worse by hoisting the read out of loops. The fix is volatile — forces reads and writes through main memory. This is the number one subtle concurrency bug because it doesn't throw exceptions — the app just silently misbehaves."*
 
 ### ⚡ Remember

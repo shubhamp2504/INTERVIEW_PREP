@@ -62,7 +62,7 @@ public ThreadPoolTaskExecutor taskExecutor() {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Thread pool tuning depends on workload type. CPU-bound — I match pool size to CPU cores because more threads just add context switching waste. I/O-bound — I use the formula cores × (1 + wait/compute ratio). The queue must always be bounded — an unbounded queue causes OOM under load. I use CallerRunsPolicy for rejection — it provides natural backpressure by making the submitting thread run the task itself."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -116,7 +116,7 @@ I/O-bound (4 cores):
   *(Wait mein hai toh CPU doosre ko de do)*
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"CPU-bound tasks are computation heavy — sorting, encryption, transformation. Adding more threads than cores just adds context switching overhead. I/O-bound tasks spend most time waiting — for DB, HTTP, file I/O. Here more threads help because idle threads don't use CPU. Spring apps are typically I/O-bound — calling databases and REST APIs. I always separate CPU and I/O workloads into different pools to prevent starvation."*
 
 ### ⚡ Remember
@@ -151,7 +151,7 @@ Biggest win — Parallel I/O:
   *(Teeno API ek saath call karo — sabse slow API jitna time lagega)*
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"I use multithreading primarily for parallel I/O — calling multiple APIs or databases simultaneously cuts total latency. In a project, parallelizing three downstream service calls reduced latency from 650ms to 300ms. Second use is background processing — accept a request, return immediately, process async. For batch operations, Spring Batch with partitioned steps processes millions of records efficiently."*
 
 ### ⚡ Remember
@@ -180,7 +180,7 @@ Biggest win — Parallel I/O:
 - Heavy lock contention = **worse** than single thread *(sab threads lock ka wait kar rahe — ek se bhi slow)*
 - Concurrent bugs are **10x harder to debug** *(multi-thread bug dhundhna bahut mushkil)*
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"I avoid multithreading when tasks are inherently sequential. Also when the task is fast — threading overhead exceeds the benefit. Heavy shared state is a red flag — if all threads synchronize on the same lock, performance is worse than single-threaded due to contention. Concurrent code is 10x harder to debug, so if single-threaded meets performance requirements, I prefer that."*
 
 ### ⚡ Remember
@@ -236,7 +236,7 @@ private static final ThreadLocal<SimpleDateFormat> df =
 String date = df.get().format(new Date());  // each thread gets own instance
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Biggest gain is reducing lock contention. Minimize synchronized scope — lock only the mutation, not preparation or logging. Use lock-free structures — ConcurrentHashMap over synchronized HashMap, LongAdder over AtomicLong for high-contention counters. ThreadLocal for per-thread non-thread-safe objects. And batch I/O — instead of per-record DB inserts, batch 1000 at a time."*
 
 ### 🎯 Tricky Interview Qs
@@ -287,7 +287,7 @@ Fix with padding:
 Java 8+: @Contended annotation (JVM handles padding)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"False sharing is a hardware-level problem. CPUs transfer data in 64-byte cache lines. If two threads on different cores modify different variables that happen to be on the same cache line, each write invalidates the entire line for the other core. The fix is padding — add dummy fields so they land on different cache lines. Java 8's @Contended annotation handles this automatically. LongAdder internally uses this technique in Striped64."*
 
 ### ⚡ Remember
@@ -358,7 +358,7 @@ public class StripedMap<K, V> {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Lock striping splits a single lock into multiple segment locks. ConcurrentHashMap in Java 7 used 16 segments — up to 16 threads could write simultaneously. Java 8 went further with per-bucket CAS and synchronized on the first node. I apply this concept whenever I have a large data structure with independent regions."*
 
 ### ⚡ Remember

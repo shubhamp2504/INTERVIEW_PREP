@@ -52,7 +52,7 @@ JOIN FETCH (fix N+1):
   // ONE query loads everything!
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Lazy loading defers fetching related entities until they're accessed — JPA returns a proxy that triggers a database query on first touch. Eager loading fetches everything immediately via JOIN. The key performance issue with lazy loading is the N+1 problem: loading 100 orders plus accessing each order's items generates 101 queries instead of one. The fix is using JOIN FETCH in JPQL or @EntityGraph on repository methods, which tells JPA to load the relationship in a single query only when needed. I keep the default lazy loading on entities and selectively use JOIN FETCH in specific queries where I know I need the associated data. In my project, fixing an N+1 with JOIN FETCH reduced a page load query from 230ms to 8ms."
 
 ### 💻 Code
@@ -181,7 +181,7 @@ When to use which:
   Pessimistic: Write-heavy, high contention, inventory → critical sections
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I use optimistic locking as the default strategy — adding a @Version field to the entity. JPA automatically adds a version check to every UPDATE statement. If two users read the same record and both try to update, the second one gets an OptimisticLockException because the version no longer matches. The application catches this and either retries automatically or notifies the user. For high-contention scenarios like inventory management where multiple threads decrement stock simultaneously, I use pessimistic locking with @Lock(PESSIMISTIC_WRITE) on the repository method — this acquires a row-level lock preventing concurrent access. In my project, we used optimistic locking for order updates — where conflicts are rare — and pessimistic locking for the stock count decrement during checkout."
 
 ### 💻 Code
@@ -336,7 +336,7 @@ DURABILITY (committed = permanent):
   → Server restarts → reads WAL → transfer is intact ✅
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "ACID ensures reliable transactions. In a bank transfer of 5000 rupees from A to B — Atomicity guarantees both the debit and credit happen together or neither happens; if the credit fails, the debit is rolled back. Consistency ensures the total money in the system remains unchanged — database constraints like minimum balance are enforced. Isolation means concurrent transactions don't see each other's uncommitted changes — if someone checks A's balance mid-transfer, they see the original amount until the transfer commits. Durability means once committed, the data survives crashes — databases achieve this through Write-Ahead Logging, flushing to disk before reporting success. In my project, we rely on ACID for payment processing — @Transactional on our transfer method ensures atomicity, and we use READ_COMMITTED isolation to prevent dirty reads."
 
 ### 💻 Code
@@ -463,7 +463,7 @@ Step 4: Pagination
         → Keyset pagination, O(1) with index ⭐
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "My systematic approach starts with EXPLAIN ANALYZE to understand the actual execution plan. I look for sequential scans indicating missing indexes, nested loops suggesting bad join order, and in-memory sorts. The biggest wins usually come from adding proper indexes — composite indexes on columns used together in WHERE and ORDER BY. I also check for ORM-generated N+1 queries that hit the DB hundreds of times. For large datasets, I use keyset pagination instead of OFFSET, which stays constant-time at any page depth. In my project, a customer order history query was taking 850ms — adding a composite index on (customer_id, created_at) brought it down to 2ms, a 425× improvement."
 
 ### 💻 Code

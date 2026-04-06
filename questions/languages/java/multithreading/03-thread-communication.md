@@ -31,7 +31,7 @@ With BlockingQueue (BEST):
   *(Queue handle karta hai sab — hum sirf put/take karo)*
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Inter-thread communication is how threads coordinate work. The classic mechanism is wait/notify — a thread calls wait() to release the lock and sleep until another thread calls notify(). In production, I always use BlockingQueue instead — it handles all the synchronization internally. put() blocks when full, take() blocks when empty. No manual wait/notify needed."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -147,7 +147,7 @@ WITH synchronized (CORRECT):
                                 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"wait() must be inside synchronized to prevent the 'lost wakeup' problem. Without synchronization, there's a race: the producer might call notify() between the consumer's condition check and wait() call — the signal is lost, and the consumer waits forever. synchronized ensures the check-and-wait is atomic from the signaling thread's perspective."*
 
 ### ⚡ Remember
@@ -228,7 +228,7 @@ notifyAll() solution:
   → Correct thread always picks up ✅
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"I always use notifyAll() instead of notify(). notify() wakes a random thread — if that thread's condition isn't met, the signal is effectively lost. notifyAll() wakes all threads, each re-checks its condition in a while loop, and the right one proceeds. The slight overhead of waking extra threads is negligible compared to the risk of missed signals."*
 
 ### ⚡ Remember
@@ -262,7 +262,7 @@ Buffer (capacity = 3):
   Producer: (wakes)  → [B C D]      ← ab jagah hai, daalo
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"The producer-consumer is the fundamental concurrency pattern. Producer threads put data into a shared bounded buffer, consumer threads take from it. When the buffer is full, producers wait. When empty, consumers wait. In Java, I solve this with BlockingQueue — put() blocks on full, take() blocks on empty. No manual wait/notify needed. It's the backbone of most async processing — message queues, task pipelines, event processing."*
 
 ### ⚡ Remember
@@ -368,7 +368,7 @@ executor.submit(consumer);
 | Production-ready | ❌ | ✅ ⭐ |
 | Performance | OK | Optimized |
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"In production, I always use BlockingQueue for producer-consumer. put() blocks when the queue is full, take() blocks when empty — no manual synchronization needed. I use ArrayBlockingQueue for fixed-size bounded queues with predictable memory, and LinkedBlockingQueue when I need higher throughput with separate put and take locks. The wait/notify solution is good to know for interviews, but I'd never use it in production code."*
 
 ### ⚠️ Pitfalls / Gotchas

@@ -33,7 +33,7 @@ Destination?
 
 Key difference from readers: writers receive a **List<T>** (entire chunk at once), not one item at a time. This enables batch operations.
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Spring Batch provides writers for databases, files, messaging, and NoSQL. For database writes, JdbcBatchItemWriter is the fastest because it uses JDBC batch operations — buffering SQL statements locally and sending them in one network call. JpaItemWriter is convenient when the project uses JPA entities but has ORM overhead. For multi-destination writes, CompositeItemWriter sends the same data to multiple writers, while ClassifierCompositeItemWriter routes items to different writers based on conditions. In my project, we used JdbcBatchItemWriter for the main database insert and CompositeItemWriter to also write an audit log to a separate table."
 
 ### 💻 Code
@@ -116,7 +116,7 @@ Internal flow:
 3. After all items: `executeBatch()` → sends all to DB in one call
 4. Check affected rows if `assertUpdates(true)`
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "JdbcBatchItemWriter uses JDBC's batch API — PreparedStatement.addBatch() and executeBatch(). For each item in the chunk, it sets the parameters and calls addBatch, which just buffers the statement locally without any network call. Once all items are batched, executeBatch sends everything to the database in a single network round-trip. In my project, this gave us 50x throughput improvement compared to individual inserts — processing 500K records dropped from 45 minutes to under a minute. We used beanMapped() for automatic field mapping and assertUpdates(true) to verify all rows were inserted."
 
 ### 💻 Code
@@ -231,7 +231,7 @@ ORM Overhead per entity:
 └── Flush SQL generation
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "JpaItemWriter persists entities using EntityManager.merge. It automatically handles inserts for new entities and updates for existing ones, including cascading relationships. In my project, we used it when processing Order entities with OrderItems — the cascading persist was very convenient. However, when we benchmarked it against JdbcBatchItemWriter for a high-throughput migration job, JPA was 30% slower due to dirty checking and cache management. So we used JpaItemWriter for complex domain operations and JdbcBatchItemWriter for high-throughput simple inserts."
 
 ### 💻 Code
@@ -319,7 +319,7 @@ Java Object    →    LineAggregator    →    Text File
                                         └──────────────────┘
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "FlatFileItemWriter writes items to text files. It's the writing counterpart of FlatFileItemReader. I configure it with a delimiter for CSV output, field names to extract from the Java object, and optional header and footer callbacks. In my project, we used it to generate daily reconciliation CSV files — with a header row of column names, the data rows, and a footer with record count and checksum. We also used shouldDeleteIfEmpty(true) so that if the step had no data, no empty file was created."
 
 ### 💻 Code
@@ -419,7 +419,7 @@ ClassifierCompositeItemWriter (route by condition):
 └──────────┘     └──────────────────────┘
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "CompositeItemWriter sends the same data to multiple destinations by delegating to multiple writers — useful when you need to write to a database and simultaneously create an audit file. ClassifierCompositeItemWriter uses a classification function to route each item to a different writer based on a condition. In my project, we used CompositeItemWriter to write processed payments to the main table and also to an audit log table for compliance. In another job, we used ClassifierCompositeItemWriter to route transactions — domestic payments went to one table and international payments to a separate table with different schemas."
 
 ### 💻 Code
@@ -532,7 +532,7 @@ With rewriteBatchedStatements=true (MySQL):
   → Even fewer DB-side parses
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "JdbcBatchItemWriter leverages the JDBC batch API. For each item, it sets parameters on a PreparedStatement and calls addBatch, which only buffers the statement locally in the driver — no network communication. Once all items are batched, executeBatch sends everything in a single network round-trip. In my project, this reduced 500 individual INSERT network calls to just 1, cutting our write time by 98%. We also enabled rewriteBatchedStatements=true in MySQL, which further optimized by rewriting the batch into a multi-row INSERT statement."
 
 ### 💻 Code
@@ -610,7 +610,7 @@ Decision Matrix:
 | Independent| No                | Separate Steps |
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "There are three approaches depending on the requirement. CompositeItemWriter sends the same data to multiple writers — I used this when we needed to write orders to the database and simultaneously to an audit CSV file. ClassifierCompositeItemWriter routes each item to a specific writer based on a condition — we used this to route transactions by type. For completely independent data flows, I use separate steps in the job. The key difference is that composite writers share the same chunk transaction for atomicity, while separate steps are independent."
 
 ### 💻 Code
@@ -692,7 +692,7 @@ Write Failure WITH skip (SCAN MODE):
   → Continue with next chunk
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "When a write fails, behavior depends on fault tolerance configuration. Without skip, the entire chunk rolls back and the job fails. With skip enabled, Spring Batch enters scan mode — since the writer received the entire chunk as a list, it doesn't know which specific item caused the failure. So it rolls back, then re-processes and re-writes each item individually in its own transaction. The item that fails again is skipped and logged via SkipListener, while all good items are saved. In my project, we had this for payment processing — one invalid payment in a chunk of 500 shouldn't fail the other 499. We configured skip with a SkipListener that wrote bad records to an error file for manual review."
 
 ### 💻 Code

@@ -52,7 +52,7 @@ Why parallelStream is faster for large data:
   └── Merge results → ForkJoinPool (uses all CPU cores)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "For basic benchmarks, the traditional for-loop is faster because it has zero pipeline overhead — direct array access with aggressive JIT optimization. The Stream API creates Spliterator objects, lambda instances, and pipeline stages, which adds overhead of roughly 2-5× for small collections under a thousand elements. However, the real power of Streams is parallelStream — for CPU-intensive operations on large datasets, it automatically splits work across ForkJoinPool threads and can be significantly faster than a sequential loop. In practice, the loop-vs-stream difference is microseconds while our database calls take milliseconds, so I choose Streams for readability and maintainability in most business logic. I use for-loops only in performance-critical hot paths identified by profiling."
 
 ### 💻 Code
@@ -203,7 +203,7 @@ Where transient data is NOT stored:
   └── Lost forever after serialization (unless you recompute it)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "The transient keyword tells Java's serialization mechanism to skip that field when converting an object to bytes. When we serialize a User object, non-transient fields like name and email are written to the output stream, but transient fields like password or session tokens are excluded. On deserialization, transient fields get their Java default values — null for reference types, zero for numbers. I use transient for sensitive fields that shouldn't be persisted, for non-serializable dependencies like Logger or database connections, and for derived fields that can be recomputed. It's important to note that transient only affects Java's built-in serialization — libraries like Jackson and Gson ignore it and use their own annotations like @JsonIgnore."
 
 ### 💻 Code

@@ -47,7 +47,7 @@ Real-world choices:
     → Not distributed, so partition tolerance isn't needed
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "The CAP theorem states that a distributed system can provide at most two of three guarantees: Consistency, Availability, and Partition Tolerance. Since network partitions are unavoidable in distributed systems, the practical tradeoff is between CP and AP. CP systems like ZooKeeper or HBase prioritize consistency — they may become unavailable during a partition to ensure all nodes agree on the same data. AP systems like Cassandra or DynamoDB prioritize availability — they always respond but may return stale data during partitions, achieving eventual consistency. In my projects, I choose CP for financial data where correctness is critical, and AP for read-heavy non-critical data like user activity feeds where eventual consistency is acceptable."
 
 ### ⚠️ Pitfalls / Gotchas
@@ -110,7 +110,7 @@ Read-Your-Writes:
   Other users might still see old name for a few seconds (eventual)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I choose the consistency model based on the business requirement. For financial transactions and inventory where correctness is critical, I use strong consistency — all replicas must agree before the write is acknowledged. For social media feeds or analytics dashboards, eventual consistency is sufficient — reads may be slightly stale but the system is much faster and more available. Causal consistency is useful for messaging systems where the order of cause and effect must be preserved but unrelated messages can be reordered. In practice with Cassandra, I configure consistency levels per query — writes with QUORUM for important data and reads with ONE for high-throughput analytics."
 
 ### 🆚 vs. Comparison
@@ -180,7 +180,7 @@ Architecture Patterns:
    Combines accuracy of batch with speed of streaming
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I choose architecture based on the problem. For most enterprise applications, microservices architecture — each service owns its domain, data, and lifecycle — combined with event-driven communication through Kafka for cross-service events. For data processing, master-worker pattern like Apache Spark where the driver distributes tasks to executors. For real-time analytics on massive datasets, lambda architecture combining batch processing for accuracy with stream processing for low latency. The key is to not over-architect — I start with a modular monolith and extract microservices when team boundaries and scaling requirements justify the operational complexity."
 
 ### 🆚 vs. Comparison
@@ -250,7 +250,7 @@ Quorum Table:
   Nodes: 7 → Quorum: 4 → Tolerates: 3 failures
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Consensus algorithms solve the fundamental problem of getting distributed nodes to agree on a value despite node failures and network delays. Raft is the most widely used practical consensus algorithm — it works by electing a leader who handles all client writes. The leader replicates its log to followers and waits for a majority quorum to acknowledge before committing. If the leader fails, followers detect the missing heartbeat, start an election, and a new leader is elected. The quorum requirement — a majority of nodes — ensures that committed values are never lost since any majority overlaps with the previous. In practice, I use systems built on Raft like etcd for Kubernetes coordination and Consul for service discovery, rather than implementing consensus directly."
 
 ### ⚠️ Pitfalls / Gotchas
@@ -322,7 +322,7 @@ Rebalancing problem with naive hash:
   → Massive data migration. Consistent hashing avoids this.
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Sharding distributes data across multiple database instances to scale beyond what a single node can handle. I choose the sharding strategy based on access patterns. Hash-based sharding — hash of the shard key modulo number of shards — gives even distribution but makes range queries expensive since they require scatter-gather across all shards. Range-based sharding is good for time-series data where queries are usually by date range, but it can create hot spots on the most recent shard. For production, I use consistent hashing rather than simple modulo, because adding or removing a shard only requires moving a small fraction of data instead of rehashing everything. The biggest challenges are cross-shard queries, which require coordination, and choosing the right shard key — a bad key leads to hot spots where one shard handles disproportionate load."
 
 ### ⚠️ Pitfalls / Gotchas

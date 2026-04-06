@@ -111,7 +111,7 @@ public class PaymentService {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "For observability in microservices, I implement centralized logging with the ELK stack and distributed tracing with OpenTelemetry exported to Jaeger. Every log entry is structured JSON with consistent fields including traceId and spanId — automatically injected by Micrometer Tracing. When a request enters the system, a unique traceId is generated and propagated through all service calls via HTTP headers. This lets me search for a single traceId in Kibana and see all logs across all services for that request, then switch to Jaeger to visualize the timing waterfall and identify which service is the bottleneck. In production, I sample at 10% to control storage costs, but use 100% sampling for error traces. The switch from Spring Cloud Sleuth to Micrometer Tracing gives us vendor-neutral OpenTelemetry compatibility."
 
 ### ⚠️ Pitfalls / Gotchas
@@ -242,7 +242,7 @@ public PaymentResult processPayment(PaymentRequest request) {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I instrument Spring Boot services with Micrometer, exposing metrics to Prometheus via the actuator endpoint. Micrometer is like SLF4J for metrics — a facade that supports multiple backends. I track the RED metrics — Rate, Errors, and Duration — for every service endpoint. For business metrics, I create custom counters for order counts, timers with p50/p95/p99 percentiles for processing duration, and gauges for active connections. Prometheus scrapes these endpoints every 15 seconds, stores them as time-series data, and I query with PromQL to detect anomalies. Grafana dashboards visualize these metrics with graphs and tables, and I configure alerts on thresholds like p99 latency exceeding 500ms or error rate above 1%."
 
 ### ⚠️ Pitfalls / Gotchas
@@ -383,7 +383,7 @@ receivers:
         text: '{{ .CommonAnnotations.summary }}'
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I design alerting around symptoms rather than causes — I alert on 'error rate exceeds 5%' rather than 'CPU above 80%' because high CPU might be normal during a batch job. Every alert must be actionable with a linked runbook explaining what to check and how to remediate. I use Prometheus Alertmanager for routing — critical alerts page the on-call engineer via PagerDuty, warnings go to Slack. I configure the `for` duration to avoid flapping — the condition must persist for 5 minutes before firing. Modern SLO-based alerting is even better: I define an error budget based on our SLO, and alert when we're burning through the budget faster than expected. This directly ties alerts to business impact. The biggest anti-pattern is alert fatigue — too many noisy alerts means critical ones get ignored."
 
 ### ⚠️ Pitfalls / Gotchas

@@ -1,4 +1,4 @@
-# ☕ Core Java — Interview Questions (236 Questions)
+# ☕ Core Java — Interview Questions (249 Questions)
 
 [![Last Updated](https://img.shields.io/badge/Updated-March%202026-green.svg)](#)
 
@@ -27,6 +27,7 @@
 | 17 | Java Version Features (7, 8, 11, 17) | 2 | [Go →](./17-java-versions-features.md) |
 | 18 | Design Patterns, Sorting & Singleton | 3 | [Go →](./18-sorting-singleton-patterns.md) |
 | 19 | Exception Handling — Advanced Patterns (2+ YOE) | 15 | [Go →](./19-exception-handling-advanced.md) |
+| 20 | Java 8 Coding — From Real Interviews Part 2 (Parsing, Multi-Sort, Grouping) | 13 | [Go →](./20-java8-coding-interviews.md) |
 
 ---
 

@@ -31,7 +31,7 @@ Stored in: BATCH_JOB_INSTANCE table
   2               | dailyPaymentJob    | def456...
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "A JobInstance is the logical identity of a job run, defined by the job name plus identifying job parameters. Multiple JobExecutions can belong to the same JobInstance — this happens when a failed job is restarted with the same parameters. A completed JobInstance cannot be re-run with the same parameters, which prevents duplicate processing. In my project, we used the processing date as a job parameter, so each day automatically created a new JobInstance. If the job failed at night, the morning restart found the same JobInstance and resumed from where it left off."
 
 ### 💻 Code
@@ -115,7 +115,7 @@ JobInstance:                    JobExecution:
                                └──────────────────────────┘
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "JobInstance identifies what job was run — it's the logical identity based on job name and parameters. JobExecution represents one physical attempt at running that job, with actual start time, end time, and status. One JobInstance can have multiple JobExecutions — this happens when a failed job is restarted. In my project, I used this understanding to build a monitoring dashboard — showing the number of execution attempts per instance and the trend of failures before eventual success."
 
 ### 💻 Code
@@ -212,7 +212,7 @@ StepExecution Metrics:
 | rollbackCount | Number of chunks rolled back |
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "JobExecution gives the overall job status, while StepExecution provides granular step-level metrics. Each step tracks readCount, writeCount, filterCount, skipCount, commitCount, and rollbackCount. In my project, I built a monitoring system that queried StepExecution metrics after each job run — comparing readCount minus writeCount minus filterCount to detect data anomalies. If the skip rate exceeded 5%, we automatically triggered an alert to the operations team."
 
 ### 💻 Code
@@ -287,7 +287,7 @@ BATCH_JOB_INSTANCE:
   1               | dailyPaymentJob  | <hash of "date=2024-01-15">
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Spring Batch identifies a unique JobInstance by computing a hash of the job name plus only the identifying job parameters. When you create a parameter with the boolean flag set to false, it becomes non-identifying — stored in the database but excluded from the identity hash. In my project, we used the business date as the identifying parameter and environment, requestId, and runId as non-identifying parameters. This way, the same business date always mapped to the same JobInstance for restart purposes, while non-identifying params provided context for logging and auditing."
 
 ### 💻 Code
@@ -354,7 +354,7 @@ To bypass COMPLETED restriction:
   → Each run becomes a NEW JobInstance
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "When you launch a job with the same parameters, Spring Batch looks up the existing JobInstance and checks the last execution status. If it's completed, it throws JobInstanceAlreadyCompleteException — Spring Batch prevents duplicate processing by design. If it's failed, a new JobExecution is created and the job restarts from where it left off. In my project, we used RunIdIncrementer for jobs that needed to run multiple times per day with the same business date — each run got a unique run.id making it a new JobInstance."
 
 ### 💻 Code
@@ -436,7 +436,7 @@ Layer 4: Database Constraint
   └── BATCH_JOB_INSTANCE(JOB_NAME, JOB_KEY) has unique constraint
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Spring Batch provides built-in duplicate prevention — a completed job cannot be re-run with the same identifying parameters. On top of that, I use a JobParametersValidator to ensure required parameters are present before the job starts. In my project's clustered environment with 3 nodes, we added a database-based distributed lock — before launching, the scheduler acquires a lock in a dedicated table, ensuring only one node runs the job. This prevents race conditions where two scheduler nodes might try to launch the same job simultaneously."
 
 ### 💻 Code
@@ -539,7 +539,7 @@ Restart Mechanism:
      - NOT STARTED → execute fresh
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Restarting a failed job in Spring Batch is simple — I just run it again with the same identifying parameters. The framework automatically detects it's a restart and handles everything. Already completed steps are skipped. The failed step resumes from the last committed chunk using checkpoint data stored in the ExecutionContext. In my project, our scheduler automatically retried failed nightly jobs in the morning. The restart typically processed only the remaining 10-20% of data since the completed chunks from the previous night were already committed."
 
 ### 💻 Code
@@ -626,7 +626,7 @@ Internal Restart Flow:
    FlatFileItemReader → starts from line 7500
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Internally, Spring Batch first queries JobRepository to find the last execution for that JobInstance. It creates a new JobExecution under the same instance. Then for each step, it checks the previous StepExecution status — completed steps are skipped, failed steps are resumed by loading their ExecutionContext from the database, and never-started steps execute fresh. The ExecutionContext contains the reader's position, so the reader can initialize at the exact point where processing stopped. In my project, our JdbcPagingItemReader stored the last page offset in context, so restart skipped the already-processed pages."
 
 ### 💻 Code

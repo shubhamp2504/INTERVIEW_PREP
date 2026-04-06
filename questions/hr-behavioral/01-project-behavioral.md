@@ -26,7 +26,7 @@ Use the STAR framework: Situation (project context + scale), Task (your role), A
    - Performance improvements (e.g., "reduced latency by 40%")
    - Business impact (e.g., "processed 2M transactions/day")
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I work on a [domain] platform that handles [X requests/day]. The architecture consists of [describe 3-4 key services]. I specifically own the [service name] which handles [responsibility]. A key design decision I made was [choosing X over Y because Z]. This resulted in [quantifiable improvement]."
 
 ### ⚠️ Pitfalls / Gotchas

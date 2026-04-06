@@ -34,7 +34,7 @@ All readers follow the same contract:
 - Returns `null` when no more data (signals end)
 - Spring Batch calls `read()` repeatedly until null
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Spring Batch provides built-in readers for files, databases, messaging, and NoSQL. For files, FlatFileItemReader handles CSV and fixed-width formats. For databases, the key decision is between cursor and paging readers — cursor holds one DB connection for the entire step and is simpler but not thread-safe, while paging reader fetches data page by page, releases connections between pages, and is thread-safe. In my project, we used JdbcPagingItemReader for production because we needed multi-threaded steps for performance, and JpaPagingItemReader when we needed entity mapping for complex domain objects."
 
 ### 💻 Code
@@ -125,7 +125,7 @@ Two tokenizer types:
 1. **DelimitedLineTokenizer** — splits by delimiter (comma, tab, pipe)
 2. **FixedLengthTokenizer** — splits by column positions (columns 0-5, 6-20, 21-30)
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "FlatFileItemReader reads text files line by line. Internally, it uses a LineTokenizer to split each line into fields — DelimitedLineTokenizer for CSV or FixedLengthTokenizer for fixed-width files — and a FieldSetMapper to map those fields to Java objects. In my project, we used it to read daily payment CSV files from an SFTP server. We configured linesToSkip(1) to skip the header, set the encoding to UTF-8, and used a custom FieldSetMapper for date parsing since the date format in the CSV was non-standard."
 
 ### 💻 Code
@@ -245,7 +245,7 @@ Each read():
   returns null when cursor reaches end
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "JdbcCursorItemReader executes a single SQL query and opens a database cursor. Each read call moves the cursor forward and maps the row to a Java object using a RowMapper. The key characteristic is that it holds the database connection for the entire step duration, which makes it simple and memory-efficient but unsuitable for long-running steps or multi-threaded processing. In my project, we used it for small daily batch runs processing under 100K records in a single-threaded step, where the simplicity was worth the connection hold time. For our larger jobs, we switched to JdbcPagingItemReader."
 
 ### 💻 Code
@@ -345,7 +345,7 @@ Spring Batch auto-generates pagination SQL based on your database:
 - SQL Server: `OFFSET FETCH`
 - PostgreSQL: `LIMIT ? OFFSET ?`
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "JdbcPagingItemReader fetches data page by page using separate SQL queries for each page. The key advantage over cursor reader is that it releases the database connection between pages, making it thread-safe and suitable for long-running jobs. A sort key is mandatory to ensure consistent row ordering across pages. In my project, we used JdbcPagingItemReader as our standard for all production batch jobs. We set page size equal to chunk size at 500, used the primary key as sort key, and ran multi-threaded steps with a thread pool of 4 for our high-volume payment processing job."
 
 ### 💻 Code
@@ -447,7 +447,7 @@ JpaPagingItemReader:
        → ORM overhead (10-30% slower)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "JpaPagingItemReader works similarly to JdbcPagingItemReader but uses JPQL queries and returns JPA entities. The advantage is automatic entity mapping, relationship handling, and consistency with the rest of the JPA-based application. The downside is performance — it's 10-30% slower than JdbcPagingItemReader due to ORM overhead like dirty checking and first-level cache management. In my project, we used JpaPagingItemReader for steps that needed complex entity relationships like Order with OrderItems, and JdbcPagingItemReader for high-throughput steps where we only needed flat data."
 
 ### 💻 Code
@@ -532,7 +532,7 @@ PAGING READER:
 └─────────────────────────────────┘
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "The key difference is connection management. Cursor reader opens one database connection and one cursor for the entire step — it streams rows one at a time, which is memory efficient but holds the connection for hours on large datasets and is not thread-safe. Paging reader makes a separate SQL query for each page, releasing the connection between pages, making it thread-safe and safe from connection timeouts. In my project, we standardized on JdbcPagingItemReader for all production jobs because we needed multi-threaded steps and couldn't risk connection timeouts. We only used cursor reader in dev for quick testing with small datasets."
 
 ### 💻 Code
@@ -632,7 +632,7 @@ XML File:
 Flow: XML stream → StAX parser → fragment extraction → JAXB unmarshal → Order object
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "StaxEventItemReader reads XML files using the StAX streaming API. Instead of loading the entire XML into memory like DOM, it streams events and extracts fragments matching a configured root element name. Each fragment is unmarshalled to a Java object using JAXB. In my project, we received daily transaction reports as XML files from a partner system, and we used StaxEventItemReader with JAXB to read and process them. It handled 500MB XML files without memory issues because it streams rather than loads."
 
 ### 💻 Code
@@ -703,7 +703,7 @@ MultiResourceItemReader:
 └──────────────────────────────────────────────┘
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "MultiResourceItemReader wraps a delegate reader and processes multiple files sequentially. When one file is exhausted, it automatically switches to the next. In my project, we received hourly transaction files and used MultiResourceItemReader to process all files in a directory in one batch step. We combined it with a file pattern to pick up only files matching our naming convention, and used a ResourceSuffixCreator to track which file each record came from for error reporting."
 
 ### 💻 Code
@@ -775,7 +775,7 @@ Common encodings:
 └── Shift_JIS    → Japanese systems
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Encoding issues occur when the reader's charset doesn't match the file's actual encoding. I always set the encoding explicitly — never rely on system default. In my project, we received files from a legacy Windows system in CP1252 encoding. Without explicit encoding config, UTF-8 was assumed and special characters were garbled. We fixed it by setting `.encoding(\"CP1252\")` on the FlatFileItemReader. We also had UTF-8 files with BOM that caused parse errors on the first record, which we handled by adding a linesToSkip callback to strip the BOM."
 
 ### 💻 Code
@@ -847,7 +847,7 @@ With skippedLinesCallback:
   → Can validate: "id,name,amount" matches expected columns
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "For headers, I use linesToSkip to skip the header rows. I also use skippedLinesCallback to capture and validate the header — ensuring column names match the expected format. For footers, there's no direct support, so in my project I handled it in the processor — when the line matched the trailer pattern, I returned null to filter it out. For complex files with multi-line headers and footers, we pre-processed the file in a tasklet step that stripped headers and footers before the main chunk step."
 
 ### 💻 Code

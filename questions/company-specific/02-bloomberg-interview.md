@@ -301,7 +301,7 @@ Use a structured framework: define the problem → list options → evaluate aga
 5. **Decide**: Pick one, document the reasoning
 6. **Validate**: Spike/POC if the decision is high-risk or irreversible
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "When I needed to choose between Kafka and RabbitMQ for our event system, I first defined the requirements: ordering guarantees, throughput of 50K events/sec, and replay capability. I evaluated both against these criteria — Kafka won on ordering and replay, RabbitMQ on simplicity. Given our scale needs and the team's familiarity with Kafka, we chose Kafka. I documented the decision in an ADR (Architecture Decision Record) and validated latency requirements with a 2-day POC."
 
 ### ⚡ Remember
@@ -320,7 +320,7 @@ Show a systematic approach to prioritization based on impact, urgency, dependenc
 ### 🔑 Quick Answer
 Eisenhower matrix (urgent vs important), impact/effort scoring, stakeholder alignment. Production issues first, then blocking items, then high-impact features, then tech debt. *(urgent aur important pehle, blocking items uske baad, phir high-impact features)*
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I use a combination of impact and urgency. Production issues are always P0 — they come first. Then I look at what's blocking other team members. For feature work, I prioritize by business impact relative to effort. I keep a visible backlog so the team and stakeholders are aligned. In my last project, when we had a P0 incident alongside a release deadline, I split the team — 2 engineers on the incident, 3 on the release — and we delivered both."
 
 ### ⚡ Remember
@@ -339,7 +339,7 @@ Demonstrate a structured incident response: detect, communicate, mitigate, root-
 ### 🔑 Quick Answer
 Follow incident management: detect (alerts/monitoring) → acknowledge → communicate (status page, Slack) → mitigate (rollback, scale, hotfix) → root cause analysis (5 whys) → post-mortem (blameless) → action items. *(pehle detect karo, communicate karo, fix karo, phir root cause nikalo, post-mortem likho)*
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "In my last incident, our payment service latency spiked to 5 seconds. Here's how I handled it: First, I acknowledged the alert and posted in our #incidents channel with initial status. I pulled thread dumps and found connection pool exhaustion. I mitigated by scaling horizontally and increasing pool size. Root cause was a slow downstream API without a circuit breaker. Post-mortem action items: add circuit breaker, set connection timeout to 3s, add pool exhaustion alerting."
 
 ### ⚡ Remember
@@ -358,7 +358,7 @@ Show emotional intelligence, active listening, and collaborative problem-solving
 ### 🔑 Quick Answer
 Listen first, understand their perspective, find common ground, propose a solution that serves the team/project goals. Escalate only if needed, always keep it professional. *(pehle suno, samjho, common ground dhundho, team ke goal ke liye solution nikalo)*
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I disagreed with a colleague about using microservices vs monolith for a new project. Instead of arguing in the meeting, I scheduled a 1:1. I listened to their concerns about operational complexity — valid points. I shared my concerns about scaling. We agreed to start as a modular monolith with clean boundaries, with a migration path to microservices when traffic justified it. This compromise addressed both concerns and the team was aligned."
 
 ### ⚡ Remember
@@ -374,7 +374,7 @@ Listen first, understand their perspective, find common ground, propose a soluti
 ### 📝 One-Liner
 Demonstrate proactive ownership and impact beyond your assigned role.
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I noticed our deployment process took 45 minutes with manual steps and frequent rollback-triggering errors. Even though DevOps wasn't my responsibility, I spent evenings over two weeks building a CI/CD pipeline with GitHub Actions. I automated building, testing, and deploying to staging. After validating with the team, we adopted it for production too. Deployment time dropped to 8 minutes, and deployment failures dropped from 30% to near zero."
 
 ### ⚡ Remember
@@ -390,7 +390,7 @@ Demonstrate proactive ownership and impact beyond your assigned role.
 ### 📝 One-Liner
 Show how you maintain quality and team morale under tight deadlines.
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "During a tight release, we had 3 features to deliver in 2 weeks with the team at 80% capacity due to a team member being sick. I re-scoped with the PM — we agreed to ship 2 features fully and defer one non-critical feature to the next sprint. I broke remaining work into smaller PRs for faster reviews, set up daily 15-min syncs instead of a lengthy standup, and I personally took the most complex feature. We shipped on time with zero critical bugs."
 
 ### ⚡ Remember
@@ -406,7 +406,7 @@ Show how you maintain quality and team morale under tight deadlines.
 ### 📝 One-Liner
 Connect technical contributions to measurable business impact.
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I always tie my work to business metrics. For example, I optimized our search API response time from 800ms to 120ms. The business impact: conversion rate on search pages increased by 15% because users weren't abandoning slow searches. I worked with the product team to identify this correlation. Similarly, when I implemented caching for our product catalog, it reduced infrastructure costs by $2K/month by cutting database load by 60%."
 
 ### ⚡ Remember
@@ -422,7 +422,7 @@ Connect technical contributions to measurable business impact.
 ### 📝 One-Liner
 Show self-awareness, accountability, and growth from a genuine mistake.
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Early in my career, I deployed a database migration to production without testing it against production-sized data. The migration locked a critical table for 20 minutes during peak hours, causing partial outage. I immediately rolled back, communicated the impact, and ran the migration during the maintenance window. What I learned: always test migrations against production data volumes, use online schema change tools like pt-online-schema-change, and implement a deployment checklist. I later drove adoption of a migration testing pipeline for the team."
 
 ### ⚡ Remember
@@ -438,7 +438,7 @@ Show self-awareness, accountability, and growth from a genuine mistake.
 ### 📝 One-Liner
 Show genuine research about Bloomberg's tech culture, products, and how your skills align with their mission.
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Three things attract me to Bloomberg. First, the engineering challenges — processing billions of real-time financial data points requires systems that are both low-latency and highly reliable, which aligns with my experience in real-time data pipelines. Second, Bloomberg's commitment to engineering culture — the open-source contributions like the BDE libraries and involvement in C++ standards show investment in engineering excellence. Third, the impact — Bloomberg Terminal is the backbone of global finance, and contributing to that infrastructure is meaningful to me."
 
 ### ⚡ Remember

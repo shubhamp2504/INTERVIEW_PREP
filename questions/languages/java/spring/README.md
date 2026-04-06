@@ -1,6 +1,6 @@
 # 🌱 Spring Framework & Boot — Interview Questions
 
-[![Last Updated](https://img.shields.io/badge/Updated-March%202026-green.svg)](#)
+[![Last Updated](https://img.shields.io/badge/Updated-April%202026-green.svg)](#)
 
 ---
 
@@ -18,6 +18,7 @@
 | 8 | Spring Boot Fundamentals | 5 | [Go →](./08-springboot-fundamentals.md) |
 | 9 | Advanced Config & Security (Performance, Logging, Security, Filters) | 7 | [Go →](./09-advanced-config-security.md) |
 | 10 | Spring Boot Internals Advanced (Startup, Properties, Fat JAR, Cloud-Native) | 12 | [Go →](./10-springboot-internals-advanced.md) |
+| 11 | Spring Boot Scenario-Based Interviews (OCP, Parallel APIs, @Transactional, Debugging) | 12 | [Go →](./11-springboot-scenario-interviews.md) |
 
 ---
 

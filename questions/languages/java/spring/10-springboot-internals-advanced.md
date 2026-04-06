@@ -23,7 +23,7 @@ Spring Boot uses `PropertySourceLoader` implementations to load properties from 
 4. **Profile Resolution**: Base properties first → profile-specific (`application-{profile}.properties`) overlay
 5. **Merge**: All sources merged into Spring `Environment` abstraction
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Spring Boot uses ConfigFileApplicationListener to load properties during the environment-prepared phase. It searches four default locations — classpath root, classpath config, file root, and file config — using PropertySourceLoader implementations for both .properties and .yml formats. Properties are merged with a well-defined precedence, where file-system config wins over classpath."
 
 ### 💻 Code
@@ -94,7 +94,7 @@ String port = env.getProperty("server.port");
    └── Fire ApplicationReadyEvent
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "SpringApplication.run() first determines the application type, then loads initializers and listeners from spring.factories. It prepares the Environment by loading properties and profiles, creates the ApplicationContext, and refreshes it — which is where the heavy lifting happens: component scanning, auto-configuration processing, bean creation, and embedded server startup. Finally, it calls any CommandLineRunner/ApplicationRunner beans."
 
 ### ⚡ Remember
@@ -177,7 +177,7 @@ Spring Boot loads BOTH files. If the same property exists in both, `.properties`
   ```
 - Profile-specific files always override base files regardless of format
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Both files are loaded. When a property exists in both at the same location, .properties takes precedence over .yml. But location precedence still applies — a .yml in file:./config/ will override a .properties in classpath:/. In practice, I'd recommend using one format per project to avoid confusion."
 
 ### ⚡ Remember
@@ -227,7 +227,7 @@ public class AppConfig {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "@Configuration classes are enhanced with a CGLIB proxy at startup. This proxy intercepts @Bean method calls — if the bean already exists in the container, it returns the existing singleton instead of creating a new instance. This is called 'full mode.' A regular class with @Bean methods runs in 'lite mode' without the proxy, so inter-method calls create new instances, which can cause subtle bugs."
 
 ### ⚠️ Pitfalls / Gotchas
@@ -335,7 +335,7 @@ DataAccessException (abstract root)
 └── UncategorizedDataAccessException
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Spring uses @Repository and a post-processor to create AOP proxies that intercept vendor-specific exceptions — like Hibernate's ConstraintViolationException — and translate them into Spring's DataAccessException hierarchy. This makes the service layer agnostic to the ORM vendor. For REST APIs, I combine this with @ControllerAdvice to map these to proper HTTP responses."
 
 ### ⚡ Remember
@@ -414,7 +414,7 @@ Embedded server (no external Tomcat), fat JAR deployment, auto-config reduces bo
 | Containerization | Buildpack support, Docker-friendly |
 | Fast startup | Minimal footprint, lazy init option |
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Spring Boot is ideal for microservices because each service can run independently with its embedded server and fat JAR — no external container needed. Auto-configuration minimizes boilerplate so teams can focus on business logic. Actuator provides production-ready monitoring. And Spring Cloud ecosystem adds service discovery, centralized config, circuit breakers, and distributed tracing — all the infrastructure microservices need."
 
 ### ⚡ Remember
@@ -504,7 +504,7 @@ public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> customize
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Spring Boot resolves server.port through its standard configuration precedence. Command-line arguments have the highest priority, followed by environment variables — which is perfect for Kubernetes where you set SERVER_PORT. Then profile-specific properties, then base application.properties. In production, I typically set it via environment variable for flexibility."
 
 ### ⚡ Remember
@@ -539,7 +539,7 @@ Embedded server for container-friendly deployment, externalized config for envir
 | XI. Logs | Console logging → log aggregator |
 | XII. Admin Processes | CommandLineRunner, Actuator |
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Spring Boot is cloud-native by design. It follows 12-factor app principles — externalized config, stateless processes, port binding via embedded servers. Actuator provides health and readiness probes for Kubernetes. Buildpacks create OCI images without a Dockerfile. Spring Cloud adds service discovery, config server, and circuit breakers. And with GraalVM native image support, startup drops from seconds to milliseconds."
 
 ### ⚡ Remember

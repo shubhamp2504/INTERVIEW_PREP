@@ -49,7 +49,7 @@ Resizing (rehash):
   Capacity: 16 → 32 → 64 → 128 → ...  (always power of 2)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "HashMap works with an array of buckets — default size 16. When putting a key-value pair, the key's hashCode is computed and spread using XOR with its upper 16 bits to reduce collision clustering. The bucket index is determined by bitwise AND with array length minus one. If multiple keys map to the same bucket — a collision — they form a linked list, which converts to a red-black tree when the list reaches 8 nodes, an optimization added in Java 8 to prevent O(n) degradation. When the number of entries exceeds capacity times load factor — default 0.75, so 12 for size 16 — the array doubles and all entries are rehashed. In my project, I always override both hashCode and equals when using custom objects as keys, and I set initial capacity when the expected size is known to avoid unnecessary resizing."
 
 ### 💻 Code
@@ -177,7 +177,7 @@ Java 8+ Internal:
   - size() uses CounterCell array (distributed counting)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "The key difference is thread safety. HashMap has no synchronization — concurrent modifications can corrupt its internal structure. ConcurrentHashMap provides thread safety with minimal contention using node-level locking in Java 8+. When inserting into an empty bucket, it uses lock-free CAS. For collisions, it synchronizes only on the bucket head node — so threads accessing different buckets proceed in parallel. Reads don't require locks at all because node references are volatile. In my project, I use ConcurrentHashMap for shared caches — like a session cache accessed by hundreds of concurrent requests — where a synchronized wrapper would be a bottleneck."
 
 ### 💻 Code
@@ -309,7 +309,7 @@ JVM Flags:
   -XX:NewRatio=2           → Old:Young = 2:1
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "JVM memory is divided into several key areas. The Heap is shared across all threads and stores all object instances — it's divided into Young Generation for short-lived objects and Old Generation for long-lived ones. The garbage collector manages heap memory, with Minor GC cleaning Young Gen frequently and Major GC cleaning Old Gen less frequently. Each thread gets its own Stack that stores method call frames with local variables — it's fixed size, typically 1MB. Metaspace, which replaced PermGen in Java 8, stores class metadata in native memory and grows dynamically. In my project, we tuned the JVM with -Xmx4g for heap, monitored Young Gen sizing to keep Minor GC pauses under 20ms, and set MaxMetaspaceSize to 256m to prevent unbounded growth from dynamic class loading."
 
 ### 💻 Code
@@ -428,7 +428,7 @@ Troubleshooting Flow:
   7. Fix: replace with Caffeine cache (maximumSize=10000, expireAfterWrite=1h)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "In production, the most common OOM cause I've seen is memory leaks — typically a cache or collection that grows unboundedly. My troubleshooting approach has four steps. First, I always have `-XX:+HeapDumpOnOutOfMemoryError` enabled so we get a heap dump automatically. Second, I analyze the dump with Eclipse MAT — the Leak Suspects report immediately shows the largest retained objects and their reference chains. Third, I check GC logs to see the memory trend — a sawtooth pattern where the baseline keeps rising confirms a leak. Fourth, I verify the fix in a staging environment under load test before deploying. In my project, MAT revealed a static HashMap in our audit service holding 2 million entries — we replaced it with a Caffeine cache with a 10,000 entry limit and 1-hour TTL."
 
 ### 💻 Code
@@ -542,7 +542,7 @@ Strategies (from best to worst):
   5. ThreadLocal (per-thread isolation)     ← situational
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I approach thread safety by first asking: is the state shared AND mutable? If I can make the class immutable — all final fields, no setters — that's the best solution because it needs zero synchronization. For counters and flags, I use atomic variables like AtomicInteger for lock-free updates. For shared collections, I use ConcurrentHashMap or CopyOnWriteArrayList. For complex state changes involving multiple fields, I use synchronized blocks — always on a private lock object, never on `this` to avoid external interference. In my project, I made our rate limiter thread-safe using AtomicInteger for the counter and ConcurrentHashMap for per-client tracking, handling 5000 requests per second safely."
 
 ### 💻 Code

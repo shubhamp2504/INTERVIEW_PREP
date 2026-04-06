@@ -1,7 +1,7 @@
 
 # 🎯 HR & Behavioral Questions
 
-[![Last Updated](https://img.shields.io/badge/Updated-March%202026-green.svg)](#)
+[![Last Updated](https://img.shields.io/badge/Updated-April%202026-green.svg)](#)
 
 
 ---
@@ -11,6 +11,7 @@
 | # | Topic | Questions | Link |
 |---|-------|-----------|------|
 | 1 | Project & Behavioral | 1 | [Go →](./01-project-behavioral.md) |
+| 2 | Java Backend — Techno-Managerial Round | 20 | [Go →](./02-techno-managerial-round.md) |
 
 > _Questions will be added as files are created._
 

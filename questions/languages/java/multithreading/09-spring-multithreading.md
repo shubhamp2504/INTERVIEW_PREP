@@ -33,7 +33,7 @@ Spring Multithreading Stack:
 └─────────────────────────────────────────────┘
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Spring provides multithreading at several levels. @Async runs any method asynchronously — just add the annotation. ThreadPoolTaskExecutor is the production thread pool. @Scheduled handles cron-based or fixed-rate execution. For batch processing, Spring Batch offers multi-threaded steps and partitioned steps. All are managed by the Spring container — proper initialization and graceful shutdown."*
 
 ### ⚡ Remember
@@ -116,7 +116,7 @@ public class NotificationService {
 **Q: Why doesn't @Async work when called from the same class?**
 > Spring AOP uses proxies — when you call a method within the same class, you bypass the proxy and call the real method directly. The proxy interceptor never fires. Fix: extract to a separate service bean. *(Same class = proxy nahi lagta — doosri class mein daalo)*
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"@Async runs a method on a separate thread from a configured pool. I always specify a named executor to control which pool handles what. Two critical things: @EnableAsync must be present, and self-invocation doesn't work because Spring AOP proxies are bypassed for internal calls. I always configure a bounded ThreadPoolTaskExecutor with thread name prefixes for debugging."*
 
 ### ⚡ Remember
@@ -167,7 +167,7 @@ public class NotificationService {
    Flow-2: [Step-C]           ──┼──→ simultaneously
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Spring Batch provides four parallel processing strategies. My preferred is partitioned step — a Partitioner splits data into ranges, each worker gets its own reader instance, no thread-safety concerns. Multi-threaded step is simpler but the reader must be thread-safe. Parallel flows run independent steps concurrently. For massive scale, remote partitioning distributes across JVMs."*
 
 ### ⚡ Remember
@@ -218,7 +218,7 @@ public SynchronizedItemStreamReader<Input> synchronizedReader() {
 - **Chunk order not guaranteed** — data may be written out of order *(order guarantee nahi hai)*
 - Processor and writer must be **stateless** or thread-safe
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"A multi-threaded step assigns a TaskExecutor to the step — multiple threads pick up chunks in parallel. The key consideration is reader thread safety — I wrap FlatFileItemReader with SynchronizedItemStreamReader. throttleLimit controls max concurrent threads. For most production cases, I prefer partitioned steps where each worker has its own reader."*
 
 ### ⚡ Remember
@@ -281,7 +281,7 @@ public JdbcPagingItemReader<Record> reader(
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Partitioning is my preferred Spring Batch parallelism approach. A Partitioner splits data into independent ranges — typically by ID or date. Each partition gets its own worker with a separate reader, processor, and writer. Since each worker has its own reader instance via @StepScope, there are no thread-safety concerns. I use ColumnRangePartitioner for database-driven partitioning."*
 
 ### 🎯 Tricky Interview Qs
@@ -323,7 +323,7 @@ Remote Partitioning:
   Only METADATA flows through broker (ID ranges, not actual data)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Remote partitioning distributes across multiple JVMs. The manager creates partitions and sends metadata — like ID ranges — to a message broker. Worker JVMs pick up the ranges, read their data directly from the source, process, and write. Only metadata flows through the broker, not actual data. This scales horizontally — add more worker machines for more throughput."*
 
 ### ⚡ Remember
@@ -356,7 +356,7 @@ Remote Partitioning:
 | Broker load | Low ✅ | High ⚠️ |
 | **Preferred** | ⭐ Most cases | Special cases |
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Remote chunking differs from partitioning in what flows through the broker. In partitioning, only metadata like ID ranges is sent — workers read their own data. In chunking, the manager reads data and sends actual items. Chunking is useful when processing is the bottleneck but reading is fast. I prefer remote partitioning in most cases because it distributes the I/O load."*
 
 ### ⚡ Remember
@@ -410,7 +410,7 @@ public class ExecutorConfig {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"I configure ThreadPoolTaskExecutor as named Spring beans. Bounded queue capacity is critical — unbounded risks OOM. Thread name prefix is essential for debugging — 'batch-3' in a thread dump tells me exactly which pool. CallerRunsPolicy for rejection provides natural backpressure. Graceful shutdown with waitForTasksToComplete ensures in-flight tasks finish. I create separate pools for different workloads to prevent interference."*
 
 ### ⚡ Remember
@@ -453,7 +453,7 @@ ThreadPoolTaskExecutor:
 - **No upper limit** = OOM guaranteed under load *(production mein crash hoga)*
 - First thing after @EnableAsync: **configure ThreadPoolTaskExecutor**
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"SimpleAsyncTaskExecutor is Spring's default and it's dangerous — creates a new thread per task with no pooling, no limit. Under load, thousands of threads = OOM crash. The first thing I do after @EnableAsync is configure a proper ThreadPoolTaskExecutor with bounded pool and queue."*
 
 ### ⚡ Remember
@@ -506,7 +506,7 @@ public ThreadPoolTaskExecutor taskExecutor() {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"ThreadPoolTaskExecutor is the production standard. Core threads are always alive, tasks queue when core is busy, extra threads created up to max under load, and rejection policy handles overflow. I always set bounded queue to prevent OOM, thread name prefix for debugging, CallerRunsPolicy for backpressure, and graceful shutdown settings."*
 
 ### 🎯 Tricky Interview Qs

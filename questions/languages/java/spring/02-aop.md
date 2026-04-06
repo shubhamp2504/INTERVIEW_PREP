@@ -64,7 +64,7 @@ AOP Terminology:
   └────────────────────────────────────────────────────────────┘
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "AOP lets us separate cross-cutting concerns — like logging, transaction management, and security — from business logic. Instead of calling a logger in every service method, I create a LoggingAspect with a pointcut expression that targets all service-layer methods, and Spring automatically applies it. Spring AOP works through proxies — when the application starts, Spring creates CGLIB proxies around beans that match pointcut expressions. When a method is called, the proxy intercepts it and runs the advice before, after, or around the actual method. The five advice types are @Before, @After, @AfterReturning, @AfterThrowing, and @Around — where Around is the most powerful since it wraps the entire method and can modify arguments, return values, or even skip execution. @Transactional is actually implemented as an Around advice internally. In my project, I used AOP for centralized audit logging — every service method's execution time and user identity was logged without touching any business code."
 
 ### 💻 Code

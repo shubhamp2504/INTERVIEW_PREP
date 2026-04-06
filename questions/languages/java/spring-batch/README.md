@@ -17,7 +17,7 @@ Each question follows a **10-section pattern** (not all sections appear for ever
 | 📝 | **One-Liner** | 1-sentence summary for last-minute revision |
 | 🔑 | **Quick Answer** | 30-second spoken answer + *(Hindi layman brackets)* |
 | 📖 | **How It Works** | Deep explanation + diagrams + *(Hindi for hard concepts)* |
-| 🗣️ | **How to Say in Interview** | English-only Answering Approach + "In my project..." |
+| 🗣️ | **Answering Approach** | English-only Answering Approach + "In my project..." |
 | 💻 | **Code** | Working example + Hindi comments where tricky |
 | ⚠️ | **Pitfalls / Gotchas** | Common mistakes + *(Hindi warnings)* |
 | 🆚 | **vs. Comparison** | Only when relevant (~50% of questions) |

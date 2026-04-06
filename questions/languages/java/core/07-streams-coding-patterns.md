@@ -263,7 +263,7 @@ Use `map.entrySet().stream().filter(...)` to find entries by key or value, then 
 - Filter by value condition: `.filter(e -> e.getValue() > threshold)`
 - Extract: `.map(Map.Entry::getValue).findFirst()` *(filter ke baad value nikalo)*
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I'd stream the entrySet, apply a filter predicate on keys or values, then use map to extract the result. findFirst returns an Optional for null safety."
 
 ### 💻 Code
@@ -313,7 +313,7 @@ Loop: sum digits until number < 10. Or use the math formula: `1 + (n - 1) % 9`. 
 - **Math formula**: Digital root = `1 + (n - 1) % 9` for n > 0 *(ye modular arithmetic ka formula hai)*
 - Both give O(1) for the math approach, O(log n × iterations) for iterative
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "The brute force approach is to repeatedly sum digits until a single digit remains. The optimal approach uses the digital root formula: 1 + (n-1) % 9, which gives O(1) time."
 
 ### 💻 Code
@@ -369,7 +369,7 @@ Chain `filter` (even only) → `map` (multiply) → `reduce/sum`. *(filter → m
 - `.map(n -> n * constant)` → multiply each
 - `.sum()` → final result *(chain karo — filter, transform, aggregate)*
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I'd use a stream pipeline: filter to keep even numbers, map to multiply each by the constant, and sum to aggregate. It's a clean, functional one-liner."
 
 ### 💻 Code

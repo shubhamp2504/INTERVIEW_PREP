@@ -52,7 +52,7 @@ Keyset/Cursor Pagination (better for deep pages):
   → Always O(1) with index, regardless of page depth!
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I implement pagination using Spring Data's Pageable interface — the controller accepts page, size, and sort as query parameters, and I pass the Pageable directly to the repository method. I wrap the Page result in a custom PageResponse DTO that includes the content plus metadata like totalElements, totalPages, and hasNext. I cap the maximum page size at 100 to prevent clients from requesting the entire dataset. For very large datasets — say millions of audit log entries — I use keyset pagination where the client passes the last seen ID as a cursor, and the query uses a WHERE clause instead of OFFSET. This keeps query performance constant regardless of how deep the user pages. I also add proper indexes on the sort columns."
 
 ### 💻 Code
@@ -208,7 +208,7 @@ Token Refresh Flow:
   → Client retries original request with new token
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "JWT authentication is stateless. During login, the server validates credentials, creates a JWT containing the user ID and roles, signs it with a secret key, and returns it to the client. On subsequent requests, the client includes the JWT in the Authorization Bearer header. A Spring Security filter intercepts the request, extracts the token, validates the signature — which proves the data hasn't been tampered with — checks expiration, and sets the authentication in SecurityContext. No database call is needed on each request — the signed token itself is the proof of identity. I use short-lived access tokens of 15 minutes with a longer-lived refresh token for re-authentication. In my project, I implemented this with Spring Security 6 using a OncePerRequestFilter."
 
 ### 💻 Code
@@ -414,7 +414,7 @@ Monitoring Stack:
   ELK Stack → log aggregation for error patterns
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I follow a systematic approach. First, I check the high-level metrics — API latency percentiles, error rates, and throughput using Grafana dashboards backed by Prometheus. I look at where time is spent: if p99 latency jumped from 50ms to 2 seconds, I check the breakdown. In 80% of cases, it's the database — I check for slow queries via the slow query log, connection pool saturation in HikariCP metrics, and N+1 queries in Hibernate statistics. If it's not the DB, I take a thread dump to see if threads are blocked waiting on locks or external calls. For memory issues, I check GC logs for frequent pauses. In my project, we had intermittent slowdowns that turned out to be HikariCP connection pool exhaustion — 10 connections with 200 concurrent requests meant 190 threads waiting. Increasing the pool to 30 and fixing a missing @Transactional that was holding connections too long resolved it."
 
 ### 💻 Code
@@ -553,7 +553,7 @@ Kafka (Asynchronous / Event-Driven):
   - Adding new consumers doesn't change Order Service code
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I choose REST for synchronous operations where the client needs an immediate response — like fetching user profiles, validating payment, or submitting orders. Kafka is my choice for asynchronous event-driven communication — when an order is placed, I publish an OrderCreated event to Kafka, and multiple consumers (inventory, email, analytics) independently process it. This gives me loose coupling — the order service doesn't know about downstream consumers — and resilience, since Kafka retains events even if a consumer is temporarily down. In practice, most systems use both: REST for the client-facing API, and Kafka for inter-service event propagation. In my project, order placement was REST to get immediate confirmation, but stock updates, email notifications, and audit logging were all Kafka consumers."
 
 ### 💻 Code
@@ -697,7 +697,7 @@ Docker Compose (local dev):
        └── Waits for DB to be ready ──────────┘
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I use a multi-stage Dockerfile. The first stage uses a Maven image to build the JAR — this includes the JDK and build tools. The second stage copies only the JAR into a slim JRE-alpine image, which reduces the final image from around 800MB to 220MB. I run the application as a non-root user for security, and I set JVM flags like MaxRAMPercentage to 75% so the JVM respects the container's memory limit. For local development, I use Docker Compose with Postgres and Redis as services. I also configure a health check using the Spring Actuator health endpoint. For production, the image is built in CI/CD, pushed to a container registry, and deployed to Kubernetes."
 
 ### 💻 Code
@@ -856,7 +856,7 @@ Combined Pattern (Retry → Circuit Breaker → Timeout → Fallback):
                      └─ ❌ Fail → Retry → ... → Fallback
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I implement fault tolerance using Resilience4j with four complementary patterns. The circuit breaker monitors the failure rate of calls to a downstream service. When failures exceed a threshold — say 50% over the last 10 calls — it opens the circuit, and all subsequent calls immediately fail-fast without making the network call. This prevents cascading failures. After a wait period, it enters half-open state and allows test calls. I combine this with retry for transient failures with exponential backoff, a timeout so we don't wait indefinitely, and a fallback method that returns a cached or degraded response. I also use the bulkhead pattern to isolate thread pools per downstream service — if the inventory service is slow, it shouldn't exhaust all threads and affect payment calls. In my project, when the recommendation service was down, the circuit breaker activated and we returned cached recommendations instead of failing the entire product page."
 
 ### 💻 Code

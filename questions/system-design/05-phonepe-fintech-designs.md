@@ -21,7 +21,7 @@ VPA-based addressing, two-step collect/pay flow, idempotent transaction processi
 6. **Settlement**: End-of-day batch settlement between banks
 7. **Fraud Detection**: Real-time scoring on each transaction
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "The key challenge is ensuring exactly-once payment processing in a distributed system. I'd use an idempotency key per transaction, a state machine for transaction lifecycle, and a bank adapter layer to abstract different bank integrations. For reliability, I'd use Kafka with transactional producers and idempotent consumers."
 
 ### 💻 Code
@@ -79,7 +79,7 @@ Event-sourced transaction store, read-optimized projections per user, cursor-bas
 5. **Search**: Elasticsearch for full-text search on merchant names
 6. **Real-time**: WebSocket push for new transactions
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I'd use an event-sourced architecture where every transaction is an immutable event. A consumer builds per-user materialized views in Cassandra for fast reads. The API supports cursor-based pagination with filters. New transactions push real-time updates via WebSocket."
 
 ### ⚡ Remember
@@ -106,7 +106,7 @@ Pub-sub with per-user inbox, priority-based ordering, read/unread tracking, expi
 5. **Priority**: Transactional > Alerts > Promotions
 6. **Expiry**: TTL per message type, background cleanup
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I'd design a fan-out notification system. Publishers send events to Kafka topics. A routing service determines the target users and writes to their inboxes. The inbox has a hot layer in Redis for recent messages and cold storage in Cassandra. The API supports pagination, filtering, and mark-as-read."
 
 ### ⚡ Remember
@@ -134,7 +134,7 @@ Partitioned time-wheel + distributed locking + idempotent workers. Jobs stored i
 6. **Retry**: Failed jobs → retry with backoff → DLQ after max retries
 7. **Observability**: Latency, success rate, queue depth metrics
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I'd partition the job space and use Redis sorted sets for the schedule queue, scored by next-fire-time. A leader-elected scheduler polls for due jobs and dispatches to Kafka. Workers consume, acquire a distributed lock, and execute idempotently. This gives us exactly-once execution at scale."
 
 ### ⚡ Remember
@@ -161,7 +161,7 @@ Collect metrics (latency, errors, availability) → aggregate → compute SLI �
 5. **Alerting**: Multi-window burn rate alerts (fast burn = page, slow burn = ticket)
 6. **Dashboard**: Budget remaining, historical SLI trends, incident correlation
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I'd build on OpenTelemetry for metrics collection, computing SLIs from raw metrics. SLOs are defined as targets over rolling windows. The key innovation is error budget tracking — when the budget burns too fast, we alert. This shifts focus from individual incidents to overall service health."
 
 ### ⚡ Remember

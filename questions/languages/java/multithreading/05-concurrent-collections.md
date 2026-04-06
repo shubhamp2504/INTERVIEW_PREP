@@ -35,7 +35,7 @@ Concurrent Collections:
 | TreeMap | **ConcurrentSkipListMap** | Lock-free skip list |
 | Queue | **ArrayBlockingQueue** / **LinkedBlockingQueue** | Lock-based blocking |
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Concurrent collections from java.util.concurrent are designed for multi-threaded access without external synchronization. Unlike Collections.synchronizedMap() which locks the entire map, ConcurrentHashMap uses bucket-level locking and CAS — so multiple threads can read and write to different buckets simultaneously. In my project, I replaced a synchronizedMap that was causing thread contention with ConcurrentHashMap, which gave us significantly better throughput."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -105,7 +105,7 @@ map.merge("orders", 1, Integer::sum);            // atomic merge
 map.forEach((key, value) -> System.out.println(key + ": " + value));
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"ConcurrentHashMap is the production standard for thread-safe maps. In Java 8+, reads are lock-free using volatile semantics, and writes lock only the first node of the affected bucket. It provides atomic compound operations like putIfAbsent(), compute(), and merge() — these eliminate the check-then-act race condition. In my project, I use compute() for atomic counter updates and putIfAbsent() for cache initialization."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -150,7 +150,7 @@ map.forEach((key, value) -> System.out.println(key + ": " + value));
 - HashMap in multi-threaded = **infinite loop** during resize (Java 7), **lost updates**, **corrupted state** *(HashMap multi-thread mein use kiya toh data corrupt — infinite loop bhi ho sakta hai)*
 - ConcurrentModificationException from HashMap iterator ≠ thread-safety — it's just fail-fast
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"HashMap is not thread-safe — using it from multiple threads can cause infinite loops during resize, lost updates, and data corruption. ConcurrentHashMap uses bucket-level locking for writes and lock-free reads. Three key differences: no null keys/values in CHM because null is ambiguous under concurrency, weakly consistent iteration instead of fail-fast, and critically — atomic compound operations like compute() and merge() that eliminate check-then-act race conditions."*
 
 ### ⚡ Remember
@@ -213,7 +213,7 @@ for (String listener : listeners) {
 - **Never** for write-heavy workloads *(100 writes/second = 100 array copies = terrible)*
 - Iterator is snapshot — won't see changes made after iterator creation
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"CopyOnWriteArrayList creates a new array copy on every write — O(n) per add/remove. But reads are completely lock-free. Iteration uses a snapshot — even concurrent modifications don't cause ConcurrentModificationException. I use it for event listener lists and configuration that rarely change but are read thousands of times per second."*
 
 ### ⚡ Remember
@@ -281,7 +281,7 @@ executor.submit(() -> {
 });
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"BlockingQueue is the production standard for producer-consumer. put() blocks when full, take() blocks when empty — no manual wait/notify needed. I use ArrayBlockingQueue for bounded queues with predictable memory. The blocking behavior provides natural backpressure — if the consumer is slow, the producer automatically slows down."*
 
 ### ⚡ Remember
@@ -330,7 +330,7 @@ LinkedBlockingQueue:
 - LinkedBlockingQueue **default = Integer.MAX_VALUE** → effectively unbounded → **OOM risk** *(hamesha capacity do — warna memory khatam)*
 - ArrayBlockingQueue **always requires capacity** — safer by design
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"ArrayBlockingQueue uses a single lock for both put and take — producers compete with consumers. It's bounded and memory-predictable. LinkedBlockingQueue uses two separate locks — producers and consumers don't block each other, giving higher throughput under contention. But it creates a new node per element, adding GC pressure. I use ArrayBlockingQueue for most cases for simplicity and safety. LinkedBlockingQueue when I need higher throughput with heavy concurrent producers and consumers — always specifying a capacity."*
 
 ### ⚡ Remember

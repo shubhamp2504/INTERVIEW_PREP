@@ -9,7 +9,7 @@
 [![Made with ❤️](https://img.shields.io/badge/Made%20with-❤️-red.svg)](#)
 [![Markdown](https://img.shields.io/badge/Format-Markdown-blue.svg)](#)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#)
-[![Last Updated](https://img.shields.io/badge/Last%20Updated-March%202026-orange.svg)](#)
+[![Last Updated](https://img.shields.io/badge/Last%20Updated-April%202026-orange.svg)](#)
 [![GitHub](https://img.shields.io/badge/GitHub-shubhamp2504-black?logo=github)](https://github.com/shubhamp2504)
 
 ---
@@ -24,26 +24,26 @@
 | # | Category | Questions | Link |
 |---|----------|-----------|------|
 | 1 | 🧠 **DSA** | 18 | [Go →](./questions/dsa/) |
-| 2 | ☕ **Java — Core** | 236 | [Go →](./questions/languages/java/core/) |
-| 3 | 🌱 **Java — Spring Framework & Boot** | 52 | [Go →](./questions/languages/java/spring/) |
+| 2 | ☕ **Java — Core** | 249 | [Go →](./questions/languages/java/core/) |
+| 3 | 🌱 **Java — Spring Framework & Boot** | 64 | [Go →](./questions/languages/java/spring/) |
 | 4 | 🌿 **Java — Spring Batch** | 125 | [Go →](./questions/languages/java/spring-batch/) |
 | 5 | 🧵 **Java — Multithreading & Concurrency** | 112 | [Go →](./questions/languages/java/multithreading/) |
 | 6 | 🏗️ **Java — Architecture & System Design** | 16 | [Go →](./questions/languages/java/architecture/) |
 | 7 | 🛠️ **Java — Production Debugging** | 24 | [Go →](./questions/languages/java/production-debugging/) |
 | 8 | 🌐 **Web Development** | 55 | [Go →](./questions/web-dev/) |
 | 9 | 🗄️ **Database** | 18 | [Go →](./questions/database/) |
-| 10 | 🏠 **System Design** | 40 | [Go →](./questions/system-design/) |
+| 10 | 🏠 **System Design** | 54 | [Go →](./questions/system-design/) |
 | 11 | ☁️ **Cloud & DevOps** | 7 | [Go →](./questions/cloud-devops/) |
-| 12 | 🏗️ **Architecture** | 2 | [Go →](./questions/architecture/) |
-| 13 | 🧩 **OOPs & Design Patterns** | 3 | [Go →](./questions/oops-patterns/) |
+| 12 | 🏗️ **Architecture** | 22 | [Go →](./questions/architecture/) |
+| 13 | 🧩 **OOPs & Design Patterns** | 8 | [Go →](./questions/oops-patterns/) |
 | 14 | 🔐 **Security** | 0 | [Go →](./questions/security/) |
 | 15 | 🧪 **Testing** | 18 | [Go →](./questions/testing/) |
 | 16 | 📱 **Mobile Development** | 0 | [Go →](./questions/mobile/) |
 | 17 | 🤖 **AI/ML** | 22 | [Go →](./questions/ai-ml/) |
-| 18 | 🎯 **HR & Behavioral** | 1 | [Go →](./questions/hr-behavioral/) |
+| 18 | 🎯 **HR & Behavioral** | 21 | [Go →](./questions/hr-behavioral/) |
 | 19 | 📝 **Aptitude & Puzzles** | 0 | [Go →](./questions/aptitude/) |
-| 20 | 💼 **Company Specific** | 281 | [Go →](./questions/company-specific/) |
-| | | **920 total** | |
+| 20 | 💼 **Company Specific** | 323 | [Go →](./questions/company-specific/) |
+| | | **1046 total** | |
 
 ---
 
@@ -91,23 +91,23 @@ Each question has tags like: `#arrays` `#dp` `#amazon` `#medium` `#must-know`
 |----------|-------|
 | Java — Spring Batch | 125 |
 | Java — Multithreading & Concurrency | 112 |
-| Java — Core (Collections, Streams, JVM, Fundamentals) | 236 |
-| Java — Spring Framework & Boot | 52 |
+| Java — Core (Collections, Streams, JVM, Fundamentals) | 249 |
+| Java — Spring Framework & Boot | 64 |
 | Java — Production Debugging | 24 |
 | Java — Architecture & System Design | 16 |
-| System Design (Distributed, Fintech, Product Companies) | 40 |
+| System Design (Distributed, Fintech, Product Companies) | 54 |
 | DSA (Arrays, Strings, DP, Graphs) | 18 |
 | Web Development (Networking, Angular, REST/SOAP, React, JS) | 55 |
 | Database (JPA, Hibernate, SQL) | 18 |
-| Company Specific (Atlassian, Bloomberg, HCLTech, Goldman Sachs, Accenture, EY, AmEx, Amazon, Bajaj Allianz, CGI, Infosys, Deloitte, Capgemini) | 281 |
+| Company Specific (Atlassian, Bloomberg, HCLTech, Goldman Sachs, Accenture, EY, AmEx, Amazon, Bajaj Allianz, CGI, Infosys, Deloitte, Capgemini, Citi Bank) | 323 |
 | Cloud & DevOps (Observability, Infrastructure) | 7 |
-| OOPs & Design Patterns | 3 |
-| Architecture (Service Communication) | 2 |
-| HR & Behavioral | 1 |
+| OOPs & Design Patterns | 8 |
+| Architecture (Service Communication, Technical BA) | 22 |
+| HR & Behavioral | 21 |
 | Security | 0 |
 | Testing | 18 |
 | AI/ML & Generative AI | 22 |
-| **Grand Total** | **920** |
+| **Grand Total** | **1046** |
 
 ---
 
@@ -133,6 +133,8 @@ Each question has tags like: `#arrays` `#dp` `#amazon` `#medium` `#must-know`
 | 2026-03-25 | 18 | 💼 45 Qs: Accenture Java Spring Boot multi-round interview (REST impl, Spring core, Java threading, microservices, security, Kafka, DevOps, scenario-based) |
 | 2026-03-25 | 19 | 💼 19 Qs: EY Round 2 interview (9 — Spring Boot CRUD, AWS Lambda, VPC infra, Security Groups, IAM, Docker/K8s, Jenkins) + Angular Components & Services fundamentals (10) |
 | 2026-03-26 | 20 | 💼🌐🧪🤖 131 Qs: 9 company interviews (AmEx 23, Amazon SDE-1 6, EY React 12, Bajaj Allianz 14, CGI Frontend 23, Infosys React 5, Deloitte 14, Capgemini QA 15, Accenture Multi-Role 44) + Exception Handling Advanced 15 + React/JS Fundamentals 20 + React Scenarios 10 + Automation Testing 18 + AI/ML Fundamentals 22 |
+| 2026-04-06 | 21 | ☕🎯🔌 43 Qs: Java 8 Coding Part 2 (13 — string parsing, multi-field sorting, grouping+sorting, employee>manager salary, word frequency, shift zeros), Techno-Managerial Round (20 — design decisions, prioritization, performance, code quality, mentoring, production incidents, scalability, monolith vs micro, fault tolerance, secure coding), Technical BA API & Integration (10 — API requirements, validation, data mapping, sync vs async, contract changes) |
+| 2026-04-06 | 22 | 🌱🏠🏗️🧩💼 83 Qs: Spring Boot Scenario Interviews (12 — multiple main, OCP Strategy Pattern, sync/async API models, @OneToMany, @Transactional pitfalls, connection pool, production debugging, DB optimization), Backend Scenario Debugging & System Design (14 — slow service debugging, retry storms, circuit breaker, cache inconsistency, notification/chat/file-upload design, logging/monitoring, zero-downtime K8s), DevOps Kafka Advanced (10 — Kafka ordering, streams, dedup, default method conflict, TDD vs BDD, K8s vs OpenShift, inter-service security, caching Redis/GemFire), OOP Real-Project Examples (5 — Encapsulation POM, Abstraction utils, Inheritance BaseTest, Polymorphism DriverFactory, SOLID real), Capgemini L1 Java (10), Citi Bank Senior Java (18), Product Company 3 YOE (14) |
 
 ---
 

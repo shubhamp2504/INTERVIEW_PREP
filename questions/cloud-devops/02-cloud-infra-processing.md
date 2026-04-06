@@ -95,7 +95,7 @@ server {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I use load balancing at multiple levels. At the infrastructure level, AWS ALB handles external traffic with path-based routing — directing API calls to backend services and static content to frontend. Within the microservices mesh, I use Spring Cloud LoadBalancer for client-side load balancing — each service discovers available instances from Eureka and picks one using round-robin. The advantage of client-side LB is no single point of failure and the client can make intelligent choices. In Kubernetes, the Service abstraction provides internal load balancing via kube-proxy iptables rules, distributing traffic across pods. For the algorithm, I typically use round-robin for homogeneous instances and least-connections when request processing times vary significantly."
 
 ### ⚠️ Pitfalls / Gotchas
@@ -254,7 +254,7 @@ spec:
           averageUtilization: 70  # scale up when CPU > 70%
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Kubernetes manages the full lifecycle of containerized microservices. I declare the desired state — three replicas of order-service with specific resource limits — and K8s continuously reconciles actual state to match. For zero-downtime deployments, I use rolling updates with maxUnavailable set to zero, so at least three healthy pods serve traffic throughout the deployment. Spring Boot actuator health endpoints serve as liveness and readiness probes — liveness determines if the container needs a restart, readiness controls whether it receives traffic. For auto-scaling, HPA monitors CPU and custom metrics from Prometheus, scaling pods between a min and max range. Secrets management uses K8s Secrets backed by external vault for sensitive configuration."
 
 ### ⚠️ Pitfalls / Gotchas
@@ -397,7 +397,7 @@ resource "aws_dynamodb_table" "orders" {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I design cloud-native applications following the 12-factor methodology — stateless services in containers orchestrated by Kubernetes on EKS, with externalized configuration via ConfigMaps and Secrets, and all infrastructure defined as code using Terraform. For event-driven workloads with variable traffic, I use AWS Lambda — it scales from zero to thousands of concurrent executions automatically, and we only pay for actual compute time. For a recent project, we used Lambda for processing S3 file uploads and SQS messages, with Spring Cloud Function for portability across cloud providers. The key design decision is choosing between containers on K8s for long-running services with steady traffic, versus serverless for event-driven, bursty workloads where cost optimization matters."
 
 ### ⚠️ Pitfalls / Gotchas

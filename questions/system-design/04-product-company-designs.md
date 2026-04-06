@@ -20,7 +20,7 @@ Video ingestion → transcoding pipeline → CDN distribution → adaptive bitra
 5. **Streaming**: Client requests manifest file → ABR selects quality based on bandwidth
 6. **Recommendation Engine**: ML models for personalized feeds
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I'd design three main pipelines: upload/ingest, transcoding, and streaming. Videos are uploaded to blob storage, a message queue triggers the transcoding service which produces multiple quality levels as HLS segments. These are pushed to CDN edge servers. The player uses adaptive bitrate streaming, switching quality based on network conditions."
 
 ### ⚠️ Pitfalls / Gotchas
@@ -53,7 +53,7 @@ Geospatial indexing (QuadTree/Geohash) for nearby driver lookup, WebSocket for r
 5. **Payment**: Post-trip charge via payment service
 6. **ETA Calculation**: Graph-based routing with real-time traffic data
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "The core challenge is real-time geospatial matching. I'd use a geohash-based index to find nearby drivers. When a rider requests a ride, I query the index for drivers in expanding rings. The matching service dispatches to the optimal driver. WebSocket connections provide real-time location updates."
 
 ### ⚡ Remember
@@ -80,7 +80,7 @@ Edge PoPs worldwide → DNS-based routing to nearest PoP → cache static conten
 5. **DDoS Protection**: Rate limiting, WAF at edge
 6. **TLS Termination**: Edge handles SSL for faster handshake
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I'd design a multi-tier caching architecture. DNS routes users to the nearest PoP using anycast. The edge server checks its local cache — on a hit, it serves immediately. On a miss, it fetches from a regional cache or origin, then caches locally. Cache invalidation uses a combination of TTL and explicit purge."
 
 ### ⚡ Remember
@@ -131,7 +131,7 @@ WebSocket for persistent connections, message queue for guaranteed delivery, Cas
 5. **Group Chat**: Fan-out to all group members
 6. **Read Receipts**: Track last_read_timestamp per user per chat
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I'd use WebSocket for real-time bidirectional communication. Messages flow through a chat service to a message router that identifies the recipient's server. For offline users, messages queue until reconnection. I'd store messages in Cassandra partitioned by chat ID for efficient retrieval."
 
 ### ⚡ Remember

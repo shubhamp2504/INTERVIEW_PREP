@@ -26,7 +26,7 @@ Key issues: non-uniform distribution (some servers get more traffic), hotspots f
 - Separate caching layer for hot content
 - Session stickiness with graceful migration
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "The main issue is non-uniform load distribution. In music streaming, some songs are orders of magnitude more popular, creating hotspots. When a node fails, its entire load cascades to one neighbor. I'd mitigate this with virtual nodes for better distribution, a bounded-load variant to cap per-node traffic, and a separate CDN layer for popular content."
 
 ### ⚡ Remember
@@ -61,7 +61,7 @@ Pre-loaded: fast, offline-capable, but stale and increases app size. Server-load
 - Pre-load defaults → overlay with server-loaded personalized hints
 - Cache server hints locally with TTL *(default pre-load karo, server se fresh layover karo)*
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I'd use a hybrid approach. Ship default hints in the app for immediate display and offline support. On app launch, fetch personalized hints from the server and overlay them. Cache server hints locally with a TTL. This gives us best-of-both: instant display, always fresh when online."
 
 ### ⚡ Remember
@@ -145,7 +145,7 @@ Key inputs needed: article volume, ML model size, inference latency, storage ret
 - Storage: 500MB/day × 365 = 182GB/year
 - If real-time (<1s SLA): need parallel GPU workers *(real-time chahiye toh zyada GPUs lagenge)*
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "First, I'd ask clarifying questions: expected article volume, latency requirements, and the ML model's resource needs. For back-of-envelope: if we process 100K articles/day with 100ms inference time, one GPU handles it. I'd add a queue for buffering, auto-scaling workers for peak loads, and separate storage tiers for raw articles vs processed results."
 
 ### ⚡ Remember
@@ -173,7 +173,7 @@ Key changes: data residency (keep data in-country), multi-region deployment, i18
 6. **Compliance**: GDPR (EU), CCPA (California), PDPA (India), etc.
 7. **Payment**: Local payment methods per country (UPI in India, iDEAL in Netherlands)
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I'd break this into infrastructure and application changes. Infra: multi-region deployments with data residency compliance — user data stays in-country. Application: localization framework for text, currency, and date formats. Cross-cutting: timezone handling in UTC, local payment integrations, and compliance with regional regulations."
 
 ### ⚡ Remember
@@ -457,7 +457,7 @@ Ask clarifying questions, create an MVP scope, get stakeholder alignment, iterat
 5. **Iterate**: Ship MVP → gather feedback → refine → repeat
 6. **Document**: Write decisions and assumptions as you go
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "In my previous project, we received a requirement to 'improve user engagement' with no specific metrics. I organized a workshop with product and design to define what engagement means — we agreed on DAU and session duration. I proposed a 2-week MVP with push notifications and in-app tips. After the first sprint, we had data to guide the next iteration."
 
 ### ⚡ Remember
@@ -484,7 +484,7 @@ Identify skill gap, create a learning plan, pair program, give stretch assignmen
 5. **Code Reviews**: Detailed reviews with explanations, not just approvals
 6. **Feedback Loop**: Regular check-ins on progress
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "A junior developer on my team was strong in coding but struggled with system design. I created a 6-week plan: first 2 weeks we did book study on Designing Data-Intensive Applications, then I assigned them to lead the design of a cache service with me as a reviewer. I paired with them on the initial architecture, then let them drive. By the end, they presented the design to the team and implemented it. Six months later, they were confidently designing features independently."
 
 ### ⚡ Remember

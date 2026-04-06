@@ -81,7 +81,7 @@ while (true) {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "For network programming in Java, the choice between TCP and UDP depends on the reliability requirement. TCP with its three-way handshake guarantees delivery and ordering — I use it for any data that must arrive correctly like API calls and database connections. UDP skips the handshake and has no delivery guarantee — I use it for real-time scenarios like metrics streaming or video where speed matters more than occasional packet loss. For high-concurrency servers, I use Java NIO with selectors — a single thread monitors thousands of connections via non-blocking channels, rather than the traditional thread-per-connection model that doesn't scale beyond a few thousand connections. In production, I use Netty rather than raw NIO, as it provides a production-grade event-driven framework used by Kafka, gRPC, and Elasticsearch."
 
 ### 🆚 vs. Comparison
@@ -198,7 +198,7 @@ OrderResponse response = stub.getOrder(
 );
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "For inter-service communication in microservices, I use gRPC over REST when I need high performance and type safety. gRPC uses Protocol Buffers for binary serialization — which is 5-10x smaller and faster than JSON — and HTTP/2 for multiplexing, which allows multiple concurrent request-response streams over a single TCP connection. The service contract is defined in a .proto file, and the protoc compiler generates strongly-typed client stubs and server skeletons in any language. This eliminates the manual mapping layer needed with REST. I particularly leverage server-streaming for real-time data feeds and bidirectional streaming for scenarios like chat or live dashboards. For browser-facing APIs, I still use REST since gRPC-Web has limited browser support."
 
 ### 🆚 vs. Comparison
@@ -345,7 +345,7 @@ type Order {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I use GraphQL when the client has varied data requirements — particularly for mobile apps where bandwidth is limited and different screens need different subsets of data. With REST, you either over-fetch by returning everything or under-fetch requiring multiple round-trips. GraphQL solves this with a single endpoint where the client specifies exactly the fields needed. I implement it in Spring Boot using Spring for GraphQL — defining a schema in SDL, then writing resolver methods annotated with @QueryMapping and @SchemaMapping. The biggest challenge is the N+1 query problem — if the orders resolver fires once per user in a list, you get N separate DB queries. I solve this with DataLoader which batches these into a single IN query. For public APIs, I use REST because GraphQL can enable denial-of-service through deeply nested queries — I add query depth limiting and complexity analysis for any exposed GraphQL endpoint."
 
 ### ⚠️ Pitfalls / Gotchas
@@ -471,7 +471,7 @@ public RestTemplate mtlsRestTemplate() throws Exception {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I enforce TLS 1.3 for all communications in production. TLS provides encryption, authentication, and integrity for data in transit. The TLS 1.3 handshake is a significant improvement over 1.2 — it completes in just one round-trip and removes weak cipher suites. In Spring Boot, I configure HTTPS with a PKCS12 keystore and enforce TLS 1.3 through the enabled-protocols property. For microservice-to-microservice communication, I implement mTLS where both sides present certificates — this is typically handled by a service mesh like Istio which automatically manages certificate rotation and mTLS enforcement without application code changes. For key management, I use vault-based solutions to store and rotate certificates rather than bundling them in the application."
 
 ### ⚠️ Pitfalls / Gotchas

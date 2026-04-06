@@ -55,7 +55,7 @@ Tuning Decision Tree:
   Heap > 16GB? → ZGC or G1 (Parallel GC struggles)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I start by profiling rather than guessing — using Java Flight Recorder and GC logs to identify whether the issue is GC pauses, memory leaks, or thread contention. For heap sizing, I set Xms equal to Xmx to avoid resize overhead, and in containers I use MaxRAMPercentage at 75%. For GC selection, I use G1GC for most web applications — it provides a good balance of throughput and pause time with configurable MaxGCPauseMillis. For latency-sensitive services where p99 matters, I switch to ZGC which gives sub-millisecond pauses regardless of heap size. At the code level, I reduce object allocation: using primitive streams instead of boxed types, StringBuilder for string concatenation in loops, and object pooling for expensive-to-create objects like database connections. I monitor with Micrometer exporting JVM metrics to Prometheus — GC pause time, heap utilization, and thread count are on our Grafana dashboards. In my project, switching from Parallel GC to G1GC and tuning MaxGCPauseMillis from default to 100ms reduced our p99 latency from 800ms to 120ms."
 
 ### 💻 Code

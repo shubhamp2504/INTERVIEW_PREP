@@ -53,7 +53,7 @@ Timeline:
   Saturated: Req → Thread WAIT 3s → DB conn WAIT 5s → Query (5ms) → Response 8s+
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "When an API slows down after a traffic spike, I check three things in order. First, GC metrics — if the JVM is spending more than 10% of time in garbage collection with Old Gen near capacity, we're GC thrashing. I'd take a heap dump and analyze with MAT to find if there's a memory leak or if we simply need more heap. Second, I check thread dumps — if all 200 Tomcat threads are BLOCKED or WAITING, the pool is exhausted, usually because a downstream service slowed down and threads are stuck waiting on I/O. The fix there is either increasing the pool or adding timeouts and circuit breakers to the slow dependency. Third, I check HikariCP metrics — if connection pending count is high, the DB connection pool is the bottleneck. I'd increase the pool size but also check if queries can be optimized or cached to reduce DB pressure."
 
 ### 💻 Code — Preventing the Issue
@@ -139,7 +139,7 @@ Common Memory Leak Patterns:
   BufferedReader reader = new BufferedReader(...)  // never closed ❌
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "When memory doubles after a deploy, I don't guess — I take a heap dump and compare it to a pre-deploy baseline. Using Eclipse MAT's dominator tree, I find the object type consuming the most retained memory that wasn't there before. In my experience, the most common cause is an unbounded cache — someone adds a HashMap as a local cache without eviction, and it grows linearly with traffic. Second most common is a query change that accidentally loads a much larger result set, like removing a WHERE clause. I also check Metaspace — if a library upgrade introduces excessive dynamic class generation, that shows up as growing Metaspace. The git diff of the small change usually reveals the culprit within minutes once you know what object type to look for."
 
 ### 💻 Code — Common Leaks → Fixes

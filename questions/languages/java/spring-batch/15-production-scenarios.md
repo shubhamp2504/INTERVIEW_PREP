@@ -37,7 +37,7 @@ Performance:
   10 partitions: ~10 minutes (6× faster, limited by DB write speed)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "For a 10GB file, I use a two-step approach. First, a Tasklet step splits the file into 10 equal chunks of approximately 1GB each. Second, a master step uses MultiResourcePartitioner to assign each file chunk to a parallel worker. Each worker uses FlatFileItemReader which streams line-by-line with constant memory — about 50MB per partition regardless of file size. Combined with JdbcBatchItemWriter for batch inserts, 10 partitions process the file in about 10 minutes. Each partition is independently restartable — if partition 7 fails, restart only re-reads that file chunk."
 
 ### 💻 Code
@@ -157,7 +157,7 @@ Infrastructure:
   Index: ON orders(id) — CRITICAL
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "For 100 million records, I use ID-range partitioning with 20 partitions. The Partitioner queries MIN and MAX IDs, divides into 20 non-overlapping ranges of 5 million each. Each partition uses a StepScope JdbcPagingItemReader with WHERE id BETWEEN :minId AND :maxId, combined with JdbcBatchItemWriter for batch inserts. With 20 partitions running at 500 records per second each, we get 10,000 records per second total. The critical infrastructure requirements are an index on the ID column, a connection pool of at least 22, and 4-8 GB heap. In my project, this approach processes 100M payment records in about 45 minutes."
 
 ### 💻 Code
@@ -266,7 +266,7 @@ Async Launcher:
   → Both jobs run in parallel
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "For multiple concurrent batch jobs, I address four concerns. First, each job gets its own TaskExecutor with a dedicated thread pool, preventing one job from starving another. Second, the database connection pool must be large enough for all concurrent threads plus overhead — in our case, 20 connections for 14 worker threads plus buffers. Third, jobs process different data to avoid write conflicts. Fourth, I use an async JobLauncher so launching one job doesn't block launching others. In my project, we run three concurrent jobs — import, reporting, and notification — each with its own resources, totaling about 14 worker threads."
 
 ### 💻 Code
@@ -365,7 +365,7 @@ Recovery:
   7. Processing resumes from chunk 51 ✅
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "After a JVM crash, committed chunks are safe but the current chunk's transaction rolls back, and the job status stays STARTED because the afterJob callback never executed. On restart, I have an ApplicationRunner that detects stale STARTED executions — those where the start time is more than an hour ago but status is still STARTED. It marks them as FAILED, then re-launches with the same parameters. The framework reads the last committed position from the step execution context and resumes from that point. In my project, a crash at record 25,000 of 100,000 lost only the current chunk of 500 records — restart continued from 25,001."
 
 ### 💻 Code
@@ -477,7 +477,7 @@ Status check:
   GET /status/102 → {status: "STARTED", progress: "60%"}
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Each uploaded file becomes a unique JobInstance with userId, filePath, and upload timestamp as identifying parameters. I use an async JobLauncher so the upload API returns immediately with a job ID while processing runs in the background. Users can check progress via a status endpoint. Each job is independent — one user's failure doesn't affect another. We store files in user-specific directories and limit concurrent processing to prevent resource exhaustion. In my project, this handled 50+ concurrent user uploads with an 8-thread pool for batch processing."
 
 ### 💻 Code
@@ -580,7 +580,7 @@ Combined:
   Layer 3 prevents: items re-read on restart
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I implement three layers of duplicate prevention. First, Spring Batch's built-in JobParameters uniqueness prevents re-running a completed job with the same parameters. Second, I use idempotent writers with UPSERT — INSERT ON DUPLICATE KEY UPDATE — so if the same record is processed twice during a retry, the result is identical. Third, I mark source records as processed after writing, and the reader only queries unprocessed records. The CompositeItemWriter handles both writing to the target and marking the source as processed in one step. In my project, this three-layer approach gave us zero duplicate processing across 6 months of daily runs."
 
 ### 💻 Code
@@ -683,7 +683,7 @@ Reprocessing:
   → Process and write → mark STATUS=RESOLVED
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I implement a SkipListener that inserts each skipped record into an error table with the phase — whether it failed during reading, processing, or writing — along with the record data, exception message, and timestamp. This gives us a complete audit trail. In production, we alert when skip count exceeds a threshold, investigate the root cause, and then run a separate reprocessing job that reads from the error table. In my project, we tracked about 50 skipped records per day from data quality issues in partner files. The reprocessing job ran weekly after data corrections."
 
 ### 💻 Code
@@ -797,7 +797,7 @@ Stop API:
   StepExecution.setTerminateOnly()   ← immediate (current chunk lost)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "To cancel a running job, I use JobOperator.stop() which sends a graceful stop signal. The job finishes the current chunk — completes the transaction and saves the ExecutionContext — then transitions to STOPPED status. This is important because no data is lost and the job can be restarted later from the checkpoint. For urgent situations where we can't wait for the current chunk, I use setTerminateOnly() on the StepExecution inside a ChunkListener, which abandons the current chunk. In my project, we exposed stop and restart endpoints for our operations team to manage long-running jobs."
 
 ### 💻 Code
@@ -894,7 +894,7 @@ Level 2: Job-Level Timeout (SLA: 2 hours)
     → STOPPED → investigate why it's slow → restart after fixing
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I implement two timeout levels. For chunk-level, I set a transaction timeout of 60 seconds on the step — if a single chunk hangs due to a database deadlock or network issue, the transaction fails fast instead of waiting indefinitely. For job-level, I schedule a JobOperator.stop() call for the SLA deadline — if our 2-hour SLA is breached, the job stops gracefully. The stopped job preserves its checkpoint for restart after investigation. In my project, the chunk timeout caught a database deadlock that would have hung the job indefinitely, and the job-level timeout caught a performance regression where data volume exceeded expectations."
 
 ### 💻 Code

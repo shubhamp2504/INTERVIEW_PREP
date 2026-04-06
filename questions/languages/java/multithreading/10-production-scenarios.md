@@ -60,7 +60,7 @@ public JdbcBatchItemWriter<Record> writer() {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"For millions of records, I use Spring Batch partitioned steps. The Partitioner queries min/max IDs and divides into equal ranges. Each worker gets its own JdbcPagingItemReader scoped to its partition via @StepScope. Workers run in a ThreadPoolTaskExecutor. Writers use JDBC batch inserts — batching 5000 records per write. Partitions are independent — no shared state, no locking, linear scaling. I've processed 50 million records this way in under 30 minutes."*
 
 ### ⚡ Remember
@@ -116,7 +116,7 @@ public class OrderService {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"My approach is to minimize sharing first. If immutable or thread-local, no synchronization needed. For single values, AtomicInteger — lock-free CAS. For maps, ConcurrentHashMap with compute/merge for atomic compound operations. synchronized blocks as last resort with smallest scope. In Spring, services are singletons — I keep them stateless, with state in the database."*
 
 ### ⚡ Remember
@@ -181,7 +181,7 @@ public class DeadlockDetector {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"When I suspect deadlock — hanging requests, low CPU — I take 3 thread dumps with jstack, 5 seconds apart. The JVM auto-detects deadlocks in the dump. I check which locks are involved and find the code with inconsistent lock ordering. The fix is either enforcing a global lock ordering or switching to tryLock with timeout. For prevention, I add a scheduled DeadlockDetector using ThreadMXBean."*
 
 ### ⚡ Remember
@@ -229,7 +229,7 @@ if (!limiter.tryAcquire(5, TimeUnit.SECONDS)) {
 - **Always release in finally** *(bhul gaye toh permit kho gaya — aur koi nahi jaa payega)*
 - Release without acquire = permit count grows beyond initial *(galti se zyada release — limit badh jaayegi)*
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"I use Semaphore to limit concurrent access — like limiting connections to an external API that allows max 5 concurrent calls. acquire() takes a permit, release() returns it — always in finally. For timeout-based limiting, tryAcquire with timeout avoids indefinite waiting. In Spring, a fixed-size ThreadPoolTaskExecutor also serves as a natural concurrency limiter."*
 
 ### ⚡ Remember
@@ -277,7 +277,7 @@ CallerRunsPolicy effect:
 | DiscardPolicy | Silently drops ❌ | ❌ Data loss |
 | DiscardOldestPolicy | Drops oldest queued | ❌ Data loss |
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"When everything is maxed out, the rejection policy handles overflow. I always use CallerRunsPolicy — the submitting thread runs the task itself, creating natural backpressure. The caller slows down, preventing the server from being overwhelmed. AbortPolicy throws an exception — suitable for fail-fast. DiscardPolicy silently drops — dangerous because work is lost. Monitoring queue size and rejections is critical."*
 
 ### ⚡ Remember
@@ -333,7 +333,7 @@ public class ThreadPoolMonitor {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"I monitor pools at three levels. Micrometer gauges for real-time metrics — active threads, queue size, utilization. These feed into Grafana for dashboards and alerting. I alert when queue utilization exceeds 80% or any rejections occur. Periodic logging as backup. Spring Actuator exposes /metrics and /threaddump endpoints. Thread dumps via Actuator provide snapshots when needed."*
 
 ### ⚡ Remember
@@ -391,7 +391,7 @@ future.cancel(true);  // sends interrupt
 - **Never swallow InterruptedException** — always restore flag with `Thread.currentThread().interrupt()` *(flag restore karo — warna caller ko pata nahi chalega)*
 - **Thread.stop()** releases all locks instantly → corrupted state *(deprecated — use mat karo)*
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Java uses cooperative cancellation. Thread.interrupt() sets the interrupt flag — the thread must check isInterrupted() or handle InterruptedException from blocking operations. For executor tasks, Future.cancel(true) sends an interrupt. The critical rule: when catching InterruptedException, always restore the interrupt flag. Never use Thread.stop() — it's deprecated and unsafe."*
 
 ### ⚡ Remember
@@ -452,7 +452,7 @@ public class Processor {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Three-phase shutdown. Phase one: signal intent — set a volatile flag and call executor.shutdown(). Phase two: wait — awaitTermination gives tasks a grace period. Tasks check the shutdown flag and use timeout-based blocking to wake periodically. Phase three: force — shutdownNow() sends interrupts if tasks don't finish. In Spring, I configure waitForTasksToCompleteOnShutdown on the TaskExecutor."*
 
 ### ⚡ Remember
@@ -521,7 +521,7 @@ public ThreadPoolTaskExecutor writerExecutor() {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"I design concurrent systems as a pipeline with separate pools per stage. I/O stage has many threads — they mostly wait. CPU stage = CPU cores — more just wastes on context switching. Write stage batches operations for throughput. Bounded queues between stages provide backpressure. Services are stateless — shared state in the database. I use ConcurrentHashMap for caches, LongAdder for counters, and monitor every stage with Micrometer."*
 
 ### ⚡ Remember
@@ -605,7 +605,7 @@ int debitAtomic(@Param("id") Long id, @Param("amt") BigDecimal amt);
 | **Pessimistic** (FOR UPDATE) | High ✅ | Lower (blocks) | Low |
 | **Atomic SQL** | Any ✅ | Highest ⭐ | Lowest ⭐ |
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"For database consistency with concurrent threads, I choose between three approaches. Low contention — optimistic locking with @Version and @Retryable handles retry on conflict. High contention — pessimistic locking with SELECT FOR UPDATE blocks other threads until commit. For simple operations — atomic SQL like 'UPDATE SET balance = balance - amount WHERE balance >= amount' is a single atomic statement, simplest and fastest. I choose based on contention level and complexity."*
 
 ### ⚡ Remember

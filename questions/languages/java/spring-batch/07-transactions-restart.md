@@ -31,7 +31,7 @@ Why separate transactions?
 → On restart, Spring Batch reads metadata → knows where to resume
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Spring Batch handles transactions at the chunk level. Each chunk runs within its own transaction — successful chunks commit, failed chunks roll back. The critical design insight is that metadata updates happen in a separate transaction that always commits, even when the data chunk fails. This separation is what makes restartability possible — the metadata preserves the exact failure point. In my project, we verified this by looking at BATCH_STEP_EXECUTION_CONTEXT after a failure — the read count and commit count were preserved, allowing the restart to resume from the exact chunk that failed."
 
 ### 💻 Code
@@ -118,7 +118,7 @@ StepExecution tracks:
   rollbackCount: 3  → 3 chunks were rolled back during this step
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Rollback in Spring Batch undoes all database changes from the failed chunk — all INSERTs, UPDATEs, and DELETEs for that chunk revert. However, non-transactional operations like file writes and external API calls cannot be rolled back. In my project, we had a step that wrote to both a database and a file. When a chunk failed, the database data rolled back but the file retained the partially written data. We solved this by writing to a temporary file first and renaming it only after the step completed successfully — a common pattern for transactional-like file handling."
 
 ### 💻 Code
@@ -216,7 +216,7 @@ Best Practice Config:
   .listener(skipListener)                             // audit trail
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "When a chunk fails, Spring Batch first checks the fault tolerance configuration. Without it, the step fails immediately. With retry configured, it retries the operation — useful for transient errors like deadlocks or timeouts. With skip, it skips the bad item and continues — useful for data errors like validation failures. I combine both: retry 3 times for transient errors, then skip if retries are exhausted. The skipLimit acts as a safety net — if we're skipping too many records, it's likely a systemic issue and the job should fail. In my project, we always logged skipped items through SkipListener for the operations team to review."
 
 ### 💻 Code
@@ -301,7 +301,7 @@ Database Persistence:
   → Survives JVM crash, server restart, deployment
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Spring Batch's restartability is built on three pillars. First, step-level tracking — completed steps are skipped on restart. Second, chunk-level checkpointing — after each chunk commits, the reader's position is saved in the ExecutionContext. On restart, the reader initializes at the last checkpoint, so we only re-process the failed chunk. Third, database persistence — all this metadata is stored in the batch tables, so even a JVM crash doesn't lose restart information. In my project, our nightly job processing 10 million records crashed at 3 AM. The 6 AM restart picked up from the 8-millionth record because 80% was already checkpointed."
 
 ### 💻 Code
@@ -396,7 +396,7 @@ Step ExecutionContext (private):
 Persistence: saved after EVERY chunk commit → survives crashes
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "ExecutionContext is a persistent key-value map with two scopes. Job-level context is shared across all steps — useful for passing data like file names or summary counts between steps. Step-level context is private to one step — used by readers for checkpoint positions and custom counters. It's serialized and saved to the database after every chunk commit, which is what makes restart work. In my project, we stored the total record count in job context from the validation step, then used it in the report step to verify data integrity after processing."
 
 ### 💻 Code
@@ -502,7 +502,7 @@ Serialization:
   Spring Batch 4: Java serialization (binary, fragile)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "ExecutionContext is stored in two database tables — BATCH_JOB_EXECUTION_CONTEXT for job-level data and BATCH_STEP_EXECUTION_CONTEXT for step-level data. Each has a SHORT_CONTEXT column for small data and a SERIALIZED_CONTEXT CLOB for larger objects. Spring Batch 5 uses JSON serialization, which makes debugging much easier compared to Batch 4's Java serialization. In my project, when troubleshooting restart issues, I directly queried BATCH_STEP_EXECUTION_CONTEXT to check the reader's saved position and verify it matched our expected checkpoint."
 
 ### 💻 Code
@@ -573,7 +573,7 @@ Restart:
 Lost work: items 1501-1750 (one chunk) → re-processed on restart
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "On restart, Spring Batch loads the ExecutionContext from the database, which contains the reader's last checkpointed position. The reader's open method receives this context and initializes at the saved position. This means all previously committed chunks are skipped and processing resumes from the last uncommitted chunk. At most one chunk of work is re-processed. In my project, our FlatFileItemReader saved line numbers and our JdbcPagingItemReader saved page offsets — both automatically handled by the framework. On a crash at 3 million out of 10 million records, the restart only re-processed 500 items (one chunk) plus the remaining 7 million."
 
 ### 💻 Code

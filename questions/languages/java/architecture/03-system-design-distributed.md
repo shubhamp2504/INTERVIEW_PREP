@@ -65,7 +65,7 @@ Fault Tolerance Strategies:
   6. Chaos engineering → proactively test failure scenarios
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I design for scalability by making services stateless — no in-memory session state, everything stored in Redis or DB — so any instance can handle any request and I can horizontally scale by adding pods. I put a load balancer with API gateway in front for rate limiting and routing. For high throughput, I use Redis caching to absorb most read traffic and Kafka for async processing of non-critical operations like notifications and analytics. For fault tolerance, I use Resilience4j circuit breakers so that when a downstream service fails, we fail fast instead of cascading the failure. Each service has health check endpoints that Kubernetes monitors for automatic restarts. I design for graceful degradation — if the recommendation service is down, the product page still works with a cached or default recommendation. In my project, this architecture handled 10K requests per second with p99 under 100ms, surviving individual service failures without any user-visible impact."
 
 ### 💻 Code
@@ -221,7 +221,7 @@ Service Communication Flow:
     6. Product Service responds
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I design microservices with Spring Boot for each service and Spring Cloud for cross-cutting infrastructure. Each service registers with Eureka for service discovery — so services find each other by name, not hardcoded URLs. The API Gateway built with Spring Cloud Gateway provides a single entry point, handling routing, rate limiting, and JWT validation. Configuration is centralized via Spring Cloud Config backed by a Git repository, with hot-reload capability. For inter-service calls, I use OpenFeign for declarative REST clients wrapped with Resilience4j circuit breakers. Distributed tracing with Micrometer and Zipkin lets me trace a single request across all services to diagnose latency. In my project, this architecture had 8 microservices with Spring Cloud, and the Gateway handled 5K requests per second with P99 under 150ms."
 
 ### 💻 Code
@@ -407,7 +407,7 @@ Transactional Outbox Pattern (atomic DB + event):
   → Guarantees: if order is saved, event WILL be published
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I design event-driven architectures by having services publish domain events to a broker when something significant happens — OrderCreated, PaymentProcessed, InventoryUpdated. I choose Kafka for high-throughput scenarios — it handles millions of events per second with guaranteed ordering within partitions — and RabbitMQ when I need flexible routing patterns like fanout or topic-based routing. The key benefit is loose coupling: the order service publishes an OrderCreated event without knowing who consumes it. Adding a new consumer like analytics doesn't require changing the order service at all. For data consistency, I use the Transactional Outbox pattern — the event is stored in an outbox table within the same database transaction as the business data, then a separate process publishes it to Kafka. This solves the dual-write problem. For distributed transactions across services, I implement the Saga pattern with compensating events."
 
 ### 💻 Code
@@ -626,7 +626,7 @@ Choreography vs Orchestration:
     ❌ Single coordinator = potential bottleneck
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "In microservices, traditional distributed transactions like two-phase commit don't work well — they're slow and create tight coupling. I use the Saga pattern where each service performs its local transaction and publishes an event. If a downstream step fails, compensating transactions undo previous steps. For example, in an order flow — if inventory reservation fails after payment was charged, a compensating event triggers a payment refund and order cancellation. I choose choreography for simple 2-3 step flows where services react to events independently, and orchestration with a central Saga orchestrator for complex flows involving 5+ services where visibility and error handling are critical. For data consistency between the database and message broker, I use the Transactional Outbox pattern — the event is stored in the same database transaction as the business data. Every consumer operation is idempotent so that retries don't cause duplicate processing."
 
 ### 💻 Code

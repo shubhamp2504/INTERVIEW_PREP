@@ -47,7 +47,7 @@ Annotation Categories:
   7. Query:           @NamedQuery, @NamedNativeQuery, @Query (Spring Data)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Hibernate annotations map Java objects to database tables. At the entity level, @Entity marks a class as a JPA entity and @Table customizes the table name. For the primary key, I use @Id with @GeneratedValue using IDENTITY strategy for auto-increment. @Column lets me customize column name, nullability, uniqueness, and length. For relationships, @ManyToOne is the most common — it creates a foreign key column; @OneToMany with mappedBy defines the inverse side. I always use @Enumerated with STRING rather than ORDINAL to prevent bugs when enum values are reordered. @CreationTimestamp and @UpdateTimestamp auto-manage audit dates. @Version enables optimistic locking. And @Transient marks fields that shouldn't be persisted to the database."
 
 ### 💻 Code
@@ -230,7 +230,7 @@ Application Startup Timeline:
   ❌ Inner classes, interfaces, enums cannot be @Entity
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "@Entity marks a class as a JPA entity representing a database table. At application startup, Hibernate scans for all @Entity classes, reads their annotations to build an internal metadata model including column mappings, relationships, and SQL templates. It then runs the ddl-auto strategy — in development I use 'update' to auto-alter tables, but in production I use 'validate' or 'none' with Flyway managing migrations. The SessionFactory, which caches all this metadata, is built once and is expensive — typically taking 2-5 seconds. After that, at runtime, Hibernate already knows how to generate SQL for any entity operation. The entity class must have a no-arg constructor, an @Id field, and cannot be final because Hibernate creates CGLIB subclass proxies for lazy loading."
 
 ### 💻 Code
@@ -373,7 +373,7 @@ Validation Timeline:
   Spring @Query JPQL:  validated at STARTUP (Spring Data parses it)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Native queries use raw SQL sent directly to the database, so you can leverage database-specific features like PostgreSQL window functions or MySQL-specific syntax. However, they're not validated at startup — syntax errors only show up at runtime. Named queries are pre-defined JPQL queries annotated on the entity class or in XML. They're parsed and validated when the SessionFactory builds at startup, so a typo in the query is caught immediately rather than in production. Named queries are also cached by Hibernate, so repeated execution is slightly faster since the query plan doesn't need re-parsing. In practice with Spring Data, I use @Query with JPQL for most repository methods — it's validated at startup like named queries — and switch to nativeQuery only when I need database-specific features like CTEs or complex analytics."
 
 ### 💻 Code
@@ -536,7 +536,7 @@ FIX — @EntityGraph:
   // 1 query! Loads specified relationships eagerly for THIS query only
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Lazy loading defers loading related entities until they're first accessed — Hibernate returns a proxy object and fires the SQL query only on demand. Eager loading fetches everything upfront. I always keep the default lazy for collections and make @ManyToOne lazy too by explicitly setting fetch = LAZY. This avoids loading unnecessary data. When I know I need related entities for a specific use case — like an order with its items — I use JOIN FETCH in the query or @EntityGraph on the repository method to load them in a single query. This gives me the best of both worlds: lazy by default for efficiency, and selective eager loading per query to prevent the N+1 problem."
 
 ### 💻 Code
@@ -661,7 +661,7 @@ Cursor Lifecycle:
   FETCH NEXT moves pointer down one row
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "A cursor is a database mechanism for row-by-row processing of query results — you declare it with a SELECT statement, open it, fetch rows one at a time in a loop, and then close it. In practice, I almost never use cursors because set-based SQL is vastly more efficient — a single UPDATE statement modifying millions of rows will be 10 to 100 times faster than iterating with a cursor. The only cases where cursors are justified are when you have complex per-row logic that truly can't be expressed in SQL — like calling an external API for each row, sending row-specific notifications, or doing complex calculations that depend on the previous row's result. Even then, I prefer doing the iteration in application code with pagination rather than using a DB cursor, because it avoids holding database locks. If I must use a cursor, I use FAST_FORWARD and READ_ONLY options for best performance."
 
 ### 💻 Code

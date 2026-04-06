@@ -34,7 +34,7 @@ Key facts:
 - OPTIONAL component — can skip if no processing needed
 - Runs INSIDE the chunk transaction
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "ItemProcessor is the business logic layer between reader and writer. It processes one item at a time with four main uses: transforming data format, validating business rules, filtering unwanted records, or enriching with external data. It's optional — you only use it when you need to transform or validate data. In my project, our processor validated payment amounts, converted currency using an exchange rate API, calculated fees, and filtered out duplicate transactions by returning null. The processor changed the type from RawPayment to ProcessedPayment."
 
 ### 💻 Code
@@ -137,7 +137,7 @@ Three Types of Modification:
                                               ↑ looked up from DB/API
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Yes, ItemProcessor can modify data in three ways. Field modification changes values like calculating a 10% salary increase or normalizing names to uppercase. Type conversion transforms the input type to a completely different output type — like converting a raw CSV row to a JPA entity. Data enrichment fetches additional information from external sources and adds it to the object. In my project, our processor fetched the customer's credit score from an external API and added it to the order object for risk evaluation, effectively enriching the data before writing."
 
 ### 💻 Code
@@ -233,7 +233,7 @@ CsvRow ──→ validate() ──→ transform() ──→ enrich() ──→ E
 
 Key rule: **If ANY processor returns null → remaining processors skipped, item filtered.**
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Yes, you can chain multiple processors using CompositeItemProcessor. Processors execute in the order they're registered, with each processor's output becoming the next processor's input. Types can change through the chain — for example, validator takes CsvRow, transformer converts to Employee, enricher adds customer data and returns EnrichedEmployee. If any processor in the chain returns null, the remaining processors are skipped and the item is filtered. In my project, we had four processors in chain: validation, deduplication, currency conversion, and risk scoring — each focused on a single responsibility."
 
 ### 💻 Code
@@ -346,7 +346,7 @@ Short-circuit example:
   → return null → item FILTERED
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "CompositeItemProcessor is a decorator that chains multiple processors into one. Internally, it loops through delegates in order, passing each processor's output as the next processor's input. If any processor returns null, it short-circuits — the remaining processors are skipped and the item is filtered. In my project, we designed each processor with a single responsibility — validation, transformation, enrichment, and risk scoring. The composite wrapped them as one processor for the step. We made sure validation was first so invalid records were filtered before expensive enrichment operations."
 
 ### 💻 Code
@@ -435,7 +435,7 @@ processor.process(item) → throws Exception
                             └── NO → chunk ROLLBACK → step FAILED
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "When a processor throws an exception, behavior depends on fault tolerance configuration. Without it, the chunk rolls back and job fails immediately. With skip enabled, that specific item is skipped and processing continues with the next item — tracked as processSkipCount. With retry, the processing is retried up to the configured limit — ideal for transient errors like API timeouts. In my project, we combined both: retry 3 times for TimeoutException from our external API, and skip up to 100 ValidationExceptions for bad data. We always used a SkipListener to log skipped records to an error table for the operations team to review."
 
 ### 💻 Code
@@ -530,7 +530,7 @@ Record Count Formula:
   → 1000 - 50 - 5 = 945 written
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Yes, returning null from the processor is the standard way to filter records. It's counted as filterCount in StepExecution, which is different from skipCount. Filtering is a business decision — like excluding inactive employees or test records. Skipping is error handling — for items that throw exceptions. In my project, our processor filtered out three types of records: inactive customers, orders below the minimum amount, and duplicate transactions detected by a dedup cache. We monitored filterCount in our post-step listener to alert if the filter rate exceeded 20%, which could indicate a data quality issue."
 
 ### 💻 Code

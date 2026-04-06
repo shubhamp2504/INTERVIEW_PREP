@@ -18,7 +18,7 @@ By keys: use `TreeMap`. By values: stream the entrySet, sort, collect into `Link
 - Collect into `LinkedHashMap` to preserve insertion order *(LinkedHashMap order maintain karta hai)*
 - For reverse order: `comparingByValue(Comparator.reverseOrder())`
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "For sorting by keys, I'd use TreeMap which maintains natural key ordering. For sorting by values, I'd stream the entrySet, sort using Map.Entry.comparingByValue(), and collect into a LinkedHashMap to maintain the sorted order."
 
 ### 💻 Code
@@ -73,7 +73,7 @@ Best approaches: Enum singleton (simplest, safest), or Bill Pugh (lazy, thread-s
 - **Bill Pugh (Inner Class)**: Lazy + thread-safe via class loader guarantee
 - **Enum**: JVM guarantees single instance, serialization-safe, reflection-safe
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I prefer the Enum singleton for its simplicity and built-in protection against reflection and serialization attacks. For lazy initialization, I'd use the Bill Pugh approach with a static inner holder class, which is thread-safe without synchronization."
 
 ### 💻 Code
@@ -179,7 +179,7 @@ Key patterns: Singleton, Factory, Builder (Creational); Adapter, Proxy, Decorato
 | Iterator | Sequential access | `Iterator` interface |
 | Command | Encapsulate requests | `Runnable` |
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "In my projects, I've used several patterns. Builder for complex configuration objects, Strategy pattern via Comparators for flexible sorting, Observer pattern in event-driven microservices, and Factory pattern in Spring's BeanFactory. Spring itself heavily uses Proxy, Template Method, and Singleton patterns."
 
 ### 💻 Code

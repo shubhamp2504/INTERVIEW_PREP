@@ -41,7 +41,7 @@ Scaling Options:
                    ──items──→ Worker JVM 2 (process+write)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Spring Batch offers four scaling strategies. Multi-threaded step is simplest — add a TaskExecutor and multiple threads process chunks concurrently. But it loses restartability because threads read in unpredictable order. Parallel steps run independent steps simultaneously — great when steps don't depend on each other. Partitioning is the production standard — it splits data into ranges and each partition gets its own reader, writer, and StepExecution, making it restartable and isolated. Remote chunking distributes actual data to remote workers but adds network overhead. In my project, we used partitioning with 8 threads for our 10-million-record payment job, reducing processing time from 4 hours to 30 minutes."
 
 ### 💻 Code
@@ -114,7 +114,7 @@ Reader thread-safety:
   FlatFileItemReader:   ❌ NOT safe → SynchronizedItemStreamReader wrapper
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Multi-threaded step adds a TaskExecutor so multiple threads process chunks concurrently. The reader must be thread-safe — I use JdbcPagingItemReader which is inherently thread-safe. The main drawback is loss of restartability because threads read items in unpredictable order, breaking checkpoint accuracy. In my project, we used it for a one-off data migration where restartability wasn't critical — we could easily re-run the entire job. For our daily production jobs, we used partitioning instead because restart support was essential."
 
 ### 💻 Code
@@ -215,7 +215,7 @@ Benefits:
   ✅ Per-partition metrics and monitoring
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Partitioning is the production standard for scaling Spring Batch jobs. A Partitioner splits data into non-overlapping ranges — each partition gets its own ExecutionContext with range parameters. Worker steps run in parallel, each with its own reader scoped to its range. The key advantages over multi-threading are restartability and isolation — if one partition fails, only that partition retries on restart, and other partitions' work is preserved. In my project, we partitioned our 10-million-record payment job by customer ID ranges across 8 threads. Processing time dropped from 4 hours to 30 minutes, and when a partition failed due to a data issue, restart only re-processed that specific range."
 
 ### 💻 Code
@@ -357,7 +357,7 @@ Step 5: Master aggregates results
   Any FAILED → master FAILED ❌
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Internally, the Partitioner creates a Map of ExecutionContexts, each defining a data range for one partition. The PartitionHandler creates a StepExecution for each partition and submits them to the TaskExecutor for parallel execution. Each worker step initializes its StepScope reader with the partition's range from the ExecutionContext. Workers run completely independently — each with its own reader, processor, writer, and StepExecution. The master waits for all workers to finish and aggregates the results. This independence is what makes partitioning restartable — each partition's StepExecution tracks its own progress independently."
 
 ### 💻 Code
@@ -444,7 +444,7 @@ Workers read directly from source → NO data over network
 Master monitors via polling or messaging reply
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Remote partitioning distributes partition execution across multiple JVMs. The master creates partition definitions and sends them to remote workers via messaging middleware like Kafka or RabbitMQ. The critical point is that only metadata travels over the network — partition boundaries like min/max IDs, not actual data. Each worker reads data directly from the source database, processes it, and writes the results. This is efficient for I/O-bound workloads because you're scaling database connections and processing power without serializing data over the network."
 
 ### 💻 Code
@@ -524,7 +524,7 @@ Remote Chunking vs Remote Partitioning:
   Remote Partitioning: Master sends METADATA only → Workers read+process+write
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Remote chunking distributes the processing and writing work to remote JVMs while the master handles reading. The master reads items and sends the actual data over messaging to workers for processing and writing. Unlike remote partitioning where only partition metadata travels, remote chunking sends full item data over the network. It's ideal when reading is fast but processing is CPU-intensive — like image processing or ML inference. In practice I prefer remote partitioning because it avoids the network overhead, but remote chunking makes sense when the data source can only be read from one location."
 
 ### 💻 Code
@@ -613,7 +613,7 @@ Partitioned Step:
   → Only Partition-2 re-runs on restart
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "For production, partitioning is the clear winner. Multi-threading is simpler to configure — just add a TaskExecutor — but it loses restartability because threads read items in unpredictable order. If the step fails, you have to re-process everything. With partitioning, each partition has its own StepExecution, so on restart only failed partitions re-run. There's also no thread-safety concern because each partition has its own reader and writer. In my project, we switched from multi-threaded to partitioned processing and gained reliable restart capability — a failed partition affecting 12K records didn't require re-processing the other 988K records."
 
 ### 💻 Code
@@ -692,7 +692,7 @@ Parallel:
   Time: max(A, B, C) + D  ← much faster!
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "For parallel step execution, I use FlowBuilder with split() and a TaskExecutor. This runs independent steps simultaneously — for example, processing orders and invoices at the same time since they don't depend on each other. The job continues to the next step only after all parallel steps complete. In my project, we had three independent data loads — customers, products, and inventory — that we parallelized, reducing total job time from 3 hours to 1 hour since each load took roughly an hour."
 
 ### 💻 Code

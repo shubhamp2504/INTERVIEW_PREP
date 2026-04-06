@@ -37,7 +37,7 @@ REST: lightweight, uses JSON/HTTP, stateless, flexible. SOAP: heavyweight, XML-o
 - Microservices communication
 - When performance matters
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "REST is lightweight and uses standard HTTP methods with JSON, making it ideal for web and mobile APIs. SOAP is a full protocol with XML messaging, WSDL contracts, and built-in security/transaction support, making it suitable for enterprise systems like banking. In my experience, I've used REST for microservice communication and SOAP when integrating with legacy banking systems."
 
 ### 💻 Code

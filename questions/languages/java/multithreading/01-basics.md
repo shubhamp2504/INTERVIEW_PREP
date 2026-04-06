@@ -34,7 +34,7 @@ Multi-threaded:   Task-A ──→
                   Task-C ──→
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Multithreading is running multiple threads within a single JVM process. Each thread has its own call stack and program counter, but they all share the heap memory — that's why shared data access needs synchronization. In my project, we used multithreading for parallel API calls to three downstream services — reduced response time from 650ms to 220ms by calling them concurrently using CompletableFuture."*
 
 ### 💻 Code
@@ -118,7 +118,7 @@ Inter-thread:  Fast (shared memory)
   *(Ek program ke andar threads seedha heap se baat karte hain)*
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"A process is an independent execution unit with its own memory — like two separate JVMs running. A thread is a lightweight unit inside a process — threads share the heap but have their own stack. Communication between threads is fast via shared memory, while inter-process needs IPC mechanisms. The tradeoff is that a crash in one thread can bring down the whole process, while processes are isolated."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -170,7 +170,7 @@ With multithreading:
   *(Teen kaam ek saath karo, sabse slow wala time lagega — baaki free mein)*
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"The main advantage is better resource utilization — while one thread waits for a database response, the CPU runs another thread. In my project, we parallelized three downstream API calls using CompletableFuture — cut response time from 650ms to 300ms. The second big advantage is responsiveness — we process heavy operations like report generation in background threads, returning 'accepted' immediately to the user."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -234,7 +234,7 @@ With multithreading:
         └──────────┘
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Java thread has 6 states defined in Thread.State enum. NEW is when the thread is created but start() hasn't been called. RUNNABLE means it's either running or ready to be picked by the thread scheduler. BLOCKED is when it's waiting to enter a synchronized block — the monitor is held by another thread. WAITING is indefinite waiting used by wait() or join() without timeout. TIMED_WAITING is waiting with a deadline — like sleep(1000) or wait(5000). TERMINATED means the run() method completed or an uncaught exception occurred."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -297,7 +297,7 @@ Runnable task = () -> System.out.println("clean");
 executor.submit(task);  // pool mein do — reusable
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"I always use Runnable over extending Thread. Two reasons: First, Java only allows single inheritance — extending Thread means I can't extend any other class. Second, Runnable separates the task from the threading mechanism — I can submit the same Runnable to different executors, test it independently, and reuse it. In Java 8+, I use lambdas for simple tasks and Callable when I need a return value."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -345,7 +345,7 @@ Integer result = future.get(5, TimeUnit.SECONDS); // timeout lagao!
 - `future.get()` **blocks** — can hang forever *(timeout lagao warna atak jaoge)*
 - Use `CompletableFuture` for non-blocking chains
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Runnable is for fire-and-forget — no return. Callable returns a result via Future. In production, I prefer CompletableFuture.supplyAsync() over raw Callable + Future because it supports chaining and non-blocking callbacks. When using raw Future, I always add a timeout to get()."*
 
 ### ⚡ Remember
@@ -462,7 +462,7 @@ Time-slicing (preemptive):
 - **Never rely on priority** for correctness — behavior is OS-dependent *(Windows pe alag, Linux pe alag)*
 - `Thread.yield()` is just a **hint** — OS can ignore it
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Java relies on the OS for thread scheduling, which is preemptive. Thread priorities are hints but aren't guaranteed. In production, I never rely on priority or scheduling order — I use proper synchronization like CountDownLatch or CompletableFuture to coordinate threads."*
 
 ### ⚡ Remember
@@ -513,7 +513,7 @@ yield():
 - `wait()` outside synchronized → **IllegalMonitorStateException**
 - `yield()` is practically **useless** — never use in production
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"The critical difference is lock behavior. sleep() pauses but keeps the lock — blocking other threads. wait() releases the lock and goes to WAITING — enabling inter-thread communication like producer-consumer. yield() is a scheduler hint I never use in production. For delays I use ScheduledExecutorService, for coordination I use wait/notify or higher-level primitives like CompletableFuture."*
 
 ### 🎯 Tricky Interview Qs
@@ -587,7 +587,7 @@ Low-priority: waiting... waiting... (STARVED!)
 *(Bade threads pehle, chhota kabhi chance nahi milta)*
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Starvation is when a thread is technically runnable but never gets CPU time because higher-priority threads or lock monopolizers keep running. Fix: use fair locks — ReentrantLock(true) — which uses FIFO ordering, or avoid relying on thread priorities."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -623,7 +623,7 @@ Low-priority: waiting... waiting... (STARVED!)
   *(Application chup chap hang — no error, no log)*
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Deadlock is when two or more threads permanently block each other. I've dealt with this in production — the app hung with no errors. We took a thread dump with jstack and saw the deadlock chain. Fix: enforce consistent lock ordering — always lock A before B regardless of which thread. Also use tryLock with timeout for critical sections."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -781,7 +781,7 @@ Hidden cost: CPU cache invalidation
   *(Purane thread ka data cache mein tha — naye ko alag chahiye → slow)*
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Context switching is the overhead of pausing one thread to run another. Direct cost is 1-10μs, but the indirect cost — CPU cache invalidation — is more significant. The new thread needs different data, causing cache misses that are 100x slower. This is why I size CPU-bound pools equal to cores — more threads means more switching, actually slowing things down."*
 
 ### ⚠️ Pitfalls / Gotchas

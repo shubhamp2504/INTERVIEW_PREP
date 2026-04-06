@@ -44,7 +44,7 @@ Java 7: try-with-resources, diamond operator. Java 8: lambdas, streams, Optional
 - Switch expressions (from 14, finalized)
 - Helpful NullPointerException messages
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Java 8 was the biggest paradigm shift with lambdas and streams. Java 11 added quality-of-life improvements like the HttpClient and String methods. Java 17 brought modern features like records and sealed classes. In my project, we migrated from Java 8 to 17 and leveraged records for DTOs and text blocks for SQL templates."
 
 ### 💻 Code
@@ -110,7 +110,7 @@ Declare resources in the `try()` parentheses — they auto-close in reverse orde
 - If both try block and close throw exceptions → close exception is **suppressed** *(close wala exception suppress ho jaata hai, Throwable.getSuppressed() se milta hai)*
 - Java 9+: can use effectively final variables declared outside
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Try-with-resources ensures automatic cleanup of resources like streams, connections, and readers. The resource must implement AutoCloseable. This eliminates the need for verbose finally blocks and prevents resource leaks."
 
 ### 💻 Code

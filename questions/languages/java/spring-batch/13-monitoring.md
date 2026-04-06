@@ -42,7 +42,7 @@ What to Monitor:
   ☐ Throughput (records/second)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I implement three monitoring layers. First, metadata tables — Spring Batch automatically logs every execution to BATCH_JOB_EXECUTION and BATCH_STEP_EXECUTION, which I query for quick debugging. Second, I implement JobExecutionListener that logs a structured summary after each job — step-by-step read, written, and skipped counts plus any exception details. This feeds into our ELK stack for searchable logs. Third, Micrometer metrics flow into Prometheus and Grafana for real-time dashboards. We set alerts for job failures, duration exceeding 2× average, and skip count spikes — which signal data quality issues."
 
 ### 💻 Code
@@ -151,7 +151,7 @@ Three Query Methods:
     → { "status": "COMPLETED", "duration": "8 min", "records": 10000000 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "For quick debugging, I query BATCH_JOB_EXECUTION directly — joining with BATCH_JOB_INSTANCE to filter by job name and ordering by start time for the latest execution. Programmatically, I use JobExplorer — a read-only API that gives me job instances, executions, and step details without touching the database directly. For dashboards, I expose a REST endpoint that returns status, duration, and record counts. In my project, we had a Grafana dashboard pulling from our REST endpoint for real-time visibility across all batch jobs."
 
 ### 💻 Code
@@ -262,7 +262,7 @@ Step 5: What was the state at failure?
   → Failed around page 90, last successful ID was 44987
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I use a systematic 5-step debugging approach. First, I check BATCH_JOB_EXECUTION to confirm the job failed. Second, I find which step failed in BATCH_STEP_EXECUTION. Third, I analyze the counts — read, write, skip, and rollback numbers tell the full story. For example, 45,000 reads with 500 skips and 3 rollbacks means we had 500 bad records and 3 transient failures before the fatal error. Fourth, EXIT_MESSAGE gives me the actual exception. Fifth, EXECUTION_CONTEXT shows the state at failure — which page we were on, the last processed ID. In my project, this approach let us diagnose that a data file had corrupted records starting at line 44,000."
 
 ### 💻 Code
@@ -372,7 +372,7 @@ INFO (capacity planning):
   🟢 Seasonal patterns → adjust scheduling windows
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I set up three alert tiers. Critical alerts page on-call for job failures, OOM errors, and stuck jobs. Warning alerts trigger investigation for skip count spikes — which is the most valuable early warning because it means data quality degraded — duration exceeding twice the average, and any rollback counts. Info-level dashboards track throughput and record count trends for capacity planning. In my project, a skip count alert caught a data corruption issue from an upstream system before it became a production incident — the skip count jumped from the normal 5 to 500, and we traced it to malformed records from a partner API change."
 
 ### 💻 Code
@@ -471,7 +471,7 @@ Grafana (dashboards + alerts):
     - Job FAILED → CRITICAL
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I use the Micrometer-Prometheus-Grafana stack for performance tracking. Spring Boot auto-configures Micrometer with Spring Batch, exposing job and step timers, item counters, and chunk metrics via the Prometheus endpoint. Prometheus scrapes these every 15 seconds, and Grafana displays dashboards for job duration trends, throughput, skip rates, and resource usage. We alert when job duration exceeds twice the average or when skip rate exceeds 1%. In my project, this setup helped us catch a gradual performance regression — our daily job's duration increased from 8 to 12 minutes over two weeks, which we traced to a missing index on a newly added column."
 
 ### 💻 Code
@@ -577,7 +577,7 @@ Chunk-Level Analysis (ChunkListener):
      data requiring expensive external API call
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I find slow steps at two levels. First, I query BATCH_STEP_EXECUTION and calculate records per second for each step — the step with the lowest throughput is the bottleneck. Second, I implement a ChunkListener that logs the duration of every chunk. This helps me find individual slow chunks — for example, in our payment job, most chunks processed in 200ms but every 50th chunk took 15 seconds. We traced it to garbage collection pauses caused by JPA persistence context growth. After adding EntityManager.clear() per chunk, all chunks processed consistently in 200ms."
 
 ### 💻 Code

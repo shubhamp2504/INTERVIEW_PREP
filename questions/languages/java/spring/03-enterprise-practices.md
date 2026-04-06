@@ -48,7 +48,7 @@ Scalability Checklist:
   ✅ API versioning → backward compatibility
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I implement API security in layers. HTTPS is non-negotiable for all environments. Authentication uses JWT tokens with Spring Security — a filter validates the token on every request without server-side sessions, keeping the service stateless for horizontal scaling. Authorization uses @PreAuthorize with role-based access control. All input is validated with Bean Validation annotations — @NotBlank, @Email, @Pattern — which prevents injection at the entry point. I add rate limiting per client using Bucket4j backed by Redis to prevent abuse. For scalability, the APIs are stateless and paginated — I use Spring's Pageable with keyset pagination for deep pages. Read-heavy endpoints have Redis caching. Non-blocking operations like sending emails go through Kafka. I also use API versioning via URI path so we can evolve the API without breaking existing clients."
 
 ### 💻 Code
@@ -236,7 +236,7 @@ Testing Pyramid:
         └────────────────┘
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I ensure code quality through automation at every stage. Developers run Spotless formatter and unit tests locally before committing. The CI pipeline runs the full test suite — unit, integration with Testcontainers for real database testing, and contract tests for API compatibility. SonarQube analyzes every PR for bugs, code smells, and security vulnerabilities with a quality gate: minimum 80% coverage, zero critical issues, and zero security vulnerabilities must pass before merge is allowed. Code reviews require two approvals and focus on design decisions, edge cases, and naming — not formatting, since that's automated. For design, we follow SOLID principles and clean architecture with clear separation between controller, service, and repository layers. Architecture Decision Records document major choices for future team members."
 
 ### 💻 Code
@@ -418,7 +418,7 @@ Deployment Strategies:
     → if metrics bad → rollback to v1.0 ← 100%
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Our CI pipeline triggers on every push. First, it compiles and runs unit tests — about 500 JUnit 5 tests in 2 minutes. Then integration tests run with Testcontainers against a real PostgreSQL and Redis. SonarQube scans for code quality with a quality gate: minimum 80% coverage, zero critical bugs, and zero security vulnerabilities — failing the gate blocks the merge. We also run OWASP Dependency-Check to catch known CVEs in libraries. The pipeline then builds a Docker image with multi-stage build and pushes to our container registry. For CD, staging deployment is automatic with smoke tests running against it. Production requires manual approval, then we deploy using canary strategy — sending 10% traffic to the new version first, monitoring error rates and latency for 15 minutes. If metrics stay healthy, we roll out to 100%. If anything degrades, Kubernetes auto-rolls back. The entire push-to-production cycle takes about 20 minutes."
 
 ### 💻 Code
@@ -594,7 +594,7 @@ AUTHENTICATION:
     // Salt included → rainbow tables useless
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I address OWASP Top 10 vulnerabilities systematically. For SQL injection, I use parameterized queries exclusively — JPA and Spring Data do this by default, and for native queries I use @Param named parameters, never string concatenation. For deserialization attacks, I avoid Java's built-in serialization entirely — all API communication uses JSON via Jackson. If legacy code requires ObjectInputStream, I use Java 9's ObjectInputFilter to whitelist only known-safe classes. For authentication, passwords are hashed with BCrypt which is intentionally slow to resist brute force. JWTs have short 15-minute expiry with refresh token rotation. Login endpoints are rate-limited to 5 attempts per minute per IP to prevent brute force. I also run OWASP Dependency-Check in our CI pipeline to catch known vulnerabilities in third-party libraries before they reach production."
 
 ### 💻 Code

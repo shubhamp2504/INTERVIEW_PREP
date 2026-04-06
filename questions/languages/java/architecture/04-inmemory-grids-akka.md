@@ -99,7 +99,7 @@ public class Product {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "An in-memory data grid like Hazelcast goes beyond simple caching — it distributes data across cluster nodes with automatic partitioning and replication, and supports compute-on-data via EntryProcessors where code executes on the node that owns the data, eliminating network transfer of large values. I use Hazelcast embedded in Spring Boot for distributed session storage and real-time aggregations. The near-cache feature provides sub-millisecond reads for hot data by caching frequently accessed entries locally on each node. For JPA heavy applications, I configure Infinispan as Hibernate's L2 cache — entities are cached in the grid and shared across all application instances, dramatically reducing database load. The key advantage over Redis is data locality and embedded mode — no separate infrastructure to manage."
 
 ### ⚠️ Pitfalls / Gotchas
@@ -247,7 +247,7 @@ Behavior<OrderCommand> supervisedBehavior = Behaviors.supervise(OrderActor.creat
         .withLimit(3, Duration.ofMinutes(1))); // max 3 restarts/min
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "The Actor Model fundamentally changes how we handle concurrency — instead of shared mutable state protected by locks, each actor owns its private state and communicates only through asynchronous messages. Since actors process one message at a time, there are no race conditions or deadlocks by design. This is particularly powerful when you need to manage millions of concurrent entities — like IoT devices or user sessions — because actors are extremely lightweight compared to threads. Supervision trees replace try/catch error handling — a parent actor defines a strategy for child failures: restart, stop, or escalate. I've used Akka for high-throughput order processing where each order is an actor, enabling us to handle millions of concurrent orders without complex locking. With Lightbend's license change, I'd recommend Apache Pekko for new projects as it's the community fork with a compatible API."
 
 ### ⚠️ Pitfalls / Gotchas

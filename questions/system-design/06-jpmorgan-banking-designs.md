@@ -22,7 +22,7 @@ Use this template to prepare:
 6. **Challenges**: Scaling bottlenecks, reliability issues you solved
 7. **Trade-offs**: Why you chose X over Y
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Our system is a [domain] platform handling [scale]. It's built as microservices communicating via REST and Kafka. Let me walk through the key components: [Service A] handles..., [Service B] processes... The main challenge was [problem], which we solved by [solution]. A key trade-off was choosing [X] over [Y] because..."
 
 ### ⚠️ Pitfalls / Gotchas
@@ -93,7 +93,7 @@ CREATE TABLE payments (
 );
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I'd separate driver locations into a dedicated table with a spatial index since it's updated every few seconds. The trips table uses a state machine enum. Payments have an idempotency key to prevent double charges. For read-heavy queries like 'find nearby drivers,' I'd use PostGIS spatial queries."
 
 ### ⚡ Remember
@@ -178,7 +178,7 @@ Crawler fetches articles → NLP pipeline categorizes → ranked feed per user b
 5. **Feed**: Pre-computed per-user or real-time merge of subscribed categories
 6. **Trending**: Sliding window count of articles per topic
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I'd build a multi-stage pipeline. Crawlers fetch articles from RSS feeds on a schedule. A processing pipeline extracts content, categorizes using ML, and detects duplicates. Articles are indexed in Elasticsearch for search and Cassandra for feed serving. The feed is ranked by a combination of recency, user interests, and trending score."
 
 ### ⚡ Remember

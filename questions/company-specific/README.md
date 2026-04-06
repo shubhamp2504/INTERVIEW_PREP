@@ -1,7 +1,7 @@
 
 # 💼 Company Specific Questions
 
-[![Last Updated](https://img.shields.io/badge/Updated-March%202026-green.svg)](#)
+[![Last Updated](https://img.shields.io/badge/Updated-April%202026-green.svg)](#)
 
 
 ---
@@ -25,6 +25,9 @@
 | 13 | Deloitte (Middleware Administrator, Managerial) | 14 | [Go →](./13-deloitte-interview.md) |
 | 14 | Capgemini (QA / Automation Testing, L1) | 15 | [Go →](./14-capgemini-qa-interview.md) |
 | 15 | Accenture (Multi-Role: Snowflake + React + Selenium) | 44 | [Go →](./15-accenture-multi-role-interviews.md) |
+| 16 | Capgemini (Java Developer, L1) | 10 | [Go →](./16-capgemini-l1-java.md) |
+| 17 | Citi Bank (Senior Java Developer, Kafka-heavy) | 18 | [Go →](./17-citibank-senior-java.md) |
+| 18 | Product Company (Java Backend, 3 YOE) | 14 | [Go →](./18-product-company-java-3yoe.md) |
 
 ---
 

@@ -26,7 +26,7 @@ With sync:
   *(Ek andar gaya — doosra bahar wait karta hai — sahi result)*
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Synchronization in Java provides two guarantees: mutual exclusion — only one thread can execute the synchronized block at a time — and memory visibility — changes made inside a synchronized block are flushed to main memory when the lock is released, so other threads see the latest values. In production, I prefer higher-level abstractions like ReentrantLock or concurrent collections, but synchronized is still the go-to for simple cases."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -143,7 +143,7 @@ public void process() {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"I always prefer synchronized blocks because they give finer control over what's locked and which object is the lock. Synchronized methods implicitly lock on 'this' for the entire method duration — often locking more code than necessary. With blocks, I lock only the critical section and can use a dedicated private lock object to prevent external code from accidentally using the same lock."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -189,7 +189,7 @@ Object Header (Mark Word — 64 bits):
   Escalation: Biased → Lightweight → Heavyweight (never goes back!)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Every Java object has an intrinsic lock in its object header mark word. The JVM optimizes lock acquisition through lock escalation: biased locking for single-thread repeated access which is nearly zero-cost, lightweight locking using CAS for low contention between few threads, and heavyweight locking using OS mutexes for high contention. This escalation is one-directional and happens automatically."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -231,7 +231,7 @@ Without reentrancy:
   *(Apne hi lock pe atak jaata — reentrant nahi hota toh problem)*
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Both synchronized and ReentrantLock are reentrant — a thread holding the lock can re-acquire it without blocking itself. Internally, a hold count tracks nested acquisitions. This is essential because methods often call other synchronized methods on the same object. Without reentrancy, a thread would deadlock waiting for a lock it already holds."*
 
 ### ⚡ Remember
@@ -334,7 +334,7 @@ public boolean tryUpdate() {
 | Complexity | Simple | More verbose |
 | **Default choice** | ✅ ⭐ | When features needed |
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"I default to synchronized for simple mutual exclusion — it's cleaner and auto-releases. I switch to ReentrantLock when I need tryLock with timeout to avoid deadlocks, fair ordering for preventing starvation, lockInterruptibly to handle thread cancellation, or multiple conditions for complex producer-consumer patterns. The key risk with ReentrantLock is forgetting to unlock in finally."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -374,7 +374,7 @@ ReentrantLock unfairLock = new ReentrantLock();     // default = unfair (faster)
 | Starvation | Prevented ✅ | Possible ⚠️ |
 | Throughput | ~10-20% less | Higher ✅ |
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"A fair lock uses FIFO ordering — the longest-waiting thread gets it next. I use it when starvation is a concern — like multiple consumers competing for a shared resource where no thread should wait indefinitely. The tradeoff is about 10-20% lower throughput."*
 
 ### ⚡ Remember
@@ -440,7 +440,7 @@ public void writeData(Data data) {
 - **Lock downgrade** OK: write → read (hold write, acquire read, release write) ✅
 - **Lock upgrade** NOT OK: read → write ❌ (deadlock risk) *(padhte padhte likhna nahi — atak jaoge)*
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"ReadWriteLock is ideal for read-heavy, write-rare scenarios — like a configuration cache. Multiple reader threads acquire the read lock concurrently with no contention. The write lock is exclusive — it waits for all readers to release, then blocks new readers until writing completes. I've used this for in-memory caches where reads happen thousands of times per second but writes happen only on config refresh."*
 
 ### ⚡ Remember
@@ -517,7 +517,7 @@ High contention:
   *(Kaam kam, wait zyada — paisa waste)*
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Lock contention is when many threads compete for the same lock, spending more time waiting than working. I reduce contention by minimizing synchronized scope — lock only the critical section, not the entire method. I use ConcurrentHashMap instead of synchronized HashMap, LongAdder instead of AtomicLong for high-write counters. If one lock protects too much, I use lock striping — splitting into multiple locks for independent data segments."*
 
 ### ⚠️ Pitfalls / Gotchas

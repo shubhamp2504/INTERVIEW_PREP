@@ -30,7 +30,7 @@ Every question follows this **10-section interview-optimized** structure:
 📝 One-Liner              ← 1 sentence (last-minute revision scanning)
 🔑 Quick Answer           ← 30-second spoken answer + (Hindi layman brackets)
 📖 How It Works           ← Deep explanation + diagrams + (Hindi for hard concepts)
-🗣️ How to Say in Interview ← English script + "In my project..." (NO Hindi)
+🗣️ Answering Approach ← English script + "In my project..." (NO Hindi)
 💻 Code                   ← Working example + Hindi comments where tricky
 ⚠️ Pitfalls / Gotchas     ← Common bugs/mistakes + (Hindi warnings)
 🆚 vs. Comparison         ← [Only when relevant] Table + (Hindi difference)

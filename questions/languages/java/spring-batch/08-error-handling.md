@@ -33,7 +33,7 @@ Skip tracking:
   skipLimit applies to total (not per-phase)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Skip logic allows Spring Batch to ignore bad records and continue processing. I configure it with faultTolerant(), specify which exception types are skippable, and set a skipLimit as a safety net. It works differently at each phase — reads and processing skip immediately since the framework knows which item failed. Write skips trigger scan mode since the writer receives the entire chunk as a list. In my project, we skipped up to 100 validation exceptions for bad CSV records, always logging them via SkipListener to an error table for the ops team to review. We never exceeded 0.1% skip rate on normal data."
 
 ### 💻 Code
@@ -137,7 +137,7 @@ Retry vs Skip:
   Best: retry first, then skip if retries exhausted
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Retry logic is for transient errors — situations where the same operation might succeed on the next attempt, like database deadlocks, network timeouts, or temporary service unavailability. I configure it with the exception types that are retryable and a retry limit. I always combine retry with skip — retry first for transient errors, then skip if all retries are exhausted. In my project, we retried 3 times for database deadlocks with exponential backoff, and if it still failed, the item was skipped and logged. Never retry permanent errors like validation failures — that wastes time."
 
 ### 💻 Code
@@ -246,7 +246,7 @@ Setting Guidelines:
 | > 1M      | 500-1000         | Large datasets have more noise |
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Skip limit is the safety net that prevents Spring Batch from silently skipping too many records, which would indicate a systemic data quality problem rather than individual bad records. I set it proportional to the data volume — typically 0.1% of expected records. In my project processing 500K daily payment records, we set skipLimit to 500. If we ever hit that limit, it meant the input file was fundamentally corrupt and needed investigation, not processing. We also monitored the skip rate after each run — a sudden increase in skip count triggered an alert."
 
 ### 💻 Code
@@ -321,7 +321,7 @@ With backoff:
   Attempt 3 → fail → wait 4s → EXHAUSTED
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Retry limit sets the maximum number of attempts for each failing item. I keep it at 3 for most transient errors — database deadlocks often resolve in 1-2 retries, and network timeouts in 2-3. I always combine it with exponential backoff to avoid hammering the service and with skip for cases where all retries are exhausted. In my project, we saw that 95% of deadlocks resolved within 2 retries, so retryLimit of 3 was sufficient. For external API timeouts, we used retryLimit of 3 with initial backoff of 2 seconds."
 
 ### 💻 Code
@@ -391,7 +391,7 @@ Custom: different limits per exception
   → DataIntegrityViolation: up to 10
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "SkipPolicy is the interface behind Spring Batch's skip mechanism. The default implementation checks exception type and skip count. I create a custom SkipPolicy when I need different skip limits per exception type — for example, allowing 100 validation errors but only 10 constraint violations, since constraint violations are more likely to indicate a systemic issue. This gives finer control than the basic skip() configuration which shares a single limit across all exception types."
 
 ### 💻 Code
@@ -476,7 +476,7 @@ Combined behavior:
   Attempt 3 → TimeoutException → EXHAUSTED (3 attempts done)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "RetryPolicy controls retry behavior in Spring Batch. SimpleRetryPolicy is the most common — it specifies retryable exception types and maximum attempt count. I always pair it with ExponentialBackOffPolicy in production to avoid rapid-fire retries that can worsen the problem. In my project, we had a per-exception retry map — 3 retries for deadlocks with 1-second backoff, and 5 retries for external API timeouts with 2-second initial backoff and exponential increase. This gave us fine-grained control based on the error type."
 
 ### 💻 Code
@@ -561,7 +561,7 @@ ERROR_RECORDS table:
 | 1  | 456         | processStep | WRITE | {order:123} | Duplicate | 2024-01-15 |
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "In production, I follow a five-step approach for bad records: skip, log, alert, query, reprocess. First, configure skip for expected error types so one bad record doesn't fail the entire job. Second, use SkipListener to write every skipped record to a dedicated ERROR_RECORDS table with the original item data, error message, phase, and timestamp. Third, monitor skip rate after each step — if it exceeds 1%, trigger an alert. Fourth, the ops team queries the error table to investigate. Fifth, after fixing the root cause, we run a separate reprocessing job on the error records. In my project, this approach reduced our incident response time from hours to minutes because errors were immediately visible and queryable."
 
 ### 💻 Code
@@ -672,7 +672,7 @@ onSkipInWrite(ProcessedOrder item, Throwable t):
   └── errorWriter.write(item.toCsv() + "," + error)    → error CSV
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I use SkipListener to log failed records through multiple channels. For real-time visibility, I log to the application log file using SLF4J. For querying and analysis, I write to a dedicated error table with item data, error message, and timestamp. In my project, we also generated an error CSV file alongside the main output — our operations team could open it in Excel for quick review. The error table was the primary source for our reprocessing pipeline, while the log file triggered real-time alerts through our log aggregation system."
 
 ### 💻 Code
@@ -782,7 +782,7 @@ ERROR_RECORDS schema:
 | reprocessed_at | TIMESTAMP | When reprocessed (nullable) |
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I store rejected records in a dedicated ERROR_RECORDS table with the full item data serialized as JSON, error details, and a status field — initially PENDING. The ops team queries this table to investigate patterns. After fixing the root cause, we run a separate reprocessing job that reads PENDING records from the error table, processes them, writes to the main table, and updates the status to REPROCESSED. In my project, this pattern recovered 95% of rejected records — only 5% were genuinely invalid and marked as IGNORED after manual review."
 
 ### 💻 Code

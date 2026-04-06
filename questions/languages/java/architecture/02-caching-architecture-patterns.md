@@ -57,7 +57,7 @@ Unique Key Strategy:
   rate_limit:ip:1.2.3.4  → rate limiting counter
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "A cache hit means the requested data is found in the cache and returned immediately — typically under a millisecond from Redis. A cache miss means the data isn't cached — we fetch it from the database, store it in Redis with a TTL, and return it. The next identical request becomes a cache hit. By using unique keys like product:12345 or user:session:abc, Redis serves as a high-speed front layer absorbing the majority of read traffic. During a flash sale with 50,000 concurrent requests for the same product, only the first request hits the database. Redis handles the remaining 49,999 from memory at sub-millisecond latency, protecting the database from overload. In my project, adding Redis caching for product catalog queries reduced database load by 93% and brought p99 latency from 200ms to 3ms during peak traffic."
 
 ### 💻 Code
@@ -254,7 +254,7 @@ KEY DIFFERENCE:
   Producer-Consumer: Producer DOESN'T KNOW consumer → tasks, decoupled
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "These are fundamentally different patterns solving different problems. Master-Slave is about data replication and read scaling — one master node handles all writes and replicates data to multiple slave nodes that serve read queries. It's used in database clusters where write volume is lower than read volume, like MySQL replication or Redis Sentinel. The master controls the slaves; slaves are passive copies. Producer-Consumer is about decoupled asynchronous processing — producers generate tasks or events and push them to a message queue like Kafka or RabbitMQ. Consumers independently pull and process these messages at their own pace. The producer has no knowledge of who consumes the message. This pattern is used for background processing, event-driven architectures, and load buffering during traffic spikes. In my project, we used MySQL Master-Slave for horizontal read scaling, and Kafka Producer-Consumer for async order processing — the order service produced events, and email, inventory, and analytics services consumed them independently."
 
 ### 💻 Code

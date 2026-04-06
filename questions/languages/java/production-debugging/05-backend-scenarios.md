@@ -35,7 +35,7 @@ Likely causes: thread pool exhaustion, connection pool saturation, GC pauses, ne
    - Check: Request distribution across instances
    - Fix: Proper health endpoints, session handling
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I'd approach this systematically. First, check if it's resource-related: thread dumps to see blocked threads, connection pool metrics for saturation, GC logs for pauses. Then check external dependencies: are downstream services slower under load? I'd look at p99 latency — if it's spiking, it's likely a saturation issue. In my experience, the most common cause is connection pool exhaustion because staging has lower concurrency."
 
 ### 💻 Code
@@ -98,7 +98,7 @@ Check: new queries without indexes, N+1 queries from new ORM code, lock contenti
    - Check current isolation: `SELECT @@transaction_isolation`
    - Fix: Use READ_COMMITTED for most operations
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I'd start with the slow query log — compare before and after deployment. Then run EXPLAIN ANALYZE on new queries to check for missing indexes or full table scans. I'd also check for N+1 queries using Hibernate statistics. In most cases I've seen, it's either a missing index on a new column being filtered, or N+1 queries from a new entity relationship."
 
 ### 💻 Code
@@ -225,7 +225,7 @@ Base design: ID generation → base62 encode → store in DB + cache in Redis. F
    - Rate limiting per client
    - Pre-warm cache with popular URLs
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "For Redis failure, I'd implement a fallback to DB reads — latency increases but the service stays functional. Redis Sentinel provides automatic failover. For replication lag, I'd use read-after-write consistency for the creating user, and rely on Redis cache for others. For traffic spikes, horizontal auto-scaling with rate limiting per client protects the system."
 
 ### ⚡ Remember

@@ -44,7 +44,7 @@ Table Purposes:
   *_PARAMS        → "With what inputs?" (parameters)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Spring Batch creates 6 metadata tables and 3 sequence tables. The hierarchy flows from BATCH_JOB_INSTANCE — which stores unique job identities based on job name and parameter hash — to BATCH_JOB_EXECUTION which records each attempt to run that instance. Each execution links to its parameters, a job-level context for sharing data between steps, and BATCH_STEP_EXECUTION which stores detailed per-step statistics like read, write, skip, and rollback counts. The step execution context stores the reader position enabling restart from where it left off. These tables are the backbone of Spring Batch's restartability, monitoring, and duplicate prevention."
 
 ### 💻 Code
@@ -118,7 +118,7 @@ Scenarios:
   3. Same params + FAILED → ✅ restart (new execution for same instance)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "BATCH_JOB_INSTANCE stores the unique identity of each job run, determined by job name plus a JOB_KEY which is an MD5 hash of the identifying parameters. If I launch a job with the same parameters and the previous instance completed successfully, Spring Batch throws JobInstanceAlreadyCompleteException — this prevents duplicate processing. If the previous instance failed, it allows a restart by creating a new execution under the same instance. In my project, we use the processing date as an identifying parameter, so each day creates a new instance while preventing accidental re-runs of the same day's data."
 
 ### 💻 Code
@@ -199,7 +199,7 @@ Key Columns:
   END_TIME:     When execution ended (NULL if STARTED/crashed)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "BATCH_JOB_EXECUTION records every attempt to run a job instance. A single instance can have multiple executions — if the first run fails and we restart, that creates a second execution row under the same instance. The EXIT_MESSAGE column is the most valuable for debugging — it contains the actual exception that caused the failure. I always check this table first when investigating a batch issue. In my project, we had a job instance with 3 executions — first failed from a disk issue, second from a code bug, third completed successfully — all traceable through this table."
 
 ### 💻 Code
@@ -276,7 +276,7 @@ Red Flags:
   ❌ COMMIT_COUNT much lower than READ/chunkSize → large chunks or failures
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "BATCH_STEP_EXECUTION is the most useful table for diagnosing batch issues. It stores detailed per-step statistics — read, write, skip, filter, commit, and rollback counts. The key formula is read minus filter minus skip equals write — if this math doesn't add up, something is wrong. Skip count tells me about data quality issues, rollback count about transient failures, and filter count about intentional exclusions. In my project, when we saw 500 skips in a daily job that normally has 5, we immediately knew the upstream data had quality issues. The combination of counts tells the complete story of what happened during processing."
 
 ### 💻 Code
@@ -367,7 +367,7 @@ Consequence:
   Same date + filePath + runTime + different description = STILL same instance
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "BATCH_JOB_EXECUTION_PARAMS stores all parameters passed to a job execution. The critical column is IDENTIFYING — when set to Y, that parameter is included in the JOB_KEY hash that determines instance uniqueness. When N, it's just metadata. In my project, we use the processing date and file path as identifying parameters, ensuring each day's file creates a unique instance. We add a description as non-identifying for audit purposes — it doesn't affect whether the job can re-run. Spring Batch 5 changed the default: all parameters are identifying unless explicitly marked non-identifying."
 
 ### 💻 Code
@@ -442,7 +442,7 @@ Context Examples by Reader Type:
                         {"JdbcPagingItemReader.read.count": 25000}
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "BATCH_STEP_EXECUTION_CONTEXT stores the step's state as JSON, primarily the reader position. After every chunk commit, the current reader position is saved to this table. When a job restarts, the framework reads this context and tells the reader to skip ahead to the last committed position. This is how Spring Batch achieves restart without reprocessing — if a job fails at record 25,000, restart picks up from 25,001. In my project, I also use it to store custom state like running totals or error counters that I need to preserve across restarts."
 
 ### 💻 Code
@@ -533,7 +533,7 @@ Summary:
   Step Context = PRIVATE per step = restart state
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "BATCH_JOB_EXECUTION_CONTEXT stores job-level shared state that persists across steps within the same execution. The key difference from step context: step context is private to each step and stores restart state, while job context is shared across all steps for inter-step communication. In my project, the first step counted total records and wrote it to job context, and the final report step read that count to include in the summary email. I write to it using jobExecution.getExecutionContext().put() in a StepExecutionListener, and read from it using @Value with the jobExecutionContext SpEL expression in @StepScope beans."
 
 ### 💻 Code

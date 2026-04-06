@@ -51,7 +51,7 @@ public class BatchConfig {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Spring Batch is a framework for batch processing — when you need to process millions of records reliably. It follows Read → Process → Write in chunks. If I have 10 million records, it reads 500 at a time, processes each, writes all 500 in one transaction. If it fails midway, it restarts from last committed chunk. It also has skip logic for bad records and retry for transient errors. In my project, we used it for daily ETL — reading CSV feeds and loading into the database."*
 
 ### ⚡ Remember
@@ -75,7 +75,7 @@ public class BatchConfig {
 ### 🔑 Quick Answer
 > Any **high-volume data processing**: **ETL** (CSV → DB), **data migration** (Oracle → MySQL), **report generation** (monthly billing for 2M customers), **file processing** (50K daily cheque images), **database cleanup** (archive old records). *(Lakho records ka kaam — CSV se DB, purana data archive, monthly report)*
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"In my experience, Spring Batch is ideal for high-volume data processing. We used it for an ETL pipeline — reading millions of records from CSV, validating, transforming, and writing to the database. We also used it for monthly report generation with 2 million customer records. The advantage over a simple loop is transaction safety, restartability, and built-in monitoring."*
 
 ### ⚡ Remember
@@ -153,7 +153,7 @@ You / Scheduler
  *(Sab kuch record hota hai — kitne padhe, kitne likhe, kab fail hua)*
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Spring Batch has a clear hierarchy. Job is the entire batch process containing Steps. Each Step has an ItemReader, ItemProcessor, and ItemWriter. The JobLauncher triggers execution, and the JobRepository stores all metadata in the database — status, read/write counts, timestamps. This metadata enables restartability and monitoring."*
 
 ### ⚡ Remember
@@ -194,7 +194,7 @@ JobExecution = physical attempt (can retry)
 *(Ek Job, alag params = alag instance — fail hua toh naya execution)*
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"A Job represents the entire batch process. It's identified by name plus parameters — so 'monthlyBilling' with month=January is one JobInstance. If it fails and I restart with the same parameters, Spring Batch creates a new JobExecution under the same JobInstance — it knows it's a retry. A completed JobInstance cannot re-run with same parameters."*
 
 ### ⚡ Remember

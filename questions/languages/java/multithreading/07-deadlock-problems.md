@@ -48,7 +48,7 @@ Thread t2 = new Thread(() -> {
 t1.start(); t2.start();  // DEADLOCK → both hang forever
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Deadlock is when two or more threads are permanently waiting for each other's locks. Thread-1 holds Lock A and waits for Lock B, while Thread-2 holds Lock B and waits for Lock A. In production, deadlocks are dangerous because there's no error thrown — the application silently hangs. I've seen this with database row locks where two transactions each held different rows and tried to acquire the other."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -94,7 +94,7 @@ Break ANY ONE → Deadlock IMPOSSIBLE!
 | No Preemption | Use tryLock() with timeout |
 | **Circular Wait** | **Lock ordering** (always same order) ⭐ |
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Deadlock requires the four Coffman conditions simultaneously. The most practical prevention is breaking circular wait by enforcing a global lock ordering — always acquire Lock A before Lock B, regardless of which thread. Another approach is tryLock with timeout to break hold-and-wait. In my projects, I sort locks by a deterministic order like object ID."*
 
 ### 🎯 Tricky Interview Qs
@@ -156,7 +156,7 @@ private void transferSafe(Account from, Account to, int amount) {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"My go-to strategy is lock ordering — impose a global order on all locks, like by object ID, and always acquire in that order. For the bank transfer problem, I lock the account with the lower ID first. When I can't control lock order, I use tryLock with timeout — if I can't get the second lock, I release the first and retry with random backoff. Beyond locks, I prefer lock-free alternatives like ConcurrentHashMap — no locks means no deadlock."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -210,7 +210,7 @@ public class DeadlockMonitor {
 // Look for: "Found one Java-level deadlock"
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"In production, I take thread dumps with jstack — the JVM automatically detects deadlocks and reports the exact lock chain. I take 3 dumps 5 seconds apart — threads stuck in the same state across dumps indicate a problem. For proactive detection, I add a scheduled DeadlockDetector using ThreadMXBean that checks every 30 seconds and alerts the team."*
 
 ### ⚡ Remember
@@ -260,7 +260,7 @@ Types:
 - Even **single-line** code can be a race (count++ = 3 bytecode ops)
 - **Check-then-act** on ConcurrentHashMap still racy if using separate get+put *(get-then-put mat karo — compute/putIfAbsent use karo)*
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"A race condition is when program correctness depends on thread scheduling order. The classic example is count++ — three operations that aren't atomic. Two patterns to watch: check-then-act, like testing if a map key exists then putting — use putIfAbsent instead. And read-modify-write like count++ — use AtomicInteger. Race conditions are especially dangerous because they're hard to reproduce in testing but appear under production load."*
 
 ### ⚡ Remember
@@ -323,7 +323,7 @@ count.incrementAndGet();  // lock-free, atomic ✅
 public synchronized void increment() { count++; }  // one thread at a time ✅
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Thread safety means correct behavior under concurrent access without external synchronization. My first choice is immutability — if it can't change, there's no race condition. Second, atomic variables for single values. Third, concurrent collections for data structures. synchronized blocks as last resort, with smallest scope. In Spring, beans are singletons, so I ensure they're either stateless or use thread-safe fields."*
 
 ### ⚡ Remember
@@ -368,7 +368,7 @@ Thread dump analysis workflow:
   5. Analyze:     fastthread.io or TDA (Thread Dump Analyzer)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"My primary tool is jstack for thread dumps — it auto-detects deadlocks. I take 3 dumps 5 seconds apart and compare — threads stuck in the same state across dumps indicate a problem. For monitoring, I use JConsole or VisualVM in development. In production, I add a scheduled ThreadMXBean check that alerts on deadlock. For online analysis, fastthread.io parses the dump and visualizes thread states and lock contention. Arthas is great for live production diagnostics without restarting the app."*
 
 ### ⚡ Remember

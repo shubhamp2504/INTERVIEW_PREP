@@ -90,7 +90,7 @@ ServiceDiscovery<InstanceDetails> discovery = ServiceDiscoveryBuilder.builder(In
 discovery.start(); // registers ephemeral node — auto-removed on crash
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "ZooKeeper is a distributed coordination service that provides strongly consistent primitives for building distributed systems. It stores data in a hierarchical tree of znodes, with two key node types: ephemeral nodes that auto-delete when the client disconnects — perfect for service registration and health detection — and sequential nodes with auto-incrementing suffixes used for ordering, like leader election and fair locks. In production, I typically use the Curator framework rather than the raw ZooKeeper API. For leader election, each candidate creates an ephemeral sequential node, and the one with the lowest sequence becomes leader. Others watch only the node immediately before them to avoid thundering herd. When the leader dies, only the next candidate gets notified and takes over."
 
 ### ⚠️ Pitfalls / Gotchas
@@ -206,7 +206,7 @@ try {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "For distributed mutual exclusion, I choose between ZooKeeper and Redis based on correctness requirements. ZooKeeper locks using Curator's InterProcessMutex are CP — they guarantee mutual exclusion even during failures because ephemeral nodes are automatically deleted when a client disconnects, and the ZAB consensus ensures all nodes agree. For performance-critical scenarios where absolute correctness isn't life-or-death, I use Redis with Redisson which provides a watchdog mechanism that automatically extends the lock while the holder is alive, preventing the classic GC-pause expiry problem. I avoid manual SET NX implementations because it's easy to get the unlock logic wrong — Redisson handles the Lua-script-based atomic unlock and lease extension."
 
 ### ⚠️ Pitfalls / Gotchas
@@ -328,7 +328,7 @@ public class AccountProjection {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Event sourcing stores every state change as an immutable event rather than just overwriting current state. This gives you a complete audit trail, the ability to time-travel by replaying events to any point, and flexibility to create new read models by projecting the same events differently. I combine it with CQRS to separate the write model — where commands are validated against business rules and events are emitted — from the read model — where events are projected into denormalized views optimized for specific query patterns. The tradeoff is eventual consistency between write and read sides, and increased complexity. I use frameworks like Axon or EventStore for implementation. Event sourcing is particularly valuable in domains with strong audit requirements like finance or compliance."
 
 ### ⚠️ Pitfalls / Gotchas
@@ -409,7 +409,7 @@ Database Failover (PostgreSQL):
   RTO (Recovery Time Objective): 30-60 seconds typical
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I implement failover at multiple levels. At the application tier, Kubernetes handles pod failures automatically through liveness probes and ReplicaSets — if a pod fails, K8s terminates it and schedules a replacement. At the database tier, I use active-passive with streaming replication — for AWS RDS Multi-AZ, the standby in another AZ is automatically promoted on primary failure with under 60 seconds failover time. For cross-region failover, I use active-active with DynamoDB Global Tables or Route53 DNS failover with health checks. The key metrics are RTO — how quickly we recover — and RPO — how much data we can afford to lose. For critical financial systems, I target zero RPO with synchronous replication and less than 30 seconds RTO."
 
 ### ⚠️ Pitfalls / Gotchas

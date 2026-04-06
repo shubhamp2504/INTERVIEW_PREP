@@ -47,7 +47,7 @@ if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
 }
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"ExecutorService is the production standard for thread management in Java. I never create raw threads — always use a pool. It handles thread lifecycle, reuse, and queuing. I use execute() for fire-and-forget tasks and submit() when I need a Future result. For shutdown, I always call shutdown() followed by awaitTermination(). In Spring, ThreadPoolTaskExecutor wraps this with additional lifecycle management."*
 
 ### ⚠️ Pitfalls / Gotchas
@@ -127,7 +127,7 @@ Thread Pool (size = 3):
 - CachedThreadPool: **unlimited threads** → 10000 tasks = 10000 threads = OOM *(thread ka koi limit nahi — khatarnak)*
 - FixedThreadPool: **unbounded queue** → 10M tasks queued = OOM *(queue ka koi limit nahi — khatarnak)*
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"I never use Executors factory methods in production. CachedThreadPool creates unlimited threads — OOM risk. FixedThreadPool has an unbounded queue — OOM risk. I always create ThreadPoolExecutor directly with bounded core/max pool sizes and a bounded queue. This gives me full control over resource limits and rejection policies."*
 
 ### ⚡ Remember
@@ -331,7 +331,7 @@ CompletableFuture.allOf(future1, future2, future3).join();
 **Q: What's the default thread pool?**
 > ForkJoinPool.commonPool() — **always specify custom executor** in production.
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"CompletableFuture is my go-to for async operations. I use supplyAsync to kick off async tasks, thenCombine to merge parallel results, thenApply for transformations, and exceptionally for error handling. In production, I always pass a custom ThreadPoolTaskExecutor — never rely on the common ForkJoinPool which is shared. For multiple parallel calls, allOf() waits for all to complete."*
 
 ### ⚡ Remember
@@ -445,7 +445,7 @@ System.out.println("All 3 done!");
 - If a thread crashes without countDown() → **latch never reaches 0** → await() hangs forever *(timeout lagao!)*
 - Always use `await(timeout)` *(warna hang)*
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"CountDownLatch is for waiting until N parallel tasks complete. I used it in a microservice health check — at startup, I waited for 5 downstream services to respond before marking the app as ready. Each health check thread calls countDown() on completion, and the main thread awaits with a timeout."*
 
 ### ⚡ Remember
@@ -532,7 +532,7 @@ if (semaphore.tryAcquire(5, TimeUnit.SECONDS)) { ... }
 - **Always release in finally** *(bhool gaye toh permit kho gaya — koi nahi jaa payega)*
 - Release without acquire → permit count **increases beyond initial** *(galti se zyada release — limit badh jaayegi)*
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"Semaphore controls concurrent access using permits. I used it to limit connections to an external API that allowed max 5 concurrent calls. acquire() takes a permit, release() returns it. Unlike locks, Semaphore doesn't have ownership — any thread can release. I always release in finally and use tryAcquire with timeout."*
 
 ### ⚡ Remember
@@ -597,7 +597,7 @@ phaser.arriveAndDeregister();  // main thread leaves
 | Pattern | Wait for N tasks | N threads meet | Limit concurrency | Phased execution |
 | Analogy | *N kaam hone do* | *Sab ek jagah milo* | *N pass hain* | *Phase wise kaam* |
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 > *"CountDownLatch: one thread waits for N events — I use for startup coordination. CyclicBarrier: N threads wait for each other — for parallel computation phases. Semaphore: limits concurrent access to a resource — like connection pool limiting. Phaser: like a reusable barrier with dynamic parties — when threads join and leave between phases. Most of my production code uses CountDownLatch for simple waiting and Semaphore for rate limiting."*
 
 ### 🎯 Tricky Interview Qs

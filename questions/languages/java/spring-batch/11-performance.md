@@ -45,7 +45,7 @@ Result: 10M records
   After:  8 minutes (16 partitions, batch inserts, tuned)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "For processing millions of records, I use a 5-layer strategy. Partitioning gives the biggest performance gain — we split 10M records into 16 ID-range partitions processed by 16 threads simultaneously. Each partition uses JdbcPagingItemReader for constant memory usage and JdbcBatchItemWriter for batch inserts — converting 500 individual inserts into 1 database call. Chunk size is tuned to 500 after benchmarking. In my project, this reduced processing time for 10M payment records from 4 hours to 8 minutes. The key insight is that partitioning gives 10-16× improvement while all other optimizations combined give 2-5×."
 
 ### 💻 Code
@@ -180,7 +180,7 @@ INFRASTRUCTURE (Layer 4):
   ☐ Thread pool = partition count ................ full utilization
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I optimize four layers. For the reader, JdbcPagingItemReader with proper indexes and column projection. For the processor, I cache reference data using @BeforeStep — loading all lookup data into a HashMap once instead of querying per item, which eliminated thousands of database calls. For the writer, JdbcBatchItemWriter is 5-10× faster than JPA because it uses native batch inserts. For infrastructure, partitioning is the biggest single optimization at 10-16×. In my project, the combination of all four layers reduced our daily payment job from 4 hours to 8 minutes."
 
 ### 💻 Code
@@ -264,7 +264,7 @@ Total DB calls for 50K records:
   After:  100 + 1 + 100 + 100 = 301 calls → 335× reduction!
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Database calls are the biggest performance bottleneck in batch processing. I target four areas. First, I match pageSize to chunkSize — typically 500. Second, and most impactful, I cache reference data using @BeforeStep — loading all customers into a HashMap once instead of querying per item. This alone eliminated 50,000 database calls in our order enrichment job. Third, JdbcBatchItemWriter batches all writes into one call. Fourth, larger chunk size means fewer commits. The net effect was reducing total database calls from over 100,000 to about 300 for a 50K record batch."
 
 ### 💻 Code
@@ -371,7 +371,7 @@ Decision Table:
   10M-100M+    → JdbcPagingItemReader + partitioning (20+ partitions)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "For large datasets, JdbcPagingItemReader is my default choice. It reads page by page with constant memory — whether the table has 100K or 100M rows, memory usage stays the same. It's thread-safe, which means it works seamlessly with multi-threaded steps and partitioning. For our 10M-record payment job, we used JdbcPagingItemReader with 16-partition setup, and each partition's reader only consumed about 50MB regardless of partition size. I avoid JpaPagingItemReader for batch because ORM overhead and entity cache growth cause performance and memory issues at scale."
 
 ### 💻 Code
@@ -469,7 +469,7 @@ Configuration Stack:
   Layer 5: COPY (PostgreSQL) ...................... 10-50×
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "For optimizing batch inserts, JdbcBatchItemWriter is essential — it uses JDBC batch API to convert 500 individual inserts into a single database call, reducing round trips from 500 to 1. On MySQL, I enable rewriteBatchedStatements which rewrites individual INSERT statements into a single multi-row INSERT, giving an additional 2× improvement. I also match batch\_size to chunk size for consistency. In my project, switching from JPA writer to JdbcBatchItemWriter with rewriteBatchedStatements reduced write time from 2 seconds to 0.1 seconds per chunk — a 20× improvement."
 
 ### 💻 Code
@@ -582,7 +582,7 @@ Rules of Thumb:
   External API in proc: 50-100  (limit blast radius)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "I start with chunk size 500 and benchmark with 100, 500, 1000, and 2000. The key is finding where increasing chunk size no longer significantly improves throughput. In my project, going from 100 to 500 gave us 3× improvement, but 500 to 1000 only gave 12% while doubling memory usage — so 500 was our sweet spot. For steps with complex processing or external API calls, I use smaller chunks (100-200) to limit the blast radius of failures. I also consider memory — JPA entities grow the persistence context, so I keep chunks smaller (100-300) when using JPA."
 
 ### 💻 Code
@@ -671,7 +671,7 @@ Memory Checklist:
   ☐ JVM: -Xmx4g, G1GC → appropriate limits
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "The number one cause of memory issues in Spring Batch is JPA persistence context growth. The EntityManager holds a reference to every entity read — after 200 chunks of 500 items, that's 100K entities consuming gigabytes of memory. The fix is implementing a ChunkListener that calls EntityManager.clear() after each chunk, keeping memory at a constant ~10MB. Other common issues include large chunk sizes, ExecutionContext bloat from storing data instead of just positions, and unbounded reference caches. In my project, we also configure JVM with -Xmx4g, G1GC, and HeapDumpOnOutOfMemoryError for diagnosis."
 
 ### 💻 Code

@@ -29,7 +29,7 @@ Three key benefits:
 2. **Transaction safety** — failed chunk rolls back, previous chunks safe
 3. **Restartable** — Spring Batch saves checkpoint after each commit, restart picks up from failed chunk
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Chunk processing is the core execution model of Spring Batch. It reads items one at a time until it reaches the configured chunk size, processes each item individually, and then writes the entire chunk as a single batch operation within one transaction. In my project, we used chunk size of 500 for processing daily payment files — reading CSV records, validating and transforming them, then batch-inserting into the database. Each committed chunk acts as a checkpoint, so if a failure occurs, only the current chunk rolls back and the job can restart from that point."
 
 ### 💻 Code
@@ -127,7 +127,7 @@ Key internals:
 - **`ChunkOrientedTasklet`** — orchestrates provider + processor, manages transaction
 - **Processor returning null** = item is FILTERED (tracked as `filterCount` in `StepExecution`)
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Internally, ChunkOrientedTasklet drives the chunk loop. SimpleChunkProvider reads items one at a time by calling reader.read() until either chunk size is reached or null is returned, meaning no more data. Each item passes through the processor — if it returns null, the item is filtered. SimpleChunkProcessor then collects all non-null results and calls writer.write() with the full list. After writing, the transaction commits and metadata is updated. In my project, I debugged a chunk processing issue by looking at filterCount in StepExecution — some records were being silently filtered because the processor returned null for invalid records."
 
 ### 💻 Code
@@ -214,7 +214,7 @@ Three separate concepts:
 
 Best practice: set page size ≤ chunk size for predictable behavior.
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Chunk size and commit interval are the same thing in Spring Batch. When you configure chunk(500), it means 500 items are processed per transaction and the commit happens after every 500 items. The common confusion is with page size, which is a completely different concept — it controls how many rows the reader fetches from the database per SQL query. In my project, we set chunk size to 500 and page size to 500 as well, keeping them aligned for predictable memory usage and transaction boundaries."
 
 ### 💻 Code
@@ -314,7 +314,7 @@ With fault tolerance (retry):
 .retryLimit(3)
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "When a failure occurs mid-chunk, the entire chunk's transaction rolls back — it's all-or-nothing for that chunk. Previously committed chunks remain safe since they're already persisted. Without fault tolerance, the job fails immediately. In my project, we configured skip logic for validation exceptions with a skip limit of 100, so individual bad records were skipped and logged without failing the entire job. We also used SkipListener to write skipped records to an error file for manual review. On restart, Spring Batch automatically resumed from the last uncommitted chunk using checkpoint data from the metadata tables."
 
 ### 💻 Code
@@ -425,7 +425,7 @@ Transaction manager options:
 - **`DataSourceTransactionManager`** — for pure JDBC (faster, recommended for batch)
 - **`JpaTransactionManager`** — for JPA entities (adds ORM overhead but manages entity lifecycle)
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Spring Batch manages transactions at the chunk level. Each chunk runs within its own transaction — on success, it commits; on failure, it rolls back. What's important is that metadata updates happen in a separate transaction that always commits, even when the chunk fails. This is what makes restart possible — the job knows exactly where it failed because the metadata transaction preserved the execution state. In my project, we used DataSourceTransactionManager for batch steps since we were doing pure JDBC operations, and it was significantly faster than JpaTransactionManager since it avoided ORM overhead."
 
 ### 💻 Code
@@ -518,7 +518,7 @@ Factors to consider:
 4. **Error tolerance** — need to skip items → smaller (less scan-mode overhead)
 5. **Memory available** — limited heap → smaller chunk
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "There's no one-size-fits-all chunk size. I follow a benchmarking approach — start with 500 for typical database read-write operations, then test with 100, 250, 1000 and measure throughput and memory. In my project, we found 500 was optimal for our payment processing — going to 1000 only improved throughput by 3% but doubled memory usage. For steps that called external APIs per item, we used chunk size of 100 to keep transaction duration short and reduce retry scope on failures."
 
 ### 💻 Code
@@ -599,7 +599,7 @@ Solutions:
 5. Partitioning → split data across threads/processes
 ```
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Memory issues in chunk processing typically come from three sources: the items themselves being too large or too many per chunk, JPA first-level cache accumulating entities, and batch writer buffers. In my project, we initially used chunk size of 2000 with JPA and ran into OutOfMemoryErrors. We solved it by reducing chunk size to 500, switching from cursor to paging reader, and adding a ChunkListener that called EntityManager.clear() after each chunk to flush the JPA cache. For our largest dataset of 50 million records, we also used partitioning to split the work across 8 threads."
 
 ### 💻 Code
@@ -691,7 +691,7 @@ Choosing the right one:
 | JPA entities | `JpaTransactionManager` | Manages EntityManager flush/clear |
 | Multiple datasources | `ChainedTransactionManager` or `JtaTransactionManager` | Coordinates multiple resources |
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "PlatformTransactionManager is the Spring abstraction that manages transaction boundaries for each chunk. Spring Batch calls it to begin a transaction before processing starts, commit after successful write, and rollback on failure. In my project, we used DataSourceTransactionManager since our batch steps used plain JDBC operations — it's faster than JpaTransactionManager because it doesn't have to manage entity state. For a step that wrote to two different databases, we used JtaTransactionManager to coordinate distributed transactions."
 
 ### 💻 Code
@@ -768,7 +768,7 @@ Each step is a self-contained unit with its own:
 - Fault tolerance config
 - Skip/retry logic
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "Yes, each step in a Spring Batch job has its own independent chunk size. In my project, we had a job with three steps — the first step validated records against an external API with chunk size 100 to limit concurrent API calls, the second step processed payments with chunk size 500 for optimal database throughput, and the third step archived records with chunk size 2000 since it was simple inserts with no processing. Each step's chunk size was tuned based on benchmarking for that specific operation."
 
 ### 💻 Code
@@ -865,7 +865,7 @@ ChunkListener vs other listeners:
 | SkipListener | Per skipped item | onSkipInRead/Process/Write |
 | ItemReadListener | Per read | beforeRead, afterRead, onReadError |
 
-### 🗣️ How to Say in Interview
+### 🗣️ Answering Approach
 "ChunkListener provides lifecycle callbacks for each chunk — beforeChunk, afterChunk, and afterChunkError. In my project, I used a ChunkListener for two purposes: first, to log progress after every chunk showing how many records were processed so far, and second, to clear the JPA EntityManager cache after each chunk to prevent memory issues. I also used afterChunkError to send an alert to our monitoring system when a chunk failed, so the ops team could investigate immediately."
 
 ### 💻 Code
