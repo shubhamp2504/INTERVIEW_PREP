@@ -13,6 +13,8 @@
 | 3 | API, State & Design Issues | 5 | [Go →](./03-api-state-design.md) |
 | 4 | Services, Ops & Infrastructure | 4 | [Go →](./04-services-ops-infra.md) |
 | 5 | Backend Scenario Questions (Staging vs Prod, DB Slow, Kafka Dupes) | 4 | [Go →](./05-backend-scenarios.md) |
+| 6 | Java Runtime & JVM Scenarios (Memory Leaks, GC, ThreadLocal, Deadlock) | 15 | [Go →](./06-java-runtime-scenarios.md) |
+| 7 | Spring Boot Production Scenarios (Config, Pool, Docker, Circuit Breaker) | 15 | [Go →](./07-springboot-production-scenarios.md) |
 
 ---
 

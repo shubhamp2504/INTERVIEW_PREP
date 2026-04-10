@@ -28,6 +28,8 @@
 | 16 | Capgemini (Java Developer, L1) | 10 | [Go →](./16-capgemini-l1-java.md) |
 | 17 | Citi Bank (Senior Java Developer, Kafka-heavy) | 18 | [Go →](./17-citibank-senior-java.md) |
 | 18 | Product Company (Java Backend, 3 YOE) | 14 | [Go →](./18-product-company-java-3yoe.md) |
+| 19 | Accenture (Java Spring Boot, Round 1 — ML 10, Custom SWE) | 11 | [Go →](./19-accenture-java-springboot-r1.md) |
+| 20 | TCS & Capgemini (Java Backend Developer) | 21 | [Go →](./20-tcs-capgemini-java-backend.md) |
 
 ---
 

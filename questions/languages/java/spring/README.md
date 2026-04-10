@@ -19,6 +19,7 @@
 | 9 | Advanced Config & Security (Performance, Logging, Security, Filters) | 7 | [Go →](./09-advanced-config-security.md) |
 | 10 | Spring Boot Internals Advanced (Startup, Properties, Fat JAR, Cloud-Native) | 12 | [Go →](./10-springboot-internals-advanced.md) |
 | 11 | Spring Boot Scenario-Based Interviews (OCP, Parallel APIs, @Transactional, Debugging) | 12 | [Go →](./11-springboot-scenario-interviews.md) |
+| 12 | Spring Boot REST, JPA & Internals Advanced (Book API, Redis, N+1, Dirty Checking) | 28 | [Go →](./12-springboot-rest-jpa-advanced.md) |
 
 ---
 
