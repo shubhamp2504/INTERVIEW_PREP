@@ -19,7 +19,7 @@
 
 ---
 
-## �️ Learning Path — Start Here
+## 🗺️ Learning Path — Start Here
 
 > **New to this system?** Follow the 7 phases in order. Each phase builds on the previous.
 > Full day-by-day schedule → **[📚 STUDY_PLAN.md](./STUDY_PLAN.md)**
@@ -38,7 +38,7 @@
 
 ---
 
-## �📋 Table of Contents
+## 📋 Table of Contents
 
 | # | Category | Questions | Link |
 |---|----------|-----------|------|
@@ -55,13 +55,13 @@
 | 11 | ☁️ **Cloud & DevOps** | 7 | [Go →](./questions/cloud-devops/) |
 | 12 | 🏗️ **Architecture** | 22 | [Go →](./questions/architecture/) |
 | 13 | 🧩 **OOPs & Design Patterns** | 8 | [Go →](./questions/oops-patterns/) |
-| 14 | 🔐 **Security** | 0 | [Go →](./questions/security/) |
-| 15 | 🧪 **Testing** | 18 | [Go →](./questions/testing/) |
-| 16 | 📱 **Mobile Development** | 0 | [Go →](./questions/mobile/) |
-| 17 | 🤖 **AI/ML** | 22 | [Go →](./questions/ai-ml/) |
-| 18 | 🎯 **HR & Behavioral** | 21 | [Go →](./questions/hr-behavioral/) |
-| 19 | 📝 **Aptitude & Puzzles** | 0 | [Go →](./questions/aptitude/) |
-| 20 | 💼 **Company Specific** | 355 | [Go →](./questions/company-specific/) |
+| 14 | 🧪 **Testing** | 18 | [Go →](./questions/testing/) |
+| 15 | 🤖 **AI/ML** | 22 | [Go →](./questions/ai-ml/) |
+| 16 | 🎯 **HR & Behavioral** | 21 | [Go →](./questions/hr-behavioral/) |
+| 17 | 💼 **Company Specific** | 355 | [Go →](./questions/company-specific/) |
+| 18 | 🔐 **Security** _(coming soon)_ | 0 | [Go →](./questions/security/) |
+| 19 | 📱 **Mobile** _(coming soon)_ | 0 | [Go →](./questions/mobile/) |
+| 20 | 📝 **Aptitude** _(coming soon)_ | 0 | [Go →](./questions/aptitude/) |
 | | | **1136 total** | |
 
 ---
@@ -70,8 +70,8 @@
 
 | Resource | Link |
 |----------|------|
-| � Study Plan (Phases 1–7) | [Go →](./STUDY_PLAN.md) |
-| �💡 Tips & Tricks | [Go →](./tips-and-tricks/) |
+| 📚 Study Plan (Phases 1–7) | [Go →](./STUDY_PLAN.md) |
+| 💡 Tips & Tricks | [Go →](./tips-and-tricks/) |
 | 🗺️ Roadmaps | [Go →](./roadmaps/) |
 | 📖 Cheat Sheets | [Go →](./cheat-sheets/) |
 | 🖼️ Diagrams & Images | [Go →](./images/) |

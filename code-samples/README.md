@@ -3,23 +3,28 @@
 
 ### _Ready-to-use code snippets for interviews & daily work_
 
-[![Last Updated](https://img.shields.io/badge/Updated-March%202026-green.svg)](#)
+[![Last Updated](https://img.shields.io/badge/Updated-April%202026-green.svg)](#)
 
 
 ---
 
 ## 📂 Languages
 
-| # | Language | Link |
-|---|---------|------|
-| 1 | Python | [Go →](./python/) |
-| 2 | JavaScript | [Go →](./javascript/) |
-| 3 | Java | [Go →](./java/) |
-| 4 | C++ | [Go →](./cpp/) |
+> ⚠️ **Folders not yet created.** The following sub-folders are planned.
+
+| # | Language | Status |
+|---|---------|--------|
+| 1 | Python | 🕐 Planned |
+| 2 | JavaScript | 🕐 Planned |
+| 3 | Java | 🕐 Planned |
+| 4 | C++ | 🕐 Planned |
 
 ---
 
-## 📌 Code samples are also embedded within question files directly.
+## 📌 Note
+Code samples are also embedded directly within question files. Use `Ctrl+Shift+F` to search `💻 Code` across all questions.
+
+> 💡 To add code samples: create `/code-samples/java/topic.md`, add to the table above with a link, and remove the ⚠️ warning.
 
 ---
 

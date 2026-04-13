@@ -3,7 +3,7 @@
 
 ### _Pro tips for Interviews, Coding, and Career Growth_
 
-[![Last Updated](https://img.shields.io/badge/Updated-March%202026-green.svg)](#)
+[![Last Updated](https://img.shields.io/badge/Updated-April%202026-green.svg)](#)
 
 
 ---

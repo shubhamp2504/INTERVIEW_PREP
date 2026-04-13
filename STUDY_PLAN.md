@@ -9,6 +9,50 @@
 
 ---
 
+## 🎯 My Targets
+
+> Fill this section in. Everything below depends on these numbers.
+
+| Field | Your Value |
+|-------|------------|
+| 📅 Study Start Date | _(e.g. April 14, 2026)_ |
+| 🎯 Target Interview Date | _(e.g. June 30, 2026)_ |
+| 🏢 Target Company / Role | _(e.g. Citi Bank — Senior Java Developer)_ |
+| ⏳ Available Hours / Day | _(e.g. 3 hrs on weekdays, 5 hrs on weekends)_ |
+| 📍 Track | Full (14 wk) / Express 8-wk / Emergency 2-wk |
+
+---
+
+## ⚡ Express Tracks — When You Have Less Time
+
+### ⚡ Emergency Track — 2 Weeks (Interview in < 2 weeks)
+> Do only these, in this order:
+1. Phase 1 Day 2 → `core/10` (basics) + `core/12` (exceptions) + `core/15` (collections)
+2. Phase 3 Day 1–2 → `mt/01` + `mt/02` (threading fundamentals + locks)
+3. Phase 4 Day 1–3 → `spring/01,08,11,12` (Spring core + scenarios)
+4. Phase 5 → `sd/04` (Product company designs)
+5. Phase 7 → Your **target company's file** from company-specific/
+6. Always: `hr-behavioral/01` + `hr-behavioral/02`
+
+### ⚡ Fast Track — 4 Weeks
+> Complete Phase 1, 2, 4 fully + cherry-pick from Phase 3, 5, 6:
+- Week 1: Phase 1 (full)
+- Week 2: Phase 2 (full)
+- Week 3: Phase 4 Spring (spring/01–12) + Phase 3 Days 1–4
+- Week 4: Phase 5 System Design (sd/01–08) + Phase 7 target company Qs + HR
+
+### 📅 Standard Track — 8 Weeks
+> Complete Phases 1–5 fully + top files from Phase 6 + Phase 7 target company:
+- Weeks 1–2: Phase 1 + 2
+- Weeks 3–4: Phase 3 + 4
+- Weeks 5–6: Phase 5 + prod-debugging/06–07
+- Weeks 7–8: Phase 7 (target company + HR + AI/ML)
+
+### 📅 Full Track — 14+ Weeks
+> Follow the complete phase-by-phase schedule below.
+
+---
+
 ## 🗺️ Overview — 7 Phases
 
 | Phase | Name | Weeks | Questions | Difficulty | Goal |
@@ -34,7 +78,29 @@
 🌙 Evening   (30 min) — Self-quiz: cover answers, attempt 5 Qs from today
 📝 Saturday  (2 hr)   — Do matching company-specific Qs from Phase 7
 ```
+### ⏰ Only Have 30 Minutes Today?
 
+| Time Available | What to Study |
+|---------------|---------------|
+| 30 min | Open current phase → read only the ⚡ **Remember** + 🔑 **Quick Answer** sections of 5 Qs |
+| 45 min | Add 📝 **One-Liner** scan for 10 more Qs from same file |
+| 60 min | Full 10-section study for 5 Qs as normal |
+| Weekend 2 hr | One complete file end-to-end |
+
+---
+
+## 🔁 Spaced Repetition Schedule
+> Forgetting curve fix — revisit older phases while progressing forward.
+
+| When You Are In... | Also Revise... |
+|--------------------|----------------|
+| Phase 3 (Week 5–6) | Phase 1 — scan ⚡ Remember sections |
+| Phase 4 (Week 7–8) | Phase 2 — scan ⚡ Remember sections |
+| Phase 5 (Week 9–10) | Phase 3 — attempt 5 Qs self-quiz |
+| Phase 6 (Week 11–12) | Phase 4 — attempt 5 Qs self-quiz |
+| Phase 7 (Week 13–16) | Phase 1+2 quick scan + Phase 5 system design Qs |
+
+> Rule: **Spend Saturday morning (30 min) on revision** from 2 phases back, before the 2-hr company-specific session.
 ---
 
 ## 🟢 Phase 1 — Java Foundation
@@ -209,7 +275,9 @@ Study these files in order:
 ---
 
 ## ⭐ Phase 7 — Interview Simulation
-**Weeks 13–14 | ~433 Questions | Goal: Speed + confidence + company patterns**
+**Weeks 13–16 | ~433 Questions | Goal: Speed + confidence + company patterns**
+
+> 📌 433 Qs across 4 weeks = ~15–20 per day. Pair with HR every Saturday.
 
 **HR & Behavioral (do first — always asked):**
 
