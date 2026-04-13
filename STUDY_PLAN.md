@@ -63,7 +63,7 @@
 | 🟡 **4** | Spring Boot & Database | Week 7–8 | ~110 | Intermediate → Hard | Build production-grade Spring apps |
 | 🔴 **5** | Architecture & System Design | Week 9–10 | ~90 | Hard | Design scalable distributed systems |
 | 🔴 **6** | Production, Spring Batch & DevOps | Week 11–12 | ~196 | Hard → Expert | Think like a senior engineer |
-| ⭐ **7** | Interview Simulation | Week 13–14 | ~433 | Mixed (Interview Mode) | Speed + confidence + pattern recognition |
+| ⭐ **7** | Interview Simulation | Week 13–16 | ~433 | Mixed (Interview Mode) | Speed + confidence + pattern recognition |
 
 > **Total: ~1136 questions across 14 weeks**
 > Daily target: ~10–15 questions on study days + 5 revision Qs from previous phase.
