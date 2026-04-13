@@ -1,6 +1,6 @@
 # 🛠️ Production Debugging — Interview Questions
 
-[![Last Updated](https://img.shields.io/badge/Updated-March%202026-green.svg)](#)
+[![Last Updated](https://img.shields.io/badge/Updated-April%202026-green.svg)](#)
 
 ---
 

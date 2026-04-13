@@ -191,6 +191,43 @@ You can also use these quick commands in chat:
 
 ---
 
+## ✅ Post-Batch Sync Checklist
+### _Run this after EVERY batch. Takes < 5 minutes. Nothing missed._
+
+**STEP 1 — Folder README** _(the folder where file was added)_
+- [ ] Add new file row to the table: `| N | Topic Name | Q count | [Go →](./filename.md) |`
+- [ ] Update total count in heading/badge
+
+**STEP 2 — Parent README(s)**
+- [ ] `java/README.md` → update subtotal for the changed topic (Core / Spring / MT / SB / Arch / Prod)
+- [ ] `languages/README.md` → update Java total (if a Java folder changed)
+
+**STEP 3 — Root README.md**
+- [ ] Update matching row in the Table of Contents (question count)
+- [ ] Update Grand Total row in Progress Tracker table
+- [ ] Add entry to 🔄 Update Log: `| YYYY-MM-DD | Batch N | Short summary |`
+
+**STEP 4 — daily-updates/README.md**
+- [ ] Add row under `## 📅 Month YYYY` (add heading if new month)
+- [ ] Format: `| Date | Batch N | X Qs — topic (count), topic (count) | Category | file links |`
+
+**STEP 5 — STUDY_PLAN.md**
+- [ ] Add new file to the correct Phase table (see "Phase Assignment Rules" in STUDY_PLAN.md)
+- [ ] Update memory note: new total question count
+
+**STEP 6 — Memory Note** _(tell GitHub Copilot to update)_
+- [ ] "Update my memory: question count is now [N] after Batch [N]"
+
+---
+
+> 💡 **Phase Assignment Quick Reference**
+> Java basics/OOP/collections → Phase 1 | Java 8/JVM/Streams → Phase 2 |
+> Multithreading → Phase 3 | Spring Boot/JPA/DB → Phase 4 |
+> System Design/Architecture → Phase 5 | Production/Spring Batch/DevOps → Phase 6 |
+> Company interviews/HR/Testing/Frontend → Phase 7
+
+---
+
 
 ### 🎯 Just paste your content — the system handles the rest!
 

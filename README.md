@@ -19,7 +19,26 @@
 
 ---
 
-## 📋 Table of Contents
+## �️ Learning Path — Start Here
+
+> **New to this system?** Follow the 7 phases in order. Each phase builds on the previous.
+> Full day-by-day schedule → **[📚 STUDY_PLAN.md](./STUDY_PLAN.md)**
+
+| Phase | Name | Weeks | Questions | Difficulty |
+|-------|------|-------|-----------|------------|
+| 🟢 **1** | Java Foundation | 1–2 | ~158 | Beginner |
+| 🟢 **2** | Java Deep Dive | 3–4 | ~99 | Intermediate |
+| 🟡 **3** | Multithreading & Concurrency | 5–6 | 112 | Intermediate → Hard |
+| 🟡 **4** | Spring Boot & Database | 7–8 | ~110 | Intermediate → Hard |
+| 🔴 **5** | Architecture & System Design | 9–10 | ~90 | Hard |
+| 🔴 **6** | Production, Spring Batch & DevOps | 11–12 | ~196 | Hard → Expert |
+| ⭐ **7** | Interview Simulation | 13–14 | ~433 | Mixed — Interview Mode |
+
+> **Phase assignment for new content** → when adding new questions, see which phase it maps to in [STUDY_PLAN.md → Phase Assignment Rules](./STUDY_PLAN.md#-phase-assignment-rules).
+
+---
+
+## �📋 Table of Contents
 
 | # | Category | Questions | Link |
 |---|----------|-----------|------|
@@ -51,7 +70,8 @@
 
 | Resource | Link |
 |----------|------|
-| 💡 Tips & Tricks | [Go →](./tips-and-tricks/) |
+| � Study Plan (Phases 1–7) | [Go →](./STUDY_PLAN.md) |
+| �💡 Tips & Tricks | [Go →](./tips-and-tricks/) |
 | 🗺️ Roadmaps | [Go →](./roadmaps/) |
 | 📖 Cheat Sheets | [Go →](./cheat-sheets/) |
 | 🖼️ Diagrams & Images | [Go →](./images/) |
